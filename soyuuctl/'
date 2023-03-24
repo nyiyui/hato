@@ -1,0 +1,20 @@
+package server
+
+import (
+	"net/http"
+
+	"nyiyui.ca/soyuu/soyuuctl/conn"
+		"github.com/rs/cors"
+
+)
+
+func RunServer(st *conn.State) {
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://foo.com"},
+	})
+	mux := http.NewServeMux()
+	&http.Server{
+		Addr: ":8032",
+		Handler:corsHandler.Handler(mux),
+	}
+}
