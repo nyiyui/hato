@@ -20,7 +20,7 @@ func (s *State) find() error {
 		if _, ok := s.conns[match]; ok {
 			continue
 		}
-		// go s.connect(match)
+		s.SetupDone.Add(1)
 		go s.connect2(match)
 	}
 	return nil
@@ -65,11 +65,7 @@ func (s *State) connect(path string) {
 	line = strings.TrimSpace(line[2:])
 	id := parseId(line)
 	log.Printf("connected to %s %s", path, id)
-	reqs := make(chan Req)
-	c := &Conn{
-		Id:   id,
-		Reqs: reqs,
-	}
+	c := &Conn{Id: id}
 	s.conns[path] = c
 	s.handleConn(path, port, c)
 }

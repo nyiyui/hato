@@ -2,22 +2,26 @@ package conn
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
+
+	"nyiyui.ca/soyuu/soyuuctl/sakayukari"
 )
+
+type Actor = sakayukari.Actor
+type Value = sakayukari.Value
 
 // TypeHandler handles a type instance.
 type TypeHandler func(s *State, path string, f io.ReadWriter, c *Conn)
 
 var typeHandlers = map[string]TypeHandler{
 	"soyuu-line-mega-0": handleLine,
-	"soyuu-dist":        handleDist,
-	"soyuu-breakbeam":   handleBreakbeam,
+	// "soyuu-dist":        handleDist,
+	"soyuu-breakbeam": handleBreakbeam,
 }
 
 type Path = string
@@ -26,52 +30,24 @@ type LineName = string
 type STName = string // ST = 照査点
 
 type State struct {
-	conns     map[ConnName]*Conn
-	connsLock sync.RWMutex
-	notifyNew chan string
-	lines     map[LineName]ConnName
-	linesLock sync.RWMutex
-	sts       map[STName]ConnName
-	stsLock   sync.RWMutex
+	conns      map[ConnName]*Conn
+	connsLock  sync.RWMutex
+	notifyNew  chan string
+	actors     map[string]*sakayukari.Actor
+	actorsLock sync.Mutex
+	SetupDone  sync.WaitGroup
 }
 
 func NewState() *State {
 	return &State{
 		conns:     map[ConnName]*Conn{},
 		notifyNew: make(chan string),
-		lines:     map[LineName]ConnName{},
-		sts:       map[STName]ConnName{},
+		actors:    map[string]*sakayukari.Actor{},
 	}
 }
 
-func (s *State) Find() error {
-	return s.find()
-}
-
-func (s *State) Req(path ConnName, req Req) error {
-	s.connsLock.RLock()
-	defer s.connsLock.RUnlock()
-	c, ok := s.conns[path]
-	if !ok {
-		return errors.New("conn not found")
-	}
-	c.Reqs <- req
-	return nil
-}
-
-func (s *State) GetST(name STName) (*Conn, bool) {
-	s.stsLock.RLock()
-	defer s.stsLock.RUnlock()
-	connName, ok := s.sts[name]
-	if !ok {
-		return nil, false
-	}
-	c, ok := s.conns[connName]
-	if !ok {
-		panic("conn not found (stale st!)")
-	}
-	return c, true
-}
+func (s *State) Actors() map[string]*sakayukari.Actor { return s.actors }
+func (s *State) Find() error                          { return s.find() }
 
 func (s *State) GetConn(path ConnName) (*Conn, bool) {
 	s.connsLock.RLock()
@@ -83,19 +59,8 @@ func (s *State) GetConn(path ConnName) (*Conn, bool) {
 	return c, true
 }
 
-func (s *State) LineReq(line LineName, req ReqLine) error {
-	s.linesLock.RLock()
-	defer s.linesLock.RUnlock()
-	path := s.lines[line]
-	req.Line = line
-	return s.Req(path, req)
-}
-
 type Conn struct {
-	Id        Id
-	Reqs      chan Req
-	HooksLock sync.Mutex
-	Hooks     []func(v Val)
+	Id Id
 }
 
 type Req interface {
@@ -111,6 +76,31 @@ type ReqLine struct {
 
 func (_ ReqLine) isReq() {}
 
+func (r ReqLine) String() string {
+	var send [7]byte
+	// CAAN000
+	// C - change
+	//  A - line
+	//   A - direction
+	//    N - brake
+	//     000 - power
+	send[0] = 'C'
+	send[1] = r.Line[0]
+	if r.Direction {
+		send[2] = 'A'
+	} else {
+		send[2] = 'B'
+	}
+	if r.Brake {
+		send[3] = 'Y'
+	} else {
+		send[3] = 'N'
+	}
+	power := fmt.Sprintf("%03d", r.Power)
+	copy(send[4:], power)
+	return string(send[:])
+}
+
 type Id struct {
 	Type     string
 	Variant  string
@@ -122,20 +112,18 @@ func (i Id) String() string {
 }
 
 func parseId(id string) Id {
-	ss := strings.Split(id, " ")
-	tv := ss[0]
-	if len(ss) < 2 {
+	ss := strings.Split(id, "/")
+	if len(ss) < 3 {
+		ss = append(ss, "")
 		ss = append(ss, "")
 	}
-	tv2 := strings.SplitN(tv, "/", 2)
-	if len(tv2) < 2 {
-		tv2 = append(tv2, "")
+	// soyuu-breakbeam/itsybitsy0/0
+	id2 := Id{
+		Type:     ss[0],
+		Variant:  ss[1],
+		Instance: ss[2],
 	}
-	return Id{
-		Type:     tv2[0],
-		Variant:  tv2[1],
-		Instance: ss[1],
-	}
+	return id2
 }
 
 func (s *State) handleConn(path string, f io.ReadWriter, c *Conn) {
@@ -148,49 +136,57 @@ func (s *State) handleConn(path string, f io.ReadWriter, c *Conn) {
 	handler(s, path, f, c)
 }
 
+type lineValue struct {
+	Line  string
+	Value Value
+}
+
 func handleLine(s *State, path string, f io.ReadWriter, c *Conn) {
+	names := []string{"A", "B", "C", "D"}
+
+	updates := make(chan lineValue, 0)
+	// Actor's DependsOn is filled by another function
+	lines := map[string]*Actor{}
+	for _, name := range names {
+		name := name
+		lines[name] = &Actor{
+			UpdateFunc: func(self *Actor, gs sakayukari.GraphState) Value {
+				if len(self.DependsOn) == 0 {
+					return nil
+				}
+				updates <- lineValue{
+					Line:  name,
+					Value: gs.States[self.DependsOn[0]],
+				}
+				return nil
+			},
+			SideEffects: true,
+		}
+	}
 	func() {
-		s.linesLock.Lock()
-		defer s.linesLock.Unlock()
-		s.lines["A"] = path
-		s.lines["B"] = path
-		s.lines["C"] = path
-		s.lines["D"] = path
+		s.actorsLock.Lock()
+		defer s.actorsLock.Unlock()
+		for name, actor := range lines {
+			s.actors[c.Id.String()+":"+name] = actor
+		}
 	}()
-	for req := range c.Reqs {
-		switch req := req.(type) {
+	s.SetupDone.Done()
+
+	for lv := range updates {
+		switch req := lv.Value.(type) {
 		case ReqLine:
-			var send [7]byte
-			// CAAN000
-			// C - change
-			//  A - line
-			//   A - direction
-			//    N - brake
-			//     000 - power
-			send[0] = 'C'
-			send[1] = req.Line[0]
-			if req.Direction {
-				send[2] = 'A'
-			} else {
-				send[2] = 'B'
-			}
-			if req.Brake {
-				send[3] = 'Y'
-			} else {
-				send[3] = 'N'
-			}
-			power := fmt.Sprintf("%03d", req.Power)
-			copy(send[4:], power)
-			_, err := fmt.Fprintf(f, "%s\n", send)
+			req.Line = lv.Line
+			_, err := fmt.Fprint(f, req.String())
 			if err != nil {
-				log.Printf("commit %s: %s", send, err)
+				log.Printf("commit %s: %s", req, err)
 			}
 		default:
-			log.Print("invalid req received")
+			log.Printf("invalid req received: %+v", req)
 		}
 	}
 }
 
+/*
 func handleDist(s *State, path string, f io.ReadWriter, c *Conn) {
 	func() {
 		s.stsLock.Lock()
@@ -250,24 +246,34 @@ func handleDist(s *State, path string, f io.ReadWriter, c *Conn) {
 			Monotonic: curTS,
 			Certain:   true,
 		}
-		func() {
-			c.HooksLock.Lock()
-			defer c.HooksLock.Unlock()
-			for _, hook := range c.Hooks {
-				hook(v)
-			}
-		}()
+		c.Actor.GetChan <- v
 	}
 }
+*/
 
 func handleBreakbeam(s *State, path string, f io.ReadWriter, c *Conn) {
+	beamNames := []string{"A", "B"}
+	beams := map[string]*Actor{}
+	for _, name := range beamNames {
+		beams[name] = &Actor{
+			RecvChan:    make(chan Value),
+			SideEffects: true,
+		}
+	}
 	func() {
-		s.stsLock.Lock()
-		defer s.stsLock.Unlock()
-		s.sts[c.Id.Instance+"A"] = path
-		s.sts[c.Id.Instance+"B"] = path
+		s.actorsLock.Lock()
+		defer s.actorsLock.Unlock()
+		for _, name := range beamNames {
+			s.actors[c.Id.String()+":"+name] = beams[name]
+		}
 	}()
-	close(c.Reqs)
+	s.SetupDone.Done()
+	reader := bufio.NewReader(f)
+	fmt.Fprint(f, "Si0100\n")
+	log.Printf("breakbeam: setup done %s %#v", path, c)
+	prevValues := map[string]ValSeen{}
+	prevDisableUntil := int64(0)
+ReadLoop:
 	for {
 		lineRaw, err := reader.ReadString('\n')
 		if err != nil {
@@ -278,24 +284,34 @@ func handleBreakbeam(s *State, path string, f io.ReadWriter, c *Conn) {
 			continue
 		}
 		// TODO: adjust log interval based on value
-		line = lineRaw[2:]
+		line := lineRaw[2:]
 		var monotonic int64
-		var values map[string]bool
-		var err error
+		values := map[string]bool{}
 		for i := 0; i < len(line); i++ {
 			switch {
-			case line[i] == "T":
-				j := strings.IndexFunc(line[i:], func(r rune) bool { return r >= "A" && r <= "Z" })
-				monotonic, err = strconv.ParseInt(line[i:i+j], 10, 64)
+			case line[i] == 'T':
+				j := strings.IndexFunc(line[i+1:], func(r rune) bool { return r >= 'A' && r <= 'Z' })
+				if j == -1 {
+					j = len(line) - i
+				}
+				monotonic, err = strconv.ParseInt(strings.TrimSpace(line[i+1:i+j]), 10, 64)
 				if err != nil {
 					log.Printf("parse: T: %s", err)
-					continue
+					continue ReadLoop
 				}
 				i += j
 			default:
-				j := strings.IndexFunc(line[i:], func(r rune) bool { return r >= "A" && r <= "Z" })
-				values[string(line[i])] = line[i+1] == "1"
-				i += j
+				values[string(line[i])] = line[i+1] == '1'
+				i++
+			}
+		}
+		if prev, ok := prevValues["A"]; ok && monotonic > prevDisableUntil {
+			delta := monotonic - prev.Monotonic
+			if prev.Seen != values["B"] {
+				velocity := 248 * 1000 * 1000 / delta // µm/s
+				_ = velocity
+				//log.Printf("velocity %d µm/s", velocity)
+				prevDisableUntil = monotonic + 1000
 			}
 		}
 		for sensor, value := range values {
@@ -304,13 +320,15 @@ func handleBreakbeam(s *State, path string, f io.ReadWriter, c *Conn) {
 				Sensor:    sensor,
 				Seen:      value,
 			}
-			func() {
-				c.HooksLock.Lock()
-				defer c.HooksLock.Unlock()
-				for _, hook := range c.Hooks {
-					hook(v)
-				}
-			}()
+			//log.Printf("sense %s %t", sensor, value)
+			beamActor, ok := beams[sensor]
+			if !ok {
+				panic("sensor's actor missing")
+			}
+			beamActor.RecvChan <- v
+			if prev, ok := prevValues[sensor]; !ok || prev.Seen != value {
+				prevValues[sensor] = v
+			}
 		}
 	}
 }

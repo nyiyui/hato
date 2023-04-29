@@ -35,9 +35,10 @@ type GraphState struct {
 
 type Actor struct {
 	DependsOn   []ActorIndex
-	UpdateFunc  func(GraphState) (updated Value)
-	GetChan     chan Value
+	UpdateFunc  func(self *Actor, gs GraphState) (updated Value)
+	RecvChan    chan Value
 	SideEffects bool
+	Comment     string
 }
 
 type Graph struct {
@@ -61,8 +62,8 @@ func NewGraph(actors []Actor) *Graph {
 }
 
 func (a Actor) check() error {
-	if !a.SideEffects && a.GetChan != nil {
-		return errors.New("pure actors must not have GetFunc")
+	if !a.SideEffects && a.RecvChan != nil {
+		return errors.New("pure actors must not have RecvChan")
 	}
 	return nil
 }
@@ -76,6 +77,8 @@ func (g *Graph) calcDeptsOf() {
 	}
 	g.DeptsOf = dependents
 }
+
+func (g *Graph) Check() error { return g.check() }
 
 func (g *Graph) check() error {
 	if g.DeptsOf == nil {
@@ -96,6 +99,7 @@ func (g *Graph) Exec() {
 	if g.DeptsOf == nil {
 		panic("Graph.DeptsOf not calculated")
 	}
+
 	// setup cases
 	cases := []reflect.SelectCase{
 		reflect.SelectCase{
@@ -105,10 +109,10 @@ func (g *Graph) Exec() {
 	}
 	caseIs := []int{-1}
 	for i, actor := range g.Actors {
-		if actor.SideEffects && actor.GetChan != nil {
+		if actor.SideEffects && actor.RecvChan != nil {
 			cases = append(cases, reflect.SelectCase{
 				Dir:  reflect.SelectRecv,
-				Chan: reflect.ValueOf(actor.GetChan),
+				Chan: reflect.ValueOf(actor.RecvChan),
 			})
 			caseIs = append(caseIs, i)
 		}
@@ -131,25 +135,25 @@ ActorLoop:
 			i = iav.Index
 			g.State.States[i] = iav.Value
 		} else {
-			g.State.States[i] = recv
+			g.State.States[i] = recv.Interface().(Value)
 		}
+		//log.Printf("loop for index %d %s", i, g.Actors[i].Comment)
 		depts := g.DeptsOf[i]
 		updated := make([]bool, len(g.Actors))
 		for len(depts) > 0 {
 			j := depts[0]
 			actor := g.Actors[j]
 			// TODO: hide values in g.State that are not relied upon by actor
-			if actor.SideEffects {
-				val := actor.UpdateFunc(g.State)
+			// TODO: confine actors with side-effects runtime (prevent hanging)
+			if !updated[j] {
+				val := actor.UpdateFunc(&actor, g.State)
 				if _, ok := val.(shutdownError); ok {
 					log.Printf("shutdown due to actor i%d", j)
 					break ActorLoop
 				}
 				g.State.States[j] = val
-			} else if !updated[j] {
-				g.State.States[j] = actor.UpdateFunc(g.State)
+				updated[j] = true
 			}
-			updated[j] = true
 			depts = append(depts[1:], g.DeptsOf[j]...)
 		}
 	}

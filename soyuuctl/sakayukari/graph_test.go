@@ -18,18 +18,18 @@ func TestGraph(t *testing.T) {
 	var g *Graph
 	g = NewGraph([]Actor{
 		Actor{
-			GetChan:     ch1,
+			RecvChan:    ch1,
 			SideEffects: true,
 		},
 		Actor{
 			DependsOn: []ActorIndex{0},
-			UpdateFunc: func(gs GraphState) Value {
+			UpdateFunc: func(self *Actor, gs GraphState) Value {
 				return valueString(fmt.Sprintf("Hello, %s!", gs.States[0]))
 			},
 		},
 		Actor{
 			DependsOn: []ActorIndex{1},
-			UpdateFunc: func(gs GraphState) Value {
+			UpdateFunc: func(self *Actor, gs GraphState) Value {
 				log.Printf("updated: %s", gs.States[1])
 				if gs.States[1].String() == "Hello, Patrick!" {
 					log.Print("request shutdown")

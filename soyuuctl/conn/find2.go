@@ -55,10 +55,8 @@ func (s *State) connect2(path string) {
 	line = strings.TrimSpace(line[2:])
 	id := parseId(line)
 	log.Printf("connected to %s %s", path, id)
-	reqs := make(chan Req)
 	c := &Conn{
-		Id:   id,
-		Reqs: reqs,
+		Id: id,
 	}
 	s.conns[path] = c
 	s.handleConn(path, &combinedReadWriter{

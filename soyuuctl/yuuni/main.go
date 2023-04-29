@@ -4,10 +4,18 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gizak/termui/v3"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"nyiyui.ca/soyuu/soyuuctl/conn"
+	"nyiyui.ca/soyuu/soyuuctl/sakayukari"
 )
+
+type EventValue struct {
+	Value termui.Event
+}
+
+func (e EventValue) String() string { return fmt.Sprintf("%#v", e.Value) }
 
 type lineState struct {
 	power     uint8
@@ -61,88 +69,83 @@ func newYuuni() (*Yuuni, error) {
 	}, nil
 }
 
-func (y *Yuuni) allStop() {
-	y.s.LineReq("A", conn.ReqLine{
-		Brake:     false,
-		Direction: true,
-		Power:     00,
-	})
-	y.s.LineReq("B", conn.ReqLine{
-		Brake:     false,
-		Direction: true,
-		Power:     00,
-	})
-}
-
 func Main() error {
-	y, err := newYuuni()
-	if err != nil {
-		return err
-	}
-	var c *conn.Conn
-	ok := false
-	for !ok {
-		c, ok = y.s.GetST("0")
-	}
-	func() {
-		c.HooksLock.Lock()
-		defer c.HooksLock.Unlock()
-		c.Hooks = append(c.Hooks, func(v conn.Val) { y.stHook("0", v) })
-	}()
-	y.allStop()
-
 	if err := ui.Init(); err != nil {
 		return fmt.Errorf("init termui: %w", err)
 	}
 	defer ui.Close()
-	p := widgets.NewParagraph()
-	p.Text = "soyuuctl-yuuni"
-	p.SetRect(0, 0, 25, 5)
-	ui.Render(p)
-	ui.Render(y.state)
+
+	y, err := newYuuni()
+	if err != nil {
+		return err
+	}
+
+	log.Print("waiting")
+	y.s.SetupDone.Wait()
+
+	kbEventsChan := make(chan sakayukari.Value)
+	keyboardEvents := sakayukari.Actor2{
+		RecvChan:    kbEventsChan,
+		SideEffects: true,
+	}
+
+	// hysteresisA := hysteresis(1000)
+	// hysteresisA.DependsOn = []string{"soyuu-breakbeam/itsybitsy0-0:A"}
+	// hysteresisB := hysteresis(1000)
+	// hysteresisB.DependsOn = []string{"soyuu-breakbeam/itsybitsy0-0:B"}
+
+	g2 := sakayukari.Graph2{
+		Actors: map[string]sakayukari.Actor2{
+			"ui-breakbeam": breakbeam(map[string]string{
+				"rA": "soyuu-breakbeam/itsybitsy0-0:A",
+				"rB": "soyuu-breakbeam/itsybitsy0-0:B",
+				// "hA": "breakbeam-A",
+				// "hB": "breakbeam-B",
+				"at": "attitude",
+			}),
+			// "breakbeam-A": hysteresisA,
+			// "breakbeam-B": hysteresisB,
+			"attitude": velocity(
+				"soyuu-breakbeam/itsybitsy0-0:A",
+				"soyuu-breakbeam/itsybitsy0-0:B",
+			),
+			"keyboard": keyboardEvents,
+		},
+	}
+	for key, actor := range y.s.Actors() {
+		actor := actor
+		log.Printf("key %s actor %#v", key, actor)
+		actor2 := sakayukari.Actor2{
+			RecvChan:    actor.RecvChan,
+			SideEffects: actor.SideEffects,
+		}
+		if actor.UpdateFunc != nil {
+			actor2.UpdateFunc = func(self *sakayukari.Actor, _ sakayukari.GraphStateMap, gs sakayukari.GraphState) sakayukari.Value {
+				return actor.UpdateFunc(self, gs)
+			}
+		}
+		g2.Actors[key] = actor2
+	}
+	//log.Printf("g2 %#v", g2.Actors)
+	/*
+		2023/04/03 09:06:51 connecting to /dev/ttyACM0
+		2023/04/03 09:06:51 g2 map[string]sakayukari.Actor2{"ui-breakbeam":sakayukari.Actor2{DependsOn:[]string{"soyuu-breakbeam/itsybitsy0-0"}, UpdateFunc:(func(map[string]int, sakayukari.GraphState) sakayukari.Value)(0xe64f0), RecvChan:(chan sakayukari.Value)(nil), SideEffects:true}}
+		2023/04/03 09:06:51 executing graph
+		2023/04/03 09:06:51 listening for [-1]
+	*/
+	g := g2.Convert()
+	err = g.Check()
+	if err != nil {
+		log.Fatalf("check: %s", err)
+	}
+	log.Printf("executing graph")
+	go g.Exec()
 	for e := range ui.PollEvents() {
-		changed := true
 		switch e.ID {
 		case "<C-c>":
 			return nil
-		case "0":
-			go y.allStop()
-			changed = false
-		case "q":
-			if y.lineStates["A"].power != 255 {
-				y.lineStates["A"].power += 3
-			}
-		case "a":
-			if y.lineStates["A"].power != 0 {
-				y.lineStates["A"].power -= 3
-			}
-		case "z":
-			y.lineStates["A"].direction = !y.lineStates["A"].direction
-		case "w":
-			if y.lineStates["B"].power != 255 {
-				y.lineStates["B"].power += 3
-			}
-		case "s":
-			if y.lineStates["B"].power != 0 {
-				y.lineStates["B"].power -= 3
-			}
-		case "x":
-			y.lineStates["B"].direction = !y.lineStates["B"].direction
-		}
-		if changed {
-			y.s.LineReq("A", conn.ReqLine{
-				Brake:     false,
-				Direction: y.lineStates["A"].direction,
-				Power:     y.lineStates["A"].power,
-			})
-			y.s.LineReq("B", conn.ReqLine{
-				Brake:     false,
-				Direction: y.lineStates["B"].direction,
-				Power:     y.lineStates["B"].power,
-			})
-			y.lineState.Text = fmt.Sprintf("A %t\t%d\n", y.lineStates["A"].direction, y.lineStates["A"].power)
-			y.lineState.Text += fmt.Sprintf("B %t\t%d\n", y.lineStates["B"].direction, y.lineStates["B"].power)
-			ui.Render(y.lineState)
+		default:
+			kbEventsChan <- EventValue{e}
 		}
 	}
 	return nil
