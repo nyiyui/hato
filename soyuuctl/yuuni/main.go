@@ -89,27 +89,27 @@ func Main() error {
 		SideEffects: true,
 	}
 
-	// hysteresisA := hysteresis(1000)
-	// hysteresisA.DependsOn = []string{"soyuu-breakbeam/itsybitsy0-0:A"}
-	// hysteresisB := hysteresis(1000)
-	// hysteresisB.DependsOn = []string{"soyuu-breakbeam/itsybitsy0-0:B"}
-
 	g2 := sakayukari.Graph2{
 		Actors: map[string]sakayukari.Actor2{
 			"ui-breakbeam": breakbeam(map[string]string{
 				"rA": "soyuu-breakbeam/itsybitsy0-0:A",
 				"rB": "soyuu-breakbeam/itsybitsy0-0:B",
-				// "hA": "breakbeam-A",
-				// "hB": "breakbeam-B",
 				"at": "attitude",
+				"kb": "keyboard",
 			}),
-			// "breakbeam-A": hysteresisA,
-			// "breakbeam-B": hysteresisB,
-			"attitude": velocity(
+			"attitude": velocity2(
 				"soyuu-breakbeam/itsybitsy0-0:A",
 				"soyuu-breakbeam/itsybitsy0-0:B",
+				248*conn.Lmm,
+				670,
 			),
 			"keyboard": keyboardEvents,
+			"dctl": directControl("keyboard", map[string]string{
+				"A": "soyuu-line-mega-0/-:A",
+				"B": "soyuu-line-mega-0/-:B",
+				"C": "soyuu-line-mega-0/-:C",
+				"D": "soyuu-line-mega-0/-:D",
+			}),
 		},
 	}
 	for key, actor := range y.s.Actors() {
@@ -118,6 +118,7 @@ func Main() error {
 		actor2 := sakayukari.Actor2{
 			RecvChan:    actor.RecvChan,
 			SideEffects: actor.SideEffects,
+			Comment:     fmt.Sprintf("legacy %s", key),
 		}
 		if actor.UpdateFunc != nil {
 			actor2.UpdateFunc = func(self *sakayukari.Actor, _ sakayukari.GraphStateMap, gs sakayukari.GraphState) sakayukari.Value {
@@ -126,14 +127,15 @@ func Main() error {
 		}
 		g2.Actors[key] = actor2
 	}
-	//log.Printf("g2 %#v", g2.Actors)
-	/*
-		2023/04/03 09:06:51 connecting to /dev/ttyACM0
-		2023/04/03 09:06:51 g2 map[string]sakayukari.Actor2{"ui-breakbeam":sakayukari.Actor2{DependsOn:[]string{"soyuu-breakbeam/itsybitsy0-0"}, UpdateFunc:(func(map[string]int, sakayukari.GraphState) sakayukari.Value)(0xe64f0), RecvChan:(chan sakayukari.Value)(nil), SideEffects:true}}
-		2023/04/03 09:06:51 executing graph
-		2023/04/03 09:06:51 listening for [-1]
-	*/
+	{
+		actor := g2.Actors["soyuu-line-mega-0/-:A"]
+		actor.DependsOn = append(actor.DependsOn, "dctl")
+		g2.Actors["soyuu-line-mega-0/-:A"] = actor
+	}
 	g := g2.Convert()
+	for i, actor := range g.Actors {
+		log.Printf("actor %d %#v", i, actor)
+	}
 	err = g.Check()
 	if err != nil {
 		log.Fatalf("check: %s", err)

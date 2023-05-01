@@ -14,7 +14,7 @@ import (
 func breakbeam(show map[string]string) sakayukari.Actor2 {
 	state := widgets.NewParagraph()
 	state.Text = "loading"
-	state.SetRect(0, 0, 30, 7)
+	state.SetRect(0, 0, 60, 27)
 	ui.Render(state)
 	keys := make([]string, len(show))
 	for _, key := range show {

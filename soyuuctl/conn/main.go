@@ -152,6 +152,7 @@ func handleLine(s *State, path string, f io.ReadWriter, c *Conn) {
 		lines[name] = &Actor{
 			UpdateFunc: func(self *Actor, gs sakayukari.GraphState) Value {
 				if len(self.DependsOn) == 0 {
+					log.Printf("%s: len is 0", name)
 					return nil
 				}
 				updates <- lineValue{
@@ -176,7 +177,7 @@ func handleLine(s *State, path string, f io.ReadWriter, c *Conn) {
 		switch req := lv.Value.(type) {
 		case ReqLine:
 			req.Line = lv.Line
-			_, err := fmt.Fprint(f, req.String())
+			_, err := fmt.Fprintf(f, "%s\n", req.String())
 			if err != nil {
 				log.Printf("commit %s: %s", req, err)
 			}

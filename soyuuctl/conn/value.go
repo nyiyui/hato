@@ -2,6 +2,15 @@ package conn
 
 import "fmt"
 
+// Integral length in micrometres.
+type Length = int64
+
+const (
+	Lum int64 = 1
+	Lmm int64 = 1000
+	Lm  int64 = 1000000
+)
+
 type Val interface {
 	isVal()
 	// Staleness() time.Time
@@ -14,12 +23,30 @@ type ValAttitude struct {
 	Velocity  int64 // um/s
 	Monotonic int64
 	Certain   bool
+	Front     bool
 }
 
 func (_ ValAttitude) isVal() {}
 
 func (v ValAttitude) String() string {
-	return fmt.Sprintf("attitude(%d %v %vmm/s %v %t)", v.State, v.Position, float64(v.Velocity)/1000.0, v.Monotonic, v.Certain)
+	front := 'f'
+	if !v.Front {
+		front = 'b'
+	}
+	certain := 'y'
+	if !v.Certain {
+		certain = 'n'
+	}
+	return fmt.Sprintf(
+		"attitude(%d %v %vmm/s %vkm/h %v %c%c)",
+		v.State,
+		v.Position,
+		float64(v.Velocity)/1000.0,
+		float64(v.Velocity*150)*3600/1e9,
+		v.Monotonic,
+		certain,
+		front,
+	)
 }
 
 type ValSeen struct {
