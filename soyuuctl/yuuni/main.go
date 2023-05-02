@@ -112,6 +112,15 @@ func Main() error {
 			}),
 		},
 	}
+	dctl2 := directControl2("dctl2", "keyboard", map[string]string{
+		"A": "soyuu-line-mega-0/-:A",
+		"B": "soyuu-line-mega-0/-:B",
+		"C": "soyuu-line-mega-0/-:C",
+		"D": "soyuu-line-mega-0/-:D",
+	})
+	for key, actor := range dctl2 {
+		g2.Actors[key] = actor
+	}
 	for key, actor := range y.s.Actors() {
 		actor := actor
 		log.Printf("key %s actor %#v", key, actor)
