@@ -87,10 +87,12 @@ func Main() error {
 	keyboardEvents := sakayukari.Actor2{
 		RecvChan:    kbEventsChan,
 		SideEffects: true,
+		Comment:     "keyboardEvents",
 	}
 
 	g2 := sakayukari.Graph2{
 		Actors: map[string]sakayukari.Actor2{
+			// "ticker": ticker(),
 			"ui-breakbeam": breakbeam(map[string]string{
 				"rA": "soyuu-breakbeam/itsybitsy0-0:A",
 				"rB": "soyuu-breakbeam/itsybitsy0-0:B",
@@ -104,23 +106,16 @@ func Main() error {
 				670,
 			),
 			"keyboard": keyboardEvents,
-			"dctl": directControl("keyboard", map[string]string{
-				"A": "soyuu-line-mega-0/-:A",
-				"B": "soyuu-line-mega-0/-:B",
-				"C": "soyuu-line-mega-0/-:C",
-				"D": "soyuu-line-mega-0/-:D",
-			}),
+			// "calibrate": calibrate("attitude", "A", "ticker"),
+			// "dctl": directControl("keyboard", map[string]string{
+			// 	"A": "soyuu-line-mega-0/-:A",
+			// 	"B": "soyuu-line-mega-0/-:B",
+			// 	"C": "soyuu-line-mega-0/-:C",
+			// 	"D": "soyuu-line-mega-0/-:D",
+			// }),
 		},
 	}
-	dctl2 := directControl2("dctl2", "keyboard", map[string]string{
-		"A": "soyuu-line-mega-0/-:A",
-		"B": "soyuu-line-mega-0/-:B",
-		"C": "soyuu-line-mega-0/-:C",
-		"D": "soyuu-line-mega-0/-:D",
-	})
-	for key, actor := range dctl2 {
-		g2.Actors[key] = actor
-	}
+	log.Printf("y.s.Actors() %#v", y.s.Actors())
 	for key, actor := range y.s.Actors() {
 		actor := actor
 		log.Printf("key %s actor %#v", key, actor)
@@ -136,11 +131,18 @@ func Main() error {
 		}
 		g2.Actors[key] = actor2
 	}
-	{
-		actor := g2.Actors["soyuu-line-mega-0/-:A"]
-		actor.DependsOn = append(actor.DependsOn, "dctl")
-		g2.Actors["soyuu-line-mega-0/-:A"] = actor
-	}
+	// put after legacy bindings as directControl2 requires them to exist in g2.Actors
+	directControl2("dctl2", "keyboard", map[string]MappingValue{
+		"A": {"soyuu-line-mega-0/-:A", MappingLine},
+		"B": {"soyuu-line-mega-0/-:B", MappingLine},
+		"C": {"soyuu-line-mega-0/-:C", MappingSwitch},
+		"D": {"soyuu-line-mega-0/-:D", MappingSwitch},
+	}, g2.Actors, "") // "calibrate")
+	//	{
+	//		actor := g2.Actors["soyuu-line-mega-0/-:A"]
+	//		actor.DependsOn = append(actor.DependsOn, "dctl")
+	//		g2.Actors["soyuu-line-mega-0/-:A"] = actor
+	//	}
 	g := g2.Convert()
 	for i, actor := range g.Actors {
 		log.Printf("actor %d %#v", i, actor)

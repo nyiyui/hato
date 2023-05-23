@@ -162,6 +162,7 @@ func handleLine(s *State, path string, f io.ReadWriter, c *Conn) {
 				return nil
 			},
 			SideEffects: true,
+			Comment:     fmt.Sprintf("line %s %s", path, name),
 		}
 	}
 	func() {
@@ -182,7 +183,7 @@ func handleLine(s *State, path string, f io.ReadWriter, c *Conn) {
 				log.Printf("commit %s: %s", req, err)
 			}
 		default:
-			log.Printf("invalid req received: %+v", req)
+			// log.Printf("invalid req received: %+v", req) // ignore
 		}
 	}
 }
@@ -259,6 +260,7 @@ func handleBreakbeam(s *State, path string, f io.ReadWriter, c *Conn) {
 		beams[name] = &Actor{
 			RecvChan:    make(chan Value),
 			SideEffects: true,
+			Comment:     fmt.Sprintf("breakbeam %s %s", path, name),
 		}
 	}
 	func() {

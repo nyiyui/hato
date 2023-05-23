@@ -1,0 +1,9 @@
+{
+  line,
+  model,
+} = import "layout"
+calibrate = linear actor:
+  for speed in [1,255]:
+    line.A.power <= speed
+    line.A.direction <= true
+    # etc...

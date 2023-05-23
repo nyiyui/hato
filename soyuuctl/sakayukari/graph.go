@@ -14,8 +14,17 @@ type shutdownError struct{}
 func (s shutdownError) Error() string {
 	return "shutdown"
 }
+
 func (s shutdownError) String() string {
 	return "shutdown"
+}
+
+var SpecialIgnore = specialIgnore{}
+
+type specialIgnore struct{}
+
+func (s specialIgnore) String() string {
+	return "special ignore (no change) value"
 }
 
 type Value interface {
@@ -86,7 +95,7 @@ func (g *Graph) check() error {
 	}
 	for i, actor := range g.Actors {
 		if !actor.SideEffects && len(g.DeptsOf[i]) == 0 {
-			return UselessActorError{I: i}
+			return UselessActorError{I: i, Comment: actor.Comment}
 		}
 		if err := actor.check(); err != nil {
 			return fmt.Errorf("actor i%d: %w", i, err)
@@ -145,24 +154,31 @@ ActorLoop:
 			actor := g.Actors[j]
 			// TODO: hide values in g.State that are not relied upon by actor
 			// TODO: confine actors with side-effects runtime (prevent hanging)
+			var val Value
 			if !updated[j] {
-				val := actor.UpdateFunc(&actor, g.State)
+				//log.Printf("update %s", actor.Comment)
+				val = actor.UpdateFunc(&actor, g.State)
 				if _, ok := val.(shutdownError); ok {
 					log.Printf("shutdown due to actor i%d", j)
 					break ActorLoop
 				}
-				g.State.States[j] = val
+				if _, ok := val.(specialIgnore); !ok {
+					g.State.States[j] = val
+				}
 				updated[j] = true
 			}
-			depts = append(depts[1:], g.DeptsOf[j]...)
+			if _, ok := val.(specialIgnore); !ok {
+				depts = append(depts[1:], g.DeptsOf[j]...)
+			}
 		}
 	}
 }
 
 type UselessActorError struct {
-	I int
+	I       int
+	Comment string
 }
 
 func (u UselessActorError) Error() string {
-	return fmt.Sprintf("useless actor i%d", u.I)
+	return fmt.Sprintf("useless actor i%d c%s", u.I, u.Comment)
 }

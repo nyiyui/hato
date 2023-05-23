@@ -1,0 +1,1469 @@
+2023/05/21 13:07:05 connecting to /dev/ttyACM0
+2023/05/21 13:07:05 connecting to /dev/ttyACM1
+/dev/ttyACM0: ready
+/dev/ttyACM1: ready
+/dev/ttyACM1: send 2 I/dev/ttyACM0: send 2 I
+
+2023/05/21 13:07:06 handling /dev/ttyACM1 soyuu-breakbeam/itsybitsy0-0
+2023/05/21 13:07:06 handling /dev/ttyACM0 soyuu-line-mega-0/-
+2023/05/21 13:07:06 timing start
+2023/05/21 13:07:06 power 30
+/dev/ttyACM0: send 7 CAAN000
+2023/05/21 13:18:47 power 31
+/dev/ttyACM0: send 7 CAAN030
+/dev/ttyACM0: send 7 CAAN031
+2023/05/21 13:19:43 sense A true
+2023/05/21 13:19:43 sense B false
+2023/05/21 13:19:43 s [{7941217 true false} {0 false false} {0 false false}]
+2023/05/21 13:19:49 sense A false
+2023/05/21 13:19:49 sense B false
+2023/05/21 13:19:49 s [{7947605 false false} {7941217 true false} {0 false false}]
+2023/05/21 13:19:49 att1l attitude(0 0 38.822mm/s 20.96388km/h 7947605 nf)
+2023/05/21 13:19:49 vel 38822
+2023/05/21 13:19:49 curPos 0
+2023/05/21 13:20:01 sense A false
+2023/05/21 13:20:01 sense B true
+2023/05/21 13:20:01 s [{7959116 false true} {7947605 false false} {7941217 true false}]
+2023/05/21 13:20:01 att2l attitude(0 694889 38.822mm/s 20.96388km/h 7959116 nb) cars694889 pos694889
+2023/05/21 13:20:01 vel 38822
+2023/05/21 13:20:01 curPos 694889
+2023/05/21 13:20:01 bodge-timing-data {"Power":31,"Attitude":{"State":0,"Position":694889,"Velocity":38822,"Monotonic":7959116,"Time":"2023-05-21T13:20:01.028585763+01:00","Certain":false,"Front":false}}
+2023/05/21 13:20:01 power 32
+/dev/ttyACM0: send 7 CAAN032
+2023/05/21 13:20:07 sense A true
+2023/05/21 13:20:07 sense B true
+2023/05/21 13:20:07 s [{7965508 true true} {7959116 false true} {7947605 false false}]
+2023/05/21 13:21:48 sense A true
+2023/05/21 13:21:48 sense B false
+2023/05/21 13:21:48 s [{8066594 true false} {7965508 true true} {7959116 false true}]
+2023/05/21 13:21:54 sense A false
+2023/05/21 13:21:54 sense B false
+2023/05/21 13:21:54 s [{8072340 false false} {8066594 true false} {7965508 true true}]
+2023/05/21 13:21:54 att1l attitude(0 0 43.16mm/s 23.3064km/h 8072340 nf)
+2023/05/21 13:21:54 vel 43160
+2023/05/21 13:21:54 curPos 0
+2023/05/21 13:22:04 sense A false
+2023/05/21 13:22:04 sense B true
+2023/05/21 13:22:04 s [{8082778 false true} {8072340 false false} {8066594 true false}]
+2023/05/21 13:22:04 att2l attitude(0 698508 43.16mm/s 23.3064km/h 8082778 nb) cars698508 pos698508
+2023/05/21 13:22:04 vel 43160
+2023/05/21 13:22:04 curPos 698508
+2023/05/21 13:22:04 bodge-timing-data {"Power":32,"Attitude":{"State":0,"Position":698508,"Velocity":43160,"Monotonic":8082778,"Time":"2023-05-21T13:22:04.704892378+01:00","Certain":false,"Front":false}}
+2023/05/21 13:22:04 power 33
+/dev/ttyACM0: send 7 CAAN033
+2023/05/21 13:22:10 sense A true
+2023/05/21 13:22:10 sense B true
+2023/05/21 13:22:10 s [{8088609 true true} {8082778 false true} {8072340 false false}]
+2023/05/21 13:23:44 sense A true
+2023/05/21 13:23:44 sense B false
+2023/05/21 13:23:44 s [{8182802 true false} {8088609 true true} {8082778 false true}]
+2023/05/21 13:23:50 sense A false
+2023/05/21 13:23:50 sense B false
+2023/05/21 13:23:50 s [{8188248 false false} {8182802 true false} {8088609 true true}]
+2023/05/21 13:23:50 att1l attitude(0 0 45.538mm/s 24.59052km/h 8188248 nf)
+2023/05/21 13:23:50 vel 45538
+2023/05/21 13:23:50 curPos 0
+2023/05/21 13:24:00 sense A false
+2023/05/21 13:24:00 sense B true
+2023/05/21 13:24:00 s [{8198209 false true} {8188248 false false} {8182802 true false}]
+2023/05/21 13:24:00 att2l attitude(0 701604 45.538mm/s 24.59052km/h 8198209 nb) cars701604 pos701604
+2023/05/21 13:24:00 bodge-timing-data {"Power":33,"Attitude":{"State":0,"Position":701604,"Velocity":45538,"Monotonic":8198209,"Time":"2023-05-21T13:24:00.149283826+01:00","Certain":false,"Front":false}}
+2023/05/21 13:24:00 power 34
+2023/05/21 13:24:00 vel 45538
+2023/05/21 13:24:00 curPos 701604
+/dev/ttyACM0: send 7 CAAN034
+2023/05/21 13:24:05 sense A true
+2023/05/21 13:24:05 sense B true
+2023/05/21 13:24:05 s [{8203756 true true} {8198209 false true} {8188248 false false}]
+2023/05/21 13:25:34 sense A true
+2023/05/21 13:25:34 sense B false
+2023/05/21 13:25:34 s [{8292778 true false} {8203756 true true} {8198209 false true}]
+2023/05/21 13:25:39 sense A false
+2023/05/21 13:25:39 sense B false
+2023/05/21 13:25:39 s [{8297919 false false} {8292778 true false} {8203756 true true}]
+2023/05/21 13:25:39 att1l attitude(0 0 48.239mm/s 26.04906km/h 8297919 nf)
+2023/05/21 13:25:39 vel 48239
+2023/05/21 13:25:39 curPos 0
+2023/05/21 13:25:49 sense A false
+2023/05/21 13:25:49 sense B true
+2023/05/21 13:25:49 s [{8307303 false true} {8297919 false false} {8292778 true false}]
+2023/05/21 13:25:49 att2l attitude(0 700680 48.239mm/s 26.04906km/h 8307303 nb) cars700680 pos700680
+2023/05/21 13:25:49 bodge-timing-data {"Power":34,"Attitude":{"State":0,"Position":700680,"Velocity":48239,"Monotonic":8307303,"Time":"2023-05-21T13:25:49.256067697+01:00","Certain":false,"Front":false}}
+2023/05/21 13:25:49 power 35
+2023/05/21 13:25:49 vel 48239
+2023/05/21 13:25:49 curPos 700680
+/dev/ttyACM0: send 7 CAAN035
+2023/05/21 13:25:54 sense A true
+2023/05/21 13:25:54 sense B true
+2023/05/21 13:25:54 s [{8312535 true true} {8307303 false true} {8297919 false false}]
+2023/05/21 13:27:19 sense A true
+2023/05/21 13:27:19 sense B false
+2023/05/21 13:27:19 s [{8397414 true false} {8312535 true true} {8307303 false true}]
+2023/05/21 13:27:24 sense A false
+2023/05/21 13:27:24 sense B false
+2023/05/21 13:27:24 s [{8402348 false false} {8397414 true false} {8312535 true true}]
+2023/05/21 13:27:24 att1l attitude(0 0 50.263mm/s 27.14202km/h 8402348 nf)
+2023/05/21 13:27:24 vel 50263
+2023/05/21 13:27:24 curPos 0
+2023/05/21 13:27:33 sense A false
+2023/05/21 13:27:33 sense B true
+2023/05/21 13:27:33 s [{8411343 false true} {8402348 false false} {8397414 true false}]
+2023/05/21 13:27:33 att2l attitude(0 700119 50.263mm/s 27.14202km/h 8411343 nb) cars700119 pos700119
+2023/05/21 13:27:33 bodge-timing-data {"Power":35,"Attitude":{"State":0,"Position":700119,"Velocity":50263,"Monotonic":8411343,"Time":"2023-05-21T13:27:33.30826259+01:00","Certain":false,"Front":false}}
+2023/05/21 13:27:33 power 36
+2023/05/21 13:27:33 vel 50263
+2023/05/21 13:27:33 curPos 700119
+/dev/ttyACM0: send 7 CAAN036
+2023/05/21 13:27:38 sense A true
+2023/05/21 13:27:38 sense B true
+2023/05/21 13:27:38 s [{8416359 true true} {8411343 false true} {8402348 false false}]
+2023/05/21 13:28:59 sense A true
+2023/05/21 13:28:59 sense B false
+2023/05/21 13:28:59 s [{8497444 true false} {8416359 true true} {8411343 false true}]
+2023/05/21 13:29:04 sense B false
+2023/05/21 13:29:04 sense A false
+2023/05/21 13:29:04 s [{8502143 false false} {8497444 true false} {8416359 true true}]
+2023/05/21 13:29:04 att1l attitude(0 0 52.777mm/s 28.49958km/h 8502143 nf)
+2023/05/21 13:29:04 vel 52777
+2023/05/21 13:29:04 curPos 0
+2023/05/21 13:29:12 sense A false
+2023/05/21 13:29:12 sense B true
+2023/05/21 13:29:12 s [{8510722 false true} {8502143 false false} {8497444 true false}]
+2023/05/21 13:29:12 att2l attitude(0 700775 52.777mm/s 28.49958km/h 8510722 nb) cars700775 pos700775
+2023/05/21 13:29:12 bodge-timing-data {"Power":36,"Attitude":{"State":0,"Position":700775,"Velocity":52777,"Monotonic":8510722,"Time":"2023-05-21T13:29:12.699018394+01:00","Certain":false,"Front":false}}
+2023/05/21 13:29:12 power 37
+2023/05/21 13:29:12 vel 52777
+2023/05/21 13:29:12 curPos 700775
+/dev/ttyACM0: send 7 CAAN037
+2023/05/21 13:29:17 sense A true
+2023/05/21 13:29:17 sense B true
+2023/05/21 13:29:17 s [{8515501 true true} {8510722 false true} {8502143 false false}]
+2023/05/21 13:30:34 sense A true
+2023/05/21 13:30:34 sense B false
+2023/05/21 13:30:34 s [{8592699 true false} {8515501 true true} {8510722 false true}]
+2023/05/21 13:30:39 sense A false
+2023/05/21 13:30:39 sense B false
+2023/05/21 13:30:39 s [{8597198 false false} {8592699 true false} {8515501 true true}]
+2023/05/21 13:30:39 att1l attitude(0 0 55.123mm/s 29.76642km/h 8597198 nf)
+2023/05/21 13:30:39 vel 55123
+2023/05/21 13:30:39 curPos 0
+2023/05/21 13:30:47 sense A false
+2023/05/21 13:30:47 sense B true
+2023/05/21 13:30:47 s [{8605406 false true} {8597198 false false} {8592699 true false}]
+2023/05/21 13:30:47 att2l attitude(0 700452 55.123mm/s 29.76642km/h 8605406 nb) cars700452 pos700452
+2023/05/21 13:30:47 bodge-timing-data {"Power":37,"Attitude":{"State":0,"Position":700452,"Velocity":55123,"Monotonic":8605406,"Time":"2023-05-21T13:30:47.393943482+01:00","Certain":false,"Front":false}}
+2023/05/21 13:30:47 power 38
+2023/05/21 13:30:47 vel 55123
+2023/05/21 13:30:47 curPos 700452
+/dev/ttyACM0: send 7 CAAN038
+2023/05/21 13:30:51 sense A true
+2023/05/21 13:30:51 sense B true
+2023/05/21 13:30:51 s [{8609970 true true} {8605406 false true} {8597198 false false}]
+2023/05/21 13:32:06 sense A true
+2023/05/21 13:32:06 sense B false
+2023/05/21 13:32:06 s [{8684009 true false} {8609970 true true} {8605406 false true}]
+2023/05/21 13:32:10 sense A false
+2023/05/21 13:32:10 sense B false
+2023/05/21 13:32:10 s [{8688314 false false} {8684009 true false} {8609970 true true}]
+2023/05/21 13:32:10 att1l attitude(0 0 57.607mm/s 31.10778km/h 8688314 nf)
+2023/05/21 13:32:10 vel 57607
+2023/05/21 13:32:10 curPos 0
+2023/05/21 13:32:18 sense A false
+2023/05/21 13:32:18 sense B true
+2023/05/21 13:32:18 s [{8696221 false true} {8688314 false false} {8684009 true false}]
+2023/05/21 13:32:18 att2l attitude(0 703501 57.607mm/s 31.10778km/h 8696221 nb) cars703501 pos703501
+2023/05/21 13:32:18 bodge-timing-data {"Power":38,"Attitude":{"State":0,"Position":703501,"Velocity":57607,"Monotonic":8696221,"Time":"2023-05-21T13:32:18.219463587+01:00","Certain":false,"Front":false}}
+2023/05/21 13:32:18 power 39
+2023/05/21 13:32:18 vel 57607
+2023/05/21 13:32:18 curPos 703501
+/dev/ttyACM0: send 7 CAAN039
+2023/05/21 13:32:22 sense A true
+2023/05/21 13:32:22 sense B true
+2023/05/21 13:32:22 s [{8700617 true true} {8696221 false true} {8688314 false false}]
+2023/05/21 13:33:33 sense A true
+2023/05/21 13:33:33 sense B false
+2023/05/21 13:33:33 s [{8771858 true false} {8700617 true true} {8696221 false true}]
+2023/05/21 13:33:38 sense A false
+2023/05/21 13:33:38 sense B false
+2023/05/21 13:33:38 s [{8776026 false false} {8771858 true false} {8700617 true true}]
+2023/05/21 13:33:38 att1l attitude(0 0 59.5mm/s 32.13km/h 8776026 nf)
+2023/05/21 13:33:38 vel 59500
+2023/05/21 13:33:38 curPos 0
+2023/05/21 13:33:45 sense A false
+2023/05/21 13:33:45 sense B true
+2023/05/21 13:33:45 s [{8783651 false true} {8776026 false false} {8771858 true false}]
+2023/05/21 13:33:45 att2l attitude(0 701694 59.5mm/s 32.13km/h 8783651 nb) cars701694 pos701694
+2023/05/21 13:33:45 bodge-timing-data {"Power":39,"Attitude":{"State":0,"Position":701694,"Velocity":59500,"Monotonic":8783651,"Time":"2023-05-21T13:33:45.659610459+01:00","Certain":false,"Front":false}}
+2023/05/21 13:33:45 power 40
+2023/05/21 13:33:45 vel 59500
+2023/05/21 13:33:45 curPos 701694
+/dev/ttyACM0: send 7 CAAN040
+2023/05/21 13:33:49 sense B true
+2023/05/21 13:33:49 sense A true
+2023/05/21 13:33:49 s [{8787896 true true} {8783651 false true} {8776026 false false}]
+2023/05/21 13:34:59 sense A true
+2023/05/21 13:34:59 sense B false
+2023/05/21 13:34:59 s [{8857178 true false} {8787896 true true} {8783651 false true}]
+2023/05/21 13:35:03 sense A false
+2023/05/21 13:35:03 sense B false
+2023/05/21 13:35:03 s [{8861204 false false} {8857178 true false} {8787896 true true}]
+2023/05/21 13:35:03 att1l attitude(0 0 61.599mm/s 33.26346km/h 8861204 nf)
+2023/05/21 13:35:03 vel 61599
+2023/05/21 13:35:03 curPos 0
+2023/05/21 13:35:10 sense A false
+2023/05/21 13:35:10 sense B true
+2023/05/21 13:35:10 s [{8868562 false true} {8861204 false false} {8857178 true false}]
+2023/05/21 13:35:10 att2l attitude(0 701249 61.599mm/s 33.26346km/h 8868562 nb) cars701249 pos701249
+2023/05/21 13:35:10 vel 61599
+2023/05/21 13:35:10 curPos 701249
+2023/05/21 13:35:10 bodge-timing-data {"Power":40,"Attitude":{"State":0,"Position":701249,"Velocity":61599,"Monotonic":8868562,"Time":"2023-05-21T13:35:10.580633697+01:00","Certain":false,"Front":false}}
+2023/05/21 13:35:10 power 41
+/dev/ttyACM0: send 7 CAAN041
+2023/05/21 13:35:14 sense A true
+2023/05/21 13:35:14 sense B true
+2023/05/21 13:35:14 s [{8872650 true true} {8868562 false true} {8861204 false false}]
+2023/05/21 13:36:20 sense A true
+2023/05/21 13:36:20 sense B false
+2023/05/21 13:36:20 s [{8938671 true false} {8872650 true true} {8868562 false true}]
+2023/05/21 13:36:24 sense A false
+2023/05/21 13:36:24 sense B false
+2023/05/21 13:36:24 s [{8942521 false false} {8938671 true false} {8872650 true true}]
+2023/05/21 13:36:24 att1l attitude(0 0 64.415mm/s 34.7841km/h 8942521 nf)
+2023/05/21 13:36:24 vel 64415
+2023/05/21 13:36:24 curPos 0
+2023/05/21 13:36:31 sense A false
+2023/05/21 13:36:31 sense B true
+2023/05/21 13:36:31 s [{8949592 false true} {8942521 false false} {8938671 true false}]
+2023/05/21 13:36:31 att2l attitude(0 703482 64.415mm/s 34.7841km/h 8949592 nb) cars703482 pos703482
+2023/05/21 13:36:31 bodge-timing-data {"Power":41,"Attitude":{"State":0,"Position":703482,"Velocity":64415,"Monotonic":8949592,"Time":"2023-05-21T13:36:31.619932999+01:00","Certain":false,"Front":false}}
+2023/05/21 13:36:31 power 42
+2023/05/21 13:36:31 vel 64415
+2023/05/21 13:36:31 curPos 703482
+/dev/ttyACM0: send 7 CAAN042
+2023/05/21 13:36:35 sense A true
+2023/05/21 13:36:35 sense B true
+2023/05/21 13:36:35 s [{8953519 true true} {8949592 false true} {8942521 false false}]
+2023/05/21 13:37:39 sense A true
+2023/05/21 13:37:39 sense B false
+2023/05/21 13:37:39 s [{9017494 true false} {8953519 true true} {8949592 false true}]
+2023/05/21 13:37:43 sense A false
+2023/05/21 13:37:43 sense B false
+2023/05/21 13:37:43 s [{9021226 false false} {9017494 true false} {8953519 true true}]
+2023/05/21 13:37:43 att1l attitude(0 0 66.452mm/s 35.88408km/h 9021226 nf)
+2023/05/21 13:37:43 vel 66452
+2023/05/21 13:37:43 curPos 0
+2023/05/21 13:37:50 sense A false
+2023/05/21 13:37:50 sense B true
+2023/05/21 13:37:50 s [{9028079 false true} {9021226 false false} {9017494 true false}]
+2023/05/21 13:37:50 att2l attitude(0 703397 66.452mm/s 35.88408km/h 9028079 nb) cars703397 pos703397
+2023/05/21 13:37:50 bodge-timing-data {"Power":42,"Attitude":{"State":0,"Position":703397,"Velocity":66452,"Monotonic":9028079,"Time":"2023-05-21T13:37:50.116099661+01:00","Certain":false,"Front":false}}
+2023/05/21 13:37:50 power 43
+2023/05/21 13:37:50 vel 66452
+2023/05/21 13:37:50 curPos 703397
+/dev/ttyACM0: send 7 CAAN043
+2023/05/21 13:37:53 sense A true
+2023/05/21 13:37:53 sense B true
+2023/05/21 13:37:53 s [{9031884 true true} {9028079 false true} {9021226 false false}]
+2023/05/21 13:38:55 sense A true
+2023/05/21 13:38:55 sense B false
+2023/05/21 13:38:55 s [{9093232 true false} {9031884 true true} {9028079 false true}]
+2023/05/21 13:38:58 sense A false
+2023/05/21 13:38:58 sense B false
+2023/05/21 13:38:58 s [{9096816 false false} {9093232 true false} {9031884 true true}]
+2023/05/21 13:38:58 att1l attitude(0 0 69.196mm/s 37.36584km/h 9096816 nf)
+2023/05/21 13:38:58 vel 69196
+2023/05/21 13:38:58 curPos 0
+2023/05/21 13:39:05 sense A false
+2023/05/21 13:39:05 sense B true
+2023/05/21 13:39:05 s [{9103405 false true} {9096816 false false} {9093232 true false}]
+2023/05/21 13:39:05 att2l attitude(0 703935 69.196mm/s 37.36584km/h 9103405 nb) cars703935 pos703935
+2023/05/21 13:39:05 bodge-timing-data {"Power":43,"Attitude":{"State":0,"Position":703935,"Velocity":69196,"Monotonic":9103405,"Time":"2023-05-21T13:39:05.461065207+01:00","Certain":false,"Front":false}}
+2023/05/21 13:39:05 power 44
+2023/05/21 13:39:05 vel 69196
+2023/05/21 13:39:05 curPos 703935
+/dev/ttyACM0: send 7 CAAN044
+2023/05/21 13:39:09 sense A true
+2023/05/21 13:39:09 sense B true
+2023/05/21 13:39:09 s [{9107056 true true} {9103405 false true} {9096816 false false}]
+2023/05/21 13:40:08 sense A true
+2023/05/21 13:40:08 sense B false
+2023/05/21 13:40:08 s [{9166053 true false} {9107056 true true} {9103405 false true}]
+2023/05/21 13:40:11 sense A false
+2023/05/21 13:40:11 sense B false
+2023/05/21 13:40:11 s [{9169494 false false} {9166053 true false} {9107056 true true}]
+2023/05/21 13:40:11 att1l attitude(0 0 72.072mm/s 38.91888km/h 9169494 nf)
+2023/05/21 13:40:11 vel 72072
+2023/05/21 13:40:11 curPos 0
+2023/05/21 13:40:17 sense A false
+2023/05/21 13:40:17 sense B true
+2023/05/21 13:40:17 s [{9175838 false true} {9169494 false false} {9166053 true false}]
+2023/05/21 13:40:17 att2l attitude(0 705225 72.072mm/s 38.91888km/h 9175838 nb) cars705225 pos705225
+2023/05/21 13:40:17 bodge-timing-data {"Power":44,"Attitude":{"State":0,"Position":705225,"Velocity":72072,"Monotonic":9175838,"Time":"2023-05-21T13:40:17.978756524+01:00","Certain":false,"Front":false}}
+2023/05/21 13:40:17 power 45
+2023/05/21 13:40:17 vel 72072
+2023/05/21 13:40:17 curPos 705225
+/dev/ttyACM0: send 7 CAAN045
+2023/05/21 13:40:21 sense B true
+2023/05/21 13:40:21 sense A true
+2023/05/21 13:40:21 s [{9179351 true true} {9175838 false true} {9169494 false false}]
+2023/05/21 13:41:18 sense A true
+2023/05/21 13:41:18 sense B false
+2023/05/21 13:41:18 s [{9236341 true false} {9179351 true true} {9175838 false true}]
+2023/05/21 13:41:21 sense A false
+2023/05/21 13:41:21 sense B false
+2023/05/21 13:41:21 s [{9239659 false false} {9236341 true false} {9179351 true true}]
+2023/05/21 13:41:21 att1l attitude(0 0 74.743mm/s 40.36122km/h 9239659 nf)
+2023/05/21 13:41:21 vel 74743
+2023/05/21 13:41:21 curPos 0
+2023/05/21 13:41:27 sense A false
+2023/05/21 13:41:27 sense B true
+2023/05/21 13:41:27 s [{9245776 false true} {9239659 false false} {9236341 true false}]
+2023/05/21 13:41:27 att2l attitude(0 705207 74.743mm/s 40.36122km/h 9245776 nb) cars705207 pos705207
+2023/05/21 13:41:27 bodge-timing-data {"Power":45,"Attitude":{"State":0,"Position":705207,"Velocity":74743,"Monotonic":9245776,"Time":"2023-05-21T13:41:27.97166504+01:00","Certain":false,"Front":false}}
+2023/05/21 13:41:27 power 46
+2023/05/21 13:41:27 vel 74743
+2023/05/21 13:41:27 curPos 705207
+/dev/ttyACM0: send 7 CAAN046
+2023/05/21 13:41:31 sense A true
+2023/05/21 13:41:31 sense B true
+2023/05/21 13:41:31 s [{9249163 true true} {9245776 false true} {9239659 false false}]
+2023/05/21 13:42:26 sense A true
+2023/05/21 13:42:26 sense B false
+2023/05/21 13:42:26 s [{9304217 true false} {9249163 true true} {9245776 false true}]
+2023/05/21 13:42:29 sense A false
+2023/05/21 13:42:29 sense B false
+2023/05/21 13:42:29 s [{9307439 false false} {9304217 true false} {9249163 true true}]
+2023/05/21 13:42:29 att1l attitude(0 0 76.97mm/s 41.5638km/h 9307439 nf)
+2023/05/21 13:42:29 vel 76970
+2023/05/21 13:42:29 curPos 0
+2023/05/21 13:42:35 sense A false
+2023/05/21 13:42:35 sense B true
+2023/05/21 13:42:35 s [{9313393 false true} {9307439 false false} {9304217 true false}]
+2023/05/21 13:42:35 att2l attitude(0 706284 76.97mm/s 41.5638km/h 9313393 nb) cars706284 pos706284
+2023/05/21 13:42:35 bodge-timing-data {"Power":46,"Attitude":{"State":0,"Position":706284,"Velocity":76970,"Monotonic":9313393,"Time":"2023-05-21T13:42:35.627510389+01:00","Certain":false,"Front":false}}
+2023/05/21 13:42:35 power 47
+2023/05/21 13:42:35 vel 76970
+2023/05/21 13:42:35 curPos 706284
+/dev/ttyACM0: send 7 CAAN047
+2023/05/21 13:42:38 sense A true
+2023/05/21 13:42:38 sense B true
+2023/05/21 13:42:38 s [{9316679 true true} {9313393 false true} {9307439 false false}]
+2023/05/21 13:43:32 sense A true
+2023/05/21 13:43:32 sense B false
+2023/05/21 13:43:32 s [{9370298 true false} {9316679 true true} {9313393 false true}]
+2023/05/21 13:43:35 sense A false
+2023/05/21 13:43:35 sense B false
+2023/05/21 13:43:35 s [{9373415 false false} {9370298 true false} {9316679 true true}]
+2023/05/21 13:43:35 att1l attitude(0 0 79.563mm/s 42.96402km/h 9373415 nf)
+2023/05/21 13:43:35 vel 79563
+2023/05/21 13:43:35 curPos 0
+2023/05/21 13:43:41 sense B true
+2023/05/21 13:43:41 sense A false
+2023/05/21 13:43:41 s [{9379185 false true} {9373415 false false} {9370298 true false}]
+2023/05/21 13:43:41 att2l attitude(0 707082 79.563mm/s 42.96402km/h 9379185 nb) cars707082 pos707082
+2023/05/21 13:43:41 bodge-timing-data {"Power":47,"Attitude":{"State":0,"Position":707082,"Velocity":79563,"Monotonic":9379185,"Time":"2023-05-21T13:43:41.449271171+01:00","Certain":false,"Front":false}}
+2023/05/21 13:43:41 power 48
+2023/05/21 13:43:41 vel 79563
+2023/05/21 13:43:41 curPos 707082
+/dev/ttyACM0: send 7 CAAN048
+2023/05/21 13:43:44 sense A true
+2023/05/21 13:43:44 sense B true
+2023/05/21 13:43:44 s [{9382369 true true} {9379185 false true} {9373415 false false}]
+2023/05/21 13:44:36 sense A true
+2023/05/21 13:44:36 sense B false
+2023/05/21 13:44:36 s [{9434197 true false} {9382369 true true} {9379185 false true}]
+2023/05/21 13:44:39 sense A false
+2023/05/21 13:44:39 sense B false
+2023/05/21 13:44:39 s [{9437223 false false} {9434197 true false} {9382369 true true}]
+2023/05/21 13:44:39 att1l attitude(0 0 81.956mm/s 44.25624km/h 9437223 nf)
+2023/05/21 13:44:39 vel 81956
+2023/05/21 13:44:39 curPos 0
+2023/05/21 13:44:45 sense A false
+2023/05/21 13:44:45 sense B true
+2023/05/21 13:44:45 s [{9442823 false true} {9437223 false false} {9434197 true false}]
+2023/05/21 13:44:45 att2l attitude(0 706955 81.956mm/s 44.25624km/h 9442823 nb) cars706955 pos706955
+2023/05/21 13:44:45 bodge-timing-data {"Power":48,"Attitude":{"State":0,"Position":706955,"Velocity":81956,"Monotonic":9442823,"Time":"2023-05-21T13:44:45.111733795+01:00","Certain":false,"Front":false}}
+2023/05/21 13:44:45 power 49
+2023/05/21 13:44:45 vel 81956
+2023/05/21 13:44:45 curPos 706955
+/dev/ttyACM0: send 7 CAAN049
+2023/05/21 13:44:48 sense A true
+2023/05/21 13:44:48 sense B true
+2023/05/21 13:44:48 s [{9445909 true true} {9442823 false true} {9437223 false false}]
+2023/05/21 13:45:38 sense A true
+2023/05/21 13:45:38 sense B false
+2023/05/21 13:45:38 s [{9496254 true false} {9445909 true true} {9442823 false true}]
+2023/05/21 13:45:41 sense A false
+2023/05/21 13:45:41 sense B false
+2023/05/21 13:45:41 s [{9499196 false false} {9496254 true false} {9445909 true true}]
+2023/05/21 13:45:41 att1l attitude(0 0 84.296mm/s 45.51984km/h 9499196 nf)
+2023/05/21 13:45:41 vel 84296
+2023/05/21 13:45:41 curPos 0
+2023/05/21 13:45:46 sense A false
+2023/05/21 13:45:46 sense B true
+2023/05/21 13:45:46 s [{9504653 false true} {9499196 false false} {9496254 true false}]
+2023/05/21 13:45:46 att2l attitude(0 708005 84.296mm/s 45.51984km/h 9504653 nb) cars708005 pos708005
+2023/05/21 13:45:46 bodge-timing-data {"Power":49,"Attitude":{"State":0,"Position":708005,"Velocity":84296,"Monotonic":9504653,"Time":"2023-05-21T13:45:46.962997089+01:00","Certain":false,"Front":false}}
+2023/05/21 13:45:46 power 50
+2023/05/21 13:45:46 vel 84296
+2023/05/21 13:45:46 curPos 708005
+/dev/ttyACM0: send 7 CAAN050
+2023/05/21 13:45:49 sense A true
+2023/05/21 13:45:49 sense B true
+2023/05/21 13:45:49 s [{9507656 true true} {9504653 false true} {9499196 false false}]
+2023/05/21 13:46:38 sense A true
+2023/05/21 13:46:38 sense B false
+2023/05/21 13:46:38 s [{9556582 true false} {9507656 true true} {9504653 false true}]
+2023/05/21 13:46:41 sense B false
+2023/05/21 13:46:41 sense A false
+2023/05/21 13:46:41 s [{9559449 false false} {9556582 true false} {9507656 true true}]
+2023/05/21 13:46:41 att1l attitude(0 0 86.501mm/s 46.71054km/h 9559449 nf)
+2023/05/21 13:46:41 vel 86501
+2023/05/21 13:46:41 curPos 0
+2023/05/21 13:46:47 sense A false
+2023/05/21 13:46:47 sense B true
+2023/05/21 13:46:47 s [{9564769 false true} {9559449 false false} {9556582 true false}]
+2023/05/21 13:46:47 att2l attitude(0 708188 86.501mm/s 46.71054km/h 9564769 nb) cars708188 pos708188
+2023/05/21 13:46:47 bodge-timing-data {"Power":50,"Attitude":{"State":0,"Position":708188,"Velocity":86501,"Monotonic":9564769,"Time":"2023-05-21T13:46:47.098167956+01:00","Certain":false,"Front":false}}
+2023/05/21 13:46:47 power 51
+2023/05/21 13:46:47 vel 86501
+2023/05/21 13:46:47 curPos 708188
+/dev/ttyACM0: send 7 CAAN051
+2023/05/21 13:46:50 sense A true
+2023/05/21 13:46:50 sense B true
+2023/05/21 13:46:50 s [{9567697 true true} {9564769 false true} {9559449 false false}]
+2023/05/21 13:47:37 sense A true
+2023/05/21 13:47:37 sense B false
+2023/05/21 13:47:37 s [{9615457 true false} {9567697 true true} {9564769 false true}]
+2023/05/21 13:47:40 sense A false
+2023/05/21 13:47:40 sense B false
+2023/05/21 13:47:40 s [{9618258 false false} {9615457 true false} {9567697 true true}]
+2023/05/21 13:47:40 att1l attitude(0 0 88.539mm/s 47.81106km/h 9618258 nf)
+2023/05/21 13:47:40 vel 88539
+2023/05/21 13:47:40 curPos 0
+2023/05/21 13:47:45 sense A false
+2023/05/21 13:47:45 sense B true
+2023/05/21 13:47:45 s [{9623450 false true} {9618258 false false} {9615457 true false}]
+2023/05/21 13:47:45 att2l attitude(0 707698 88.539mm/s 47.81106km/h 9623450 nb) cars707698 pos707698
+2023/05/21 13:47:45 bodge-timing-data {"Power":51,"Attitude":{"State":0,"Position":707698,"Velocity":88539,"Monotonic":9623450,"Time":"2023-05-21T13:47:45.796977092+01:00","Certain":false,"Front":false}}
+2023/05/21 13:47:45 power 52
+2023/05/21 13:47:45 vel 88539
+2023/05/21 13:47:45 curPos 707698
+/dev/ttyACM0: send 7 CAAN052
+2023/05/21 13:47:48 sense A true
+2023/05/21 13:47:48 sense B true
+2023/05/21 13:47:48 s [{9626304 true true} {9623450 false true} {9618258 false false}]
+2023/05/21 13:48:35 sense A true
+2023/05/21 13:48:35 sense B false
+2023/05/21 13:48:35 s [{9672886 true false} {9626304 true true} {9623450 false true}]
+2023/05/21 13:48:37 sense A false
+2023/05/21 13:48:37 sense B false
+2023/05/21 13:48:37 s [{9675624 false false} {9672886 true false} {9626304 true true}]
+2023/05/21 13:48:37 att1l attitude(0 0 90.577mm/s 48.91158km/h 9675624 nf)
+2023/05/21 13:48:37 vel 90577
+2023/05/21 13:48:37 curPos 0
+2023/05/21 13:48:43 sense A false
+2023/05/21 13:48:43 sense B true
+2023/05/21 13:48:43 s [{9680707 false true} {9675624 false false} {9672886 true false}]
+2023/05/21 13:48:43 att2l attitude(0 708403 90.577mm/s 48.91158km/h 9680707 nb) cars708403 pos708403
+2023/05/21 13:48:43 bodge-timing-data {"Power":52,"Attitude":{"State":0,"Position":708403,"Velocity":90577,"Monotonic":9680707,"Time":"2023-05-21T13:48:43.070680762+01:00","Certain":false,"Front":false}}
+2023/05/21 13:48:43 power 53
+2023/05/21 13:48:43 vel 90577
+2023/05/21 13:48:43 curPos 708403
+/dev/ttyACM0: send 7 CAAN053
+2023/05/21 13:48:45 sense B true
+2023/05/21 13:48:45 sense A true
+2023/05/21 13:48:45 s [{9683504 true true} {9680707 false true} {9675624 false false}]
+2023/05/21 13:49:31 sense A true
+2023/05/21 13:49:31 sense B false
+2023/05/21 13:49:31 s [{9728650 true false} {9683504 true true} {9680707 false true}]
+2023/05/21 13:49:33 sense A false
+2023/05/21 13:49:33 sense B false
+2023/05/21 13:49:33 s [{9731284 false false} {9728650 true false} {9683504 true true}]
+2023/05/21 13:49:33 att1l attitude(0 0 94.153mm/s 50.84262km/h 9731284 nf)
+2023/05/21 13:49:33 vel 94153
+2023/05/21 13:49:33 curPos 0
+2023/05/21 13:49:38 sense A false
+2023/05/21 13:49:38 sense B true
+2023/05/21 13:49:38 s [{9736189 false true} {9731284 false false} {9728650 true false}]
+2023/05/21 13:49:38 att2l attitude(0 709822 94.153mm/s 50.84262km/h 9736189 nb) cars709822 pos709822
+2023/05/21 13:49:38 vel 94153
+2023/05/21 13:49:38 curPos 709822
+2023/05/21 13:49:38 bodge-timing-data {"Power":53,"Attitude":{"State":0,"Position":709822,"Velocity":94153,"Monotonic":9736189,"Time":"2023-05-21T13:49:38.568850836+01:00","Certain":false,"Front":false}}
+2023/05/21 13:49:38 power 54
+/dev/ttyACM0: send 7 CAAN054
+2023/05/21 13:49:41 sense A true
+2023/05/21 13:49:41 sense B true
+2023/05/21 13:49:41 s [{9738877 true true} {9736189 false true} {9731284 false false}]
+2023/05/21 13:50:25 sense A true
+2023/05/21 13:50:25 sense B false
+2023/05/21 13:50:25 s [{9782682 true false} {9738877 true true} {9736189 false true}]
+2023/05/21 13:50:27 sense A false
+2023/05/21 13:50:27 sense B false
+2023/05/21 13:50:27 s [{9785244 false false} {9782682 true false} {9738877 true true}]
+2023/05/21 13:50:27 att1l attitude(0 0 96.799mm/s 52.27146km/h 9785244 nf)
+2023/05/21 13:50:27 vel 96799
+2023/05/21 13:50:27 curPos 0
+2023/05/21 13:50:32 sense A false
+2023/05/21 13:50:32 sense B true
+2023/05/21 13:50:32 s [{9790023 false true} {9785244 false false} {9782682 true false}]
+2023/05/21 13:50:32 att2l attitude(0 710604 96.799mm/s 52.27146km/h 9790023 nb) cars710604 pos710604
+2023/05/21 13:50:32 bodge-timing-data {"Power":54,"Attitude":{"State":0,"Position":710604,"Velocity":96799,"Monotonic":9790023,"Time":"2023-05-21T13:50:32.418241113+01:00","Certain":false,"Front":false}}
+2023/05/21 13:50:32 power 55
+2023/05/21 13:50:32 vel 96799
+/dev/ttyACM0: send 7 CAAN055
+2023/05/21 13:50:32 curPos 710604
+2023/05/21 13:50:35 sense A true
+2023/05/21 13:50:35 sense B true
+2023/05/21 13:50:35 s [{9792642 true true} {9790023 false true} {9785244 false false}]
+2023/05/21 13:51:17 sense A true
+2023/05/21 13:51:17 sense B false
+2023/05/21 13:51:17 s [{9835496 true false} {9792642 true true} {9790023 false true}]
+2023/05/21 13:51:20 sense A false
+2023/05/21 13:51:20 sense B false
+2023/05/21 13:51:20 s [{9838014 false false} {9835496 true false} {9792642 true true}]
+2023/05/21 13:51:20 att1l attitude(0 0 98.49mm/s 53.1846km/h 9838014 nf)
+2023/05/21 13:51:20 vel 98490
+2023/05/21 13:51:20 curPos 0
+2023/05/21 13:51:25 sense A false
+2023/05/21 13:51:25 sense B true
+2023/05/21 13:51:25 s [{9842725 false true} {9838014 false false} {9835496 true false}]
+2023/05/21 13:51:25 att2l attitude(0 711990 98.49mm/s 53.1846km/h 9842725 nb) cars711990 pos711990
+2023/05/21 13:51:25 bodge-timing-data {"Power":55,"Attitude":{"State":0,"Position":711990,"Velocity":98490,"Monotonic":9842725,"Time":"2023-05-21T13:51:25.135162409+01:00","Certain":false,"Front":false}}
+2023/05/21 13:51:25 power 56
+2023/05/21 13:51:25 vel 98490
+/dev/ttyACM0: send 7 CAAN056
+2023/05/21 13:51:25 curPos 711990
+2023/05/21 13:51:27 sense A true
+2023/05/21 13:51:27 sense B true
+2023/05/21 13:51:27 s [{9845311 true true} {9842725 false true} {9838014 false false}]
+2023/05/21 13:52:09 sense A true
+2023/05/21 13:52:09 sense B false
+2023/05/21 13:52:09 s [{9887237 true false} {9845311 true true} {9842725 false true}]
+2023/05/21 13:52:12 sense A false
+2023/05/21 13:52:12 sense B false
+2023/05/21 13:52:12 s [{9889614 false false} {9887237 true false} {9845311 true true}]
+2023/05/21 13:52:12 att1l attitude(0 0 104.333mm/s 56.33982km/h 9889614 nf)
+2023/05/21 13:52:12 vel 104333
+2023/05/21 13:52:12 curPos 0
+2023/05/21 13:52:16 sense A false
+2023/05/21 13:52:16 sense B true
+2023/05/21 13:52:16 s [{9894142 false true} {9889614 false false} {9887237 true false}]
+2023/05/21 13:52:16 att2l attitude(0 720420 104.333mm/s 56.33982km/h 9894142 nb) cars720420 pos720420
+2023/05/21 13:52:16 bodge-timing-data {"Power":56,"Attitude":{"State":0,"Position":720420,"Velocity":104333,"Monotonic":9894142,"Time":"2023-05-21T13:52:16.531073886+01:00","Certain":false,"Front":false}}
+2023/05/21 13:52:16 power 57
+2023/05/21 13:52:16 vel 104333
+/dev/ttyACM0: send 7 CAAN057
+2023/05/21 13:52:16 curPos 720420
+2023/05/21 13:52:19 sense A true
+2023/05/21 13:52:19 sense B true
+2023/05/21 13:52:19 s [{9896668 true true} {9894142 false true} {9889614 false false}]
+2023/05/21 13:52:59 sense A true
+2023/05/21 13:52:59 sense B false
+2023/05/21 13:52:59 s [{9937278 true false} {9896668 true true} {9894142 false true}]
+2023/05/21 13:53:02 sense A false
+2023/05/21 13:53:02 sense B false
+2023/05/21 13:53:02 s [{9939639 false false} {9937278 true false} {9896668 true true}]
+2023/05/21 13:53:02 att1l attitude(0 0 105.04mm/s 56.7216km/h 9939639 nf)
+2023/05/21 13:53:02 vel 105040
+2023/05/21 13:53:02 curPos 0
+2023/05/21 13:53:06 sense A false
+2023/05/21 13:53:06 sense B true
+2023/05/21 13:53:06 s [{9944075 false true} {9939639 false false} {9937278 true false}]
+2023/05/21 13:53:06 att2l attitude(0 713958 105.04mm/s 56.7216km/h 9944075 nb) cars713958 pos713958
+2023/05/21 13:53:06 vel 105040
+2023/05/21 13:53:06 curPos 713958
+2023/05/21 13:53:06 bodge-timing-data {"Power":57,"Attitude":{"State":0,"Position":713958,"Velocity":105040,"Monotonic":9944075,"Time":"2023-05-21T13:53:06.441706081+01:00","Certain":false,"Front":false}}
+2023/05/21 13:53:06 power 58
+/dev/ttyACM0: send 7 CAAN058
+2023/05/21 13:53:08 sense A true
+2023/05/21 13:53:08 sense B true
+2023/05/21 13:53:08 s [{9946503 true true} {9944075 false true} {9939639 false false}]
+2023/05/21 13:53:48 sense A true
+2023/05/21 13:53:48 sense B false
+2023/05/21 13:53:48 s [{9986254 true false} {9946503 true true} {9944075 false true}]
+2023/05/21 13:53:50 sense A false
+2023/05/21 13:53:50 sense B false
+2023/05/21 13:53:50 s [{9988593 false false} {9986254 true false} {9946503 true true}]
+2023/05/21 13:53:50 att1l attitude(0 0 106.028mm/s 57.25512km/h 9988593 nf)
+2023/05/21 13:53:50 vel 106028
+2023/05/21 13:53:50 curPos 0
+2023/05/21 13:53:55 sense A false
+2023/05/21 13:53:55 sense B true
+2023/05/21 13:53:55 s [{9992984 false true} {9988593 false false} {9986254 true false}]
+2023/05/21 13:53:55 att2l attitude(0 713569 106.028mm/s 57.25512km/h 9992984 nb) cars713569 pos713569
+2023/05/21 13:53:55 bodge-timing-data {"Power":58,"Attitude":{"State":0,"Position":713569,"Velocity":106028,"Monotonic":9992984,"Time":"2023-05-21T13:53:55.34360857+01:00","Certain":false,"Front":false}}
+2023/05/21 13:53:55 power 59
+2023/05/21 13:53:55 vel 106028
+/dev/ttyACM0: send 7 CAAN059
+2023/05/21 13:53:55 curPos 713569
+2023/05/21 13:53:57 sense A true
+2023/05/21 13:53:57 sense B true
+2023/05/21 13:53:57 s [{9995385 true true} {9992984 false true} {9988593 false false}]
+2023/05/21 13:54:36 sense A true
+2023/05/21 13:54:36 sense B false
+2023/05/21 13:54:36 s [{10034397 true false} {9995385 true true} {9992984 false true}]
+2023/05/21 13:54:39 sense A false
+2023/05/21 13:54:39 sense B false
+2023/05/21 13:54:39 s [{10036703 false false} {10034397 true false} {9995385 true true}]
+2023/05/21 13:54:39 att1l attitude(0 0 107.545mm/s 58.0743km/h 10036703 nf)
+2023/05/21 13:54:39 vel 107545
+2023/05/21 13:54:39 curPos 0
+2023/05/21 13:54:43 sense B true
+2023/05/21 13:54:43 sense A false
+2023/05/21 13:54:43 s [{10041027 false true} {10036703 false false} {10034397 true false}]
+2023/05/21 13:54:43 att2l attitude(0 713026 107.545mm/s 58.0743km/h 10041027 nb) cars713026 pos713026
+2023/05/21 13:54:43 bodge-timing-data {"Power":59,"Attitude":{"State":0,"Position":713026,"Velocity":107545,"Monotonic":10041027,"Time":"2023-05-21T13:54:43.386400238+01:00","Certain":false,"Front":false}}
+2023/05/21 13:54:43 power 60
+2023/05/21 13:54:43 vel 107545
+/dev/ttyACM0: send 7 CAAN060
+2023/05/21 13:54:43 curPos 713026
+2023/05/21 13:54:45 sense A true
+2023/05/21 13:54:45 sense B true
+2023/05/21 13:54:45 s [{10043381 true true} {10041027 false true} {10036703 false false}]
+2023/05/21 13:55:24 sense A true
+2023/05/21 13:55:24 sense B false
+2023/05/21 13:55:24 s [{10081792 true false} {10043381 true true} {10041027 false true}]
+2023/05/21 13:55:26 sense A false
+2023/05/21 13:55:26 sense B false
+2023/05/21 13:55:26 s [{10084048 false false} {10081792 true false} {10043381 true true}]
+2023/05/21 13:55:26 att1l attitude(0 0 109.929mm/s 59.36166km/h 10084048 nf)
+2023/05/21 13:55:26 vel 109929
+2023/05/21 13:55:26 curPos 0
+2023/05/21 13:55:30 sense B true
+2023/05/21 13:55:30 sense A false
+2023/05/21 13:55:30 s [{10088294 false true} {10084048 false false} {10081792 true false}]
+2023/05/21 13:55:30 att2l attitude(0 714758 109.929mm/s 59.36166km/h 10088294 nb) cars714758 pos714758
+2023/05/21 13:55:30 bodge-timing-data {"Power":60,"Attitude":{"State":0,"Position":714758,"Velocity":109929,"Monotonic":10088294,"Time":"2023-05-21T13:55:30.656134839+01:00","Certain":false,"Front":false}}
+2023/05/21 13:55:30 power 61
+2023/05/21 13:55:30 vel 109929
+2023/05/21 13:55:30 curPos 714758
+/dev/ttyACM0: send 7 CAAN061
+2023/05/21 13:55:32 sense A true
+2023/05/21 13:55:32 sense B true
+2023/05/21 13:55:32 s [{10090612 true true} {10088294 false true} {10084048 false false}]
+2023/05/21 13:56:10 sense B false
+2023/05/21 13:56:10 sense A true
+2023/05/21 13:56:10 s [{10128175 true false} {10090612 true true} {10088294 false true}]
+2023/05/21 13:56:12 sense A false
+2023/05/21 13:56:12 sense B false
+2023/05/21 13:56:12 s [{10130380 false false} {10128175 true false} {10090612 true true}]
+2023/05/21 13:56:12 att1l attitude(0 0 112.471mm/s 60.73434km/h 10130380 nf)
+2023/05/21 13:56:12 vel 112471
+2023/05/21 13:56:12 curPos 0
+2023/05/21 13:56:16 sense A false
+2023/05/21 13:56:16 sense B true
+2023/05/21 13:56:16 s [{10134529 false true} {10130380 false false} {10128175 true false}]
+2023/05/21 13:56:16 att2l attitude(0 714644 112.471mm/s 60.73434km/h 10134529 nb) cars714644 pos714644
+2023/05/21 13:56:16 bodge-timing-data {"Power":61,"Attitude":{"State":0,"Position":714644,"Velocity":112471,"Monotonic":10134529,"Time":"2023-05-21T13:56:16.896193541+01:00","Certain":false,"Front":false}}
+2023/05/21 13:56:16 power 62
+2023/05/21 13:56:16 vel 112471
+2023/05/21 13:56:16 curPos 714644
+/dev/ttyACM0: send 7 CAAN062
+2023/05/21 13:56:19 sense A true
+2023/05/21 13:56:19 sense B true
+2023/05/21 13:56:19 s [{10136786 true true} {10134529 false true} {10130380 false false}]
+2023/05/21 13:56:55 sense B false
+2023/05/21 13:56:55 sense A true
+2023/05/21 13:56:55 s [{10173525 true false} {10136786 true true} {10134529 false true}]
+2023/05/21 13:56:58 sense A false
+2023/05/21 13:56:58 sense B false
+2023/05/21 13:56:58 s [{10175675 false false} {10173525 true false} {10136786 true true}]
+2023/05/21 13:56:58 att1l attitude(0 0 115.348mm/s 62.28792km/h 10175675 nf)
+2023/05/21 13:56:58 vel 115348
+2023/05/21 13:56:58 curPos 0
+2023/05/21 13:57:02 sense A false
+2023/05/21 13:57:02 sense B true
+2023/05/21 13:57:02 s [{10179725 false true} {10175675 false false} {10173525 true false}]
+2023/05/21 13:57:02 att2l attitude(0 715162 115.348mm/s 62.28792km/h 10179725 nb) cars715162 pos715162
+2023/05/21 13:57:02 vel 115348
+2023/05/21 13:57:02 curPos 715162
+2023/05/21 13:57:02 bodge-timing-data {"Power":62,"Attitude":{"State":0,"Position":715162,"Velocity":115348,"Monotonic":10179725,"Time":"2023-05-21T13:57:02.098593102+01:00","Certain":false,"Front":false}}
+2023/05/21 13:57:02 power 63
+/dev/ttyACM0: send 7 CAAN063
+2023/05/21 13:57:04 sense A true
+2023/05/21 13:57:04 sense B true
+2023/05/21 13:57:04 s [{10181928 true true} {10179725 false true} {10175675 false false}]
+2023/05/21 13:57:39 sense A true
+2023/05/21 13:57:39 sense B false
+2023/05/21 13:57:39 s [{10217614 true false} {10181928 true true} {10179725 false true}]
+2023/05/21 13:57:42 sense A false
+2023/05/21 13:57:42 sense B false
+2023/05/21 13:57:42 s [{10219714 false false} {10217614 true false} {10181928 true true}]
+2023/05/21 13:57:42 att1l attitude(0 0 118.095mm/s 63.7713km/h 10219714 nf)
+2023/05/21 13:57:42 vel 118095
+2023/05/21 13:57:42 curPos 0
+2023/05/21 13:57:46 sense A false
+2023/05/21 13:57:46 sense B true
+2023/05/21 13:57:46 s [{10223683 false true} {10219714 false false} {10217614 true false}]
+2023/05/21 13:57:46 att2l attitude(0 716720 118.095mm/s 63.7713km/h 10223683 nb) cars716720 pos716720
+2023/05/21 13:57:46 bodge-timing-data {"Power":63,"Attitude":{"State":0,"Position":716720,"Velocity":118095,"Monotonic":10223683,"Time":"2023-05-21T13:57:46.062613818+01:00","Certain":false,"Front":false}}
+2023/05/21 13:57:46 power 64
+2023/05/21 13:57:46 vel 118095
+/dev/ttyACM0: send 7 CAAN064
+2023/05/21 13:57:46 curPos 716720
+2023/05/21 13:57:48 sense A true
+2023/05/21 13:57:48 sense B true
+2023/05/21 13:57:48 s [{10225837 true true} {10223683 false true} {10219714 false false}]
+2023/05/21 13:58:23 sense A true
+2023/05/21 13:58:23 sense B false
+2023/05/21 13:58:23 s [{10260788 true false} {10225837 true true} {10223683 false true}]
+2023/05/21 13:58:25 sense A false
+2023/05/21 13:58:25 sense B false
+2023/05/21 13:58:25 s [{10262834 false false} {10260788 true false} {10225837 true true}]
+2023/05/21 13:58:25 att1l attitude(0 0 121.212mm/s 65.45448km/h 10262834 nf)
+2023/05/21 13:58:25 vel 121212
+2023/05/21 13:58:25 curPos 0
+2023/05/21 13:58:29 sense A false
+2023/05/21 13:58:29 sense B true
+2023/05/21 13:58:29 s [{10266714 false true} {10262834 false false} {10260788 true false}]
+2023/05/21 13:58:29 att2l attitude(0 718303 121.212mm/s 65.45448km/h 10266714 nb) cars718303 pos718303
+2023/05/21 13:58:29 bodge-timing-data {"Power":64,"Attitude":{"State":0,"Position":718303,"Velocity":121212,"Monotonic":10266714,"Time":"2023-05-21T13:58:29.099201773+01:00","Certain":false,"Front":false}}
+2023/05/21 13:58:29 power 65
+2023/05/21 13:58:29 vel 121212
+/dev/ttyACM0: send 7 CAAN065
+2023/05/21 13:58:29 curPos 718303
+2023/05/21 13:58:31 sense A true
+2023/05/21 13:58:31 sense B true
+2023/05/21 13:58:31 s [{10268820 true true} {10266714 false true} {10262834 false false}]
+2023/05/21 13:59:05 sense A true
+2023/05/21 13:59:05 sense B false
+2023/05/21 13:59:05 s [{10303037 true false} {10268820 true true} {10266714 false true}]
+2023/05/21 13:59:07 sense A false
+2023/05/21 13:59:07 sense B false
+2023/05/21 13:59:07 s [{10305053 false false} {10303037 true false} {10268820 true true}]
+2023/05/21 13:59:07 att1l attitude(0 0 123.015mm/s 66.4281km/h 10305053 nf)
+2023/05/21 13:59:07 vel 123015
+2023/05/21 13:59:07 curPos 0
+2023/05/21 13:59:11 sense B true
+2023/05/21 13:59:11 sense A false
+2023/05/21 13:59:11 s [{10308873 false true} {10305053 false false} {10303037 true false}]
+2023/05/21 13:59:11 att2l attitude(0 717920 123.015mm/s 66.4281km/h 10308873 nb) cars717920 pos717920
+2023/05/21 13:59:11 bodge-timing-data {"Power":65,"Attitude":{"State":0,"Position":717920,"Velocity":123015,"Monotonic":10308873,"Time":"2023-05-21T13:59:11.26742226+01:00","Certain":false,"Front":false}}
+2023/05/21 13:59:11 power 66
+2023/05/21 13:59:11 vel 123015
+/dev/ttyACM0: send 7 CAAN066
+2023/05/21 13:59:11 curPos 717920
+2023/05/21 13:59:13 sense A true
+2023/05/21 13:59:13 sense B true
+2023/05/21 13:59:13 s [{10310939 true true} {10308873 false true} {10305053 false false}]
+2023/05/21 13:59:46 sense B false
+2023/05/21 13:59:46 sense A true
+2023/05/21 13:59:46 s [{10344451 true false} {10310939 true true} {10308873 false true}]
+2023/05/21 13:59:48 sense A false
+2023/05/21 13:59:48 sense B false
+2023/05/21 13:59:48 s [{10346419 false false} {10344451 true false} {10310939 true true}]
+2023/05/21 13:59:48 att1l attitude(0 0 126.016mm/s 68.04864km/h 10346419 nf)
+2023/05/21 13:59:48 vel 126016
+2023/05/21 13:59:48 curPos 0
+2023/05/21 13:59:52 sense A false
+2023/05/21 13:59:52 sense B true
+2023/05/21 13:59:52 s [{10350155 false true} {10346419 false false} {10344451 true false}]
+2023/05/21 13:59:52 att2l attitude(0 718796 126.016mm/s 68.04864km/h 10350155 nb) cars718796 pos718796
+2023/05/21 13:59:52 vel 126016
+2023/05/21 13:59:52 curPos 718796
+2023/05/21 13:59:52 bodge-timing-data {"Power":66,"Attitude":{"State":0,"Position":718796,"Velocity":126016,"Monotonic":10350155,"Time":"2023-05-21T13:59:52.550894296+01:00","Certain":false,"Front":false}}
+2023/05/21 13:59:52 power 67
+/dev/ttyACM0: send 7 CAAN067
+2023/05/21 13:59:54 sense A true
+2023/05/21 13:59:54 sense B true
+2023/05/21 13:59:54 s [{10352180 true true} {10350155 false true} {10346419 false false}]
+2023/05/21 14:00:27 sense A true
+2023/05/21 14:00:27 sense B false
+2023/05/21 14:00:27 s [{10385079 true false} {10352180 true true} {10350155 false true}]
+2023/05/21 14:00:29 sense A false
+2023/05/21 14:00:29 sense B false
+2023/05/21 14:00:29 s [{10386993 false false} {10385079 true false} {10352180 true true}]
+2023/05/21 14:00:29 att1l attitude(0 0 129.571mm/s 69.96834km/h 10386993 nf)
+2023/05/21 14:00:29 vel 129571
+2023/05/21 14:00:29 curPos 0
+2023/05/21 14:00:33 sense A false
+2023/05/21 14:00:33 sense B true
+2023/05/21 14:00:33 s [{10390653 false true} {10386993 false false} {10385079 true false}]
+2023/05/21 14:00:33 att2l attitude(0 722231 129.571mm/s 69.96834km/h 10390653 nb) cars722231 pos722231
+2023/05/21 14:00:33 bodge-timing-data {"Power":67,"Attitude":{"State":0,"Position":722231,"Velocity":129571,"Monotonic":10390653,"Time":"2023-05-21T14:00:33.053752049+01:00","Certain":false,"Front":false}}
+2023/05/21 14:00:33 power 68
+2023/05/21 14:00:33 vel 129571
+2023/05/21 14:00:33 curPos 722231
+/dev/ttyACM0: send 7 CAAN068
+2023/05/21 14:00:35 sense A true
+2023/05/21 14:00:35 sense B true
+2023/05/21 14:00:35 s [{10392629 true true} {10390653 false true} {10386993 false false}]
+2023/05/21 14:01:07 sense A true
+2023/05/21 14:01:07 sense B false
+2023/05/21 14:01:07 s [{10424940 true false} {10392629 true true} {10390653 false true}]
+2023/05/21 14:01:09 sense A false
+2023/05/21 14:01:09 sense B false
+2023/05/21 14:01:09 s [{10426847 false false} {10424940 true false} {10392629 true true}]
+2023/05/21 14:01:09 att1l attitude(0 0 130.047mm/s 70.22538km/h 10426847 nf)
+2023/05/21 14:01:09 vel 130047
+2023/05/21 14:01:09 curPos 0
+2023/05/21 14:01:12 sense A false
+2023/05/21 14:01:12 sense B true
+2023/05/21 14:01:12 s [{10430470 false true} {10426847 false false} {10424940 true false}]
+2023/05/21 14:01:12 att2l attitude(0 719160 130.047mm/s 70.22538km/h 10430470 nb) cars719160 pos719160
+2023/05/21 14:01:12 bodge-timing-data {"Power":68,"Attitude":{"State":0,"Position":719160,"Velocity":130047,"Monotonic":10430470,"Time":"2023-05-21T14:01:12.878907986+01:00","Certain":false,"Front":false}}
+2023/05/21 14:01:12 power 69
+2023/05/21 14:01:12 vel 130047
+/dev/ttyACM0: send 7 CAAN069
+2023/05/21 14:01:12 curPos 719160
+2023/05/21 14:01:14 sense A true
+2023/05/21 14:01:14 sense B true
+2023/05/21 14:01:14 s [{10432424 true true} {10430470 false true} {10426847 false false}]
+2023/05/21 14:01:46 sense A true
+2023/05/21 14:01:46 sense B false
+2023/05/21 14:01:46 s [{10464199 true false} {10432424 true true} {10430470 false true}]
+2023/05/21 14:01:48 sense A false
+2023/05/21 14:01:48 sense B false
+2023/05/21 14:01:48 s [{10466063 false false} {10464199 true false} {10432424 true true}]
+2023/05/21 14:01:48 att1l attitude(0 0 133.047mm/s 71.84538km/h 10466063 nf)
+2023/05/21 14:01:48 vel 133047
+2023/05/21 14:01:48 curPos 0
+2023/05/21 14:01:52 sense A false
+2023/05/21 14:01:52 sense B true
+2023/05/21 14:01:52 s [{10469612 false true} {10466063 false false} {10464199 true false}]
+2023/05/21 14:01:52 att2l attitude(0 720184 133.047mm/s 71.84538km/h 10469612 nb) cars720184 pos720184
+2023/05/21 14:01:52 bodge-timing-data {"Power":69,"Attitude":{"State":0,"Position":720184,"Velocity":133047,"Monotonic":10469612,"Time":"2023-05-21T14:01:52.022399743+01:00","Certain":false,"Front":false}}
+2023/05/21 14:01:52 power 70
+2023/05/21 14:01:52 vel 133047
+/dev/ttyACM0: send 7 CAAN070
+2023/05/21 14:01:52 curPos 720184
+2023/05/21 14:01:53 sense A true
+2023/05/21 14:01:53 sense B true
+2023/05/21 14:01:53 s [{10471527 true true} {10469612 false true} {10466063 false false}]
+2023/05/21 14:02:25 sense A true
+2023/05/21 14:02:25 sense B false
+2023/05/21 14:02:25 s [{10502750 true false} {10471527 true true} {10469612 false true}]
+2023/05/21 14:02:27 sense B false
+2023/05/21 14:02:27 sense A false
+2023/05/21 14:02:27 s [{10504599 false false} {10502750 true false} {10471527 true true}]
+2023/05/21 14:02:27 att1l attitude(0 0 134.126mm/s 72.42804km/h 10504599 nf)
+2023/05/21 14:02:27 vel 134126
+2023/05/21 14:02:27 curPos 0
+2023/05/21 14:02:30 sense A false
+2023/05/21 14:02:30 sense B true
+2023/05/21 14:02:30 s [{10508125 false true} {10504599 false false} {10502750 true false}]
+2023/05/21 14:02:30 att2l attitude(0 720930 134.126mm/s 72.42804km/h 10508125 nb) cars720930 pos720930
+2023/05/21 14:02:30 bodge-timing-data {"Power":70,"Attitude":{"State":0,"Position":720930,"Velocity":134126,"Monotonic":10508125,"Time":"2023-05-21T14:02:30.539966046+01:00","Certain":false,"Front":false}}
+2023/05/21 14:02:30 power 71
+2023/05/21 14:02:30 vel 134126
+/dev/ttyACM0: send 7 CAAN071
+2023/05/21 14:02:30 curPos 720930
+2023/05/21 14:02:32 sense A true
+2023/05/21 14:02:32 sense B true
+2023/05/21 14:02:32 s [{10510026 true true} {10508125 false true} {10504599 false false}]
+2023/05/21 14:03:03 sense A true
+2023/05/21 14:03:03 sense B false
+2023/05/21 14:03:03 s [{10540870 true false} {10510026 true true} {10508125 false true}]
+2023/05/21 14:03:05 sense A false
+2023/05/21 14:03:05 sense B false
+2023/05/21 14:03:05 s [{10542682 false false} {10540870 true false} {10510026 true true}]
+2023/05/21 14:03:05 att1l attitude(0 0 136.865mm/s 73.9071km/h 10542682 nf)
+2023/05/21 14:03:05 vel 136865
+2023/05/21 14:03:05 curPos 0
+2023/05/21 14:03:08 sense A false
+2023/05/21 14:03:08 sense B true
+2023/05/21 14:03:08 s [{10546139 false true} {10542682 false false} {10540870 true false}]
+2023/05/21 14:03:08 att2l attitude(0 721143 136.865mm/s 73.9071km/h 10546139 nb) cars721143 pos721143
+2023/05/21 14:03:08 bodge-timing-data {"Power":71,"Attitude":{"State":0,"Position":721143,"Velocity":136865,"Monotonic":10546139,"Time":"2023-05-21T14:03:08.562005919+01:00","Certain":false,"Front":false}}
+2023/05/21 14:03:08 power 72
+2023/05/21 14:03:08 vel 136865
+/dev/ttyACM0: send 7 CAAN072
+2023/05/21 14:03:08 curPos 721143
+2023/05/21 14:03:10 sense A true
+2023/05/21 14:03:10 sense B true
+2023/05/21 14:03:10 s [{10548002 true true} {10546139 false true} {10542682 false false}]
+2023/05/21 14:03:40 sense A true
+2023/05/21 14:03:40 sense B false
+2023/05/21 14:03:40 s [{10578166 true false} {10548002 true true} {10546139 false true}]
+2023/05/21 14:03:42 sense B false
+2023/05/21 14:03:42 sense A false
+2023/05/21 14:03:42 s [{10579940 false false} {10578166 true false} {10548002 true true}]
+2023/05/21 14:03:42 att1l attitude(0 0 139.797mm/s 75.49038km/h 10579940 nf)
+2023/05/21 14:03:42 vel 139797
+2023/05/21 14:03:42 curPos 0
+2023/05/21 14:03:45 sense A false
+2023/05/21 14:03:45 sense B true
+2023/05/21 14:03:45 s [{10583335 false true} {10579940 false false} {10578166 true false}]
+2023/05/21 14:03:45 att2l attitude(0 722611 139.797mm/s 75.49038km/h 10583335 nb) cars722611 pos722611
+2023/05/21 14:03:45 bodge-timing-data {"Power":72,"Attitude":{"State":0,"Position":722611,"Velocity":139797,"Monotonic":10583335,"Time":"2023-05-21T14:03:45.759036346+01:00","Certain":false,"Front":false}}
+2023/05/21 14:03:45 vel 139797
+2023/05/21 14:03:45 curPos 722611
+2023/05/21 14:03:45 power 73
+/dev/ttyACM0: send 7 CAAN073
+2023/05/21 14:03:47 sense A true
+2023/05/21 14:03:47 sense B true
+2023/05/21 14:03:47 s [{10585158 true true} {10583335 false true} {10579940 false false}]
+2023/05/21 14:04:17 sense A true
+2023/05/21 14:04:17 sense B false
+2023/05/21 14:04:17 s [{10614778 true false} {10585158 true true} {10583335 false true}]
+2023/05/21 14:04:18 sense A false
+2023/05/21 14:04:18 sense B false
+2023/05/21 14:04:18 s [{10616520 false false} {10614778 true false} {10585158 true true}]
+2023/05/21 14:04:18 att1l attitude(0 0 142.365mm/s 76.8771km/h 10616520 nf)
+2023/05/21 14:04:18 vel 142365
+2023/05/21 14:04:18 curPos 0
+2023/05/21 14:04:22 sense B true
+2023/05/21 14:04:22 sense A false
+2023/05/21 14:04:22 s [{10619861 false true} {10616520 false false} {10614778 true false}]
+2023/05/21 14:04:22 att2l attitude(0 723641 142.365mm/s 76.8771km/h 10619861 nb) cars723641 pos723641
+2023/05/21 14:04:22 bodge-timing-data {"Power":73,"Attitude":{"State":0,"Position":723641,"Velocity":142365,"Monotonic":10619861,"Time":"2023-05-21T14:04:22.289257122+01:00","Certain":false,"Front":false}}
+2023/05/21 14:04:22 power 74
+2023/05/21 14:04:22 vel 142365
+/dev/ttyACM0: send 7 CAAN074
+2023/05/21 14:04:22 curPos 723641
+2023/05/21 14:04:24 sense A true
+2023/05/21 14:04:24 sense B true
+2023/05/21 14:04:24 s [{10621649 true true} {10619861 false true} {10616520 false false}]
+2023/05/21 14:04:53 sense B false
+2023/05/21 14:04:53 sense A true
+2023/05/21 14:04:53 s [{10650651 true false} {10621649 true true} {10619861 false true}]
+2023/05/21 14:04:54 sense A false
+2023/05/21 14:04:54 sense B false
+2023/05/21 14:04:54 s [{10652362 false false} {10650651 true false} {10621649 true true}]
+2023/05/21 14:04:54 att1l attitude(0 0 144.944mm/s 78.26976km/h 10652362 nf)
+2023/05/21 14:04:54 vel 144944
+2023/05/21 14:04:54 curPos 0
+2023/05/21 14:04:58 sense A false
+2023/05/21 14:04:58 sense B true
+2023/05/21 14:04:58 s [{10655647 false true} {10652362 false false} {10650651 true false}]
+2023/05/21 14:04:58 att2l attitude(0 724142 144.944mm/s 78.26976km/h 10655647 nb) cars724142 pos724142
+2023/05/21 14:04:58 bodge-timing-data {"Power":74,"Attitude":{"State":0,"Position":724142,"Velocity":144944,"Monotonic":10655647,"Time":"2023-05-21T14:04:58.079640552+01:00","Certain":false,"Front":false}}
+2023/05/21 14:04:58 power 75
+2023/05/21 14:04:58 vel 144944
+/dev/ttyACM0: send 7 CAAN075
+2023/05/21 14:04:58 curPos 724142
+2023/05/21 14:04:59 sense A true
+2023/05/21 14:04:59 sense B true
+2023/05/21 14:04:59 s [{10657402 true true} {10655647 false true} {10652362 false false}]
+2023/05/21 14:05:28 sense A true
+2023/05/21 14:05:28 sense B false
+2023/05/21 14:05:28 s [{10685970 true false} {10657402 true true} {10655647 false true}]
+2023/05/21 14:05:30 sense A false
+2023/05/21 14:05:30 sense B false
+2023/05/21 14:05:30 s [{10687651 false false} {10685970 true false} {10657402 true true}]
+2023/05/21 14:05:30 att1l attitude(0 0 147.531mm/s 79.66674km/h 10687651 nf)
+2023/05/21 14:05:30 vel 147531
+2023/05/21 14:05:30 curPos 0
+2023/05/21 14:05:33 sense A false
+2023/05/21 14:05:33 sense B true
+2023/05/21 14:05:33 s [{10690879 false true} {10687651 false false} {10685970 true false}]
+2023/05/21 14:05:33 att2l attitude(0 724230 147.531mm/s 79.66674km/h 10690879 nb) cars724230 pos724230
+2023/05/21 14:05:33 bodge-timing-data {"Power":75,"Attitude":{"State":0,"Position":724230,"Velocity":147531,"Monotonic":10690879,"Time":"2023-05-21T14:05:33.315737935+01:00","Certain":false,"Front":false}}
+2023/05/21 14:05:33 power 76
+2023/05/21 14:05:33 vel 147531
+/dev/ttyACM0: send 7 CAAN076
+2023/05/21 14:05:33 curPos 724230
+2023/05/21 14:05:35 sense A true
+2023/05/21 14:05:35 sense B true
+2023/05/21 14:05:35 s [{10692605 true true} {10690879 false true} {10687651 false false}]
+2023/05/21 14:06:03 sense B false
+2023/05/21 14:06:03 sense A true
+2023/05/21 14:06:03 s [{10720574 true false} {10692605 true true} {10690879 false true}]
+2023/05/21 14:06:04 sense A false
+2023/05/21 14:06:04 sense B false
+2023/05/21 14:06:04 s [{10722226 false false} {10720574 true false} {10692605 true true}]
+2023/05/21 14:06:04 att1l attitude(0 0 150.121mm/s 81.06534km/h 10722226 nf)
+2023/05/21 14:06:04 vel 150121
+2023/05/21 14:06:04 curPos 0
+2023/05/21 14:06:07 sense A false
+2023/05/21 14:06:07 sense B true
+2023/05/21 14:06:07 s [{10725406 false true} {10722226 false false} {10720574 true false}]
+2023/05/21 14:06:07 att2l attitude(0 725384 150.121mm/s 81.06534km/h 10725406 nb) cars725384 pos725384
+2023/05/21 14:06:07 bodge-timing-data {"Power":76,"Attitude":{"State":0,"Position":725384,"Velocity":150121,"Monotonic":10725406,"Time":"2023-05-21T14:06:07.84688651+01:00","Certain":false,"Front":false}}
+2023/05/21 14:06:07 power 77
+2023/05/21 14:06:07 vel 150121
+2023/05/21 14:06:07 curPos 725384
+/dev/ttyACM0: send 7 CAAN077
+2023/05/21 14:06:09 sense A true
+2023/05/21 14:06:09 sense B true
+2023/05/21 14:06:09 s [{10727105 true true} {10725406 false true} {10722226 false false}]
+2023/05/21 14:06:37 sense A true
+2023/05/21 14:06:37 sense B false
+2023/05/21 14:06:37 s [{10754746 true false} {10727105 true true} {10725406 false true}]
+2023/05/21 14:06:38 sense A false
+2023/05/21 14:06:38 sense B false
+2023/05/21 14:06:38 s [{10756372 false false} {10754746 true false} {10727105 true true}]
+2023/05/21 14:06:38 att1l attitude(0 0 152.521mm/s 82.36134km/h 10756372 nf)
+2023/05/21 14:06:38 vel 152521
+2023/05/21 14:06:38 curPos 0
+2023/05/21 14:06:41 sense A false
+2023/05/21 14:06:41 sense B true
+2023/05/21 14:06:41 s [{10759509 false true} {10756372 false false} {10754746 true false}]
+2023/05/21 14:06:41 att2l attitude(0 726460 152.521mm/s 82.36134km/h 10759509 nb) cars726460 pos726460
+2023/05/21 14:06:41 vel 152521
+2023/05/21 14:06:41 curPos 726460
+2023/05/21 14:06:41 bodge-timing-data {"Power":77,"Attitude":{"State":0,"Position":726460,"Velocity":152521,"Monotonic":10759509,"Time":"2023-05-21T14:06:41.953308918+01:00","Certain":false,"Front":false}}
+2023/05/21 14:06:41 power 78
+/dev/ttyACM0: send 7 CAAN078
+2023/05/21 14:06:43 sense A true
+2023/05/21 14:06:43 sense B true
+2023/05/21 14:06:43 s [{10761186 true true} {10759509 false true} {10756372 false false}]
+2023/05/21 14:07:10 sense A true
+2023/05/21 14:07:10 sense B false
+2023/05/21 14:07:10 s [{10788425 true false} {10761186 true true} {10759509 false true}]
+2023/05/21 14:07:12 sense A false
+2023/05/21 14:07:12 sense B false
+2023/05/21 14:07:12 s [{10790033 false false} {10788425 true false} {10761186 true true}]
+2023/05/21 14:07:12 att1l attitude(0 0 154.228mm/s 83.28312km/h 10790033 nf)
+2023/05/21 14:07:12 vel 154228
+2023/05/21 14:07:12 curPos 0
+2023/05/21 14:07:15 sense A false
+2023/05/21 14:07:15 sense B true
+2023/05/21 14:07:15 s [{10793132 false true} {10790033 false false} {10788425 true false}]
+2023/05/21 14:07:15 att2l attitude(0 725955 154.228mm/s 83.28312km/h 10793132 nb) cars725955 pos725955
+2023/05/21 14:07:15 bodge-timing-data {"Power":78,"Attitude":{"State":0,"Position":725955,"Velocity":154228,"Monotonic":10793132,"Time":"2023-05-21T14:07:15.580147216+01:00","Certain":false,"Front":false}}
+2023/05/21 14:07:15 power 79
+2023/05/21 14:07:15 vel 154228
+/dev/ttyACM0: send 7 CAAN079
+2023/05/21 14:07:15 curPos 725955
+2023/05/21 14:07:17 sense A true
+2023/05/21 14:07:17 sense B true
+2023/05/21 14:07:17 s [{10794785 true true} {10793132 false true} {10790033 false false}]
+2023/05/21 14:07:44 sense A true
+2023/05/21 14:07:44 sense B false
+2023/05/21 14:07:44 s [{10821571 true false} {10794785 true true} {10793132 false true}]
+2023/05/21 14:07:45 sense A false
+2023/05/21 14:07:45 sense B false
+2023/05/21 14:07:45 s [{10823150 false false} {10821571 true false} {10794785 true true}]
+2023/05/21 14:07:45 att1l attitude(0 0 157.061mm/s 84.81294km/h 10823150 nf)
+2023/05/21 14:07:45 vel 157061
+2023/05/21 14:07:45 curPos 0
+2023/05/21 14:07:48 sense A false
+2023/05/21 14:07:48 sense B true
+2023/05/21 14:07:48 s [{10826201 false true} {10823150 false false} {10821571 true false}]
+2023/05/21 14:07:48 att2l attitude(0 727194 157.061mm/s 84.81294km/h 10826201 nb) cars727194 pos727194
+2023/05/21 14:07:48 bodge-timing-data {"Power":79,"Attitude":{"State":0,"Position":727194,"Velocity":157061,"Monotonic":10826201,"Time":"2023-05-21T14:07:48.652749576+01:00","Certain":false,"Front":false}}
+2023/05/21 14:07:48 power 80
+2023/05/21 14:07:48 vel 157061
+/dev/ttyACM0: send 7 CAAN080
+2023/05/21 14:07:48 curPos 727194
+2023/05/21 14:07:50 sense B true
+2023/05/21 14:07:50 sense A true
+2023/05/21 14:07:50 s [{10827827 true true} {10826201 false true} {10823150 false false}]
+2023/05/21 14:08:16 sense A true
+2023/05/21 14:08:16 sense B false
+2023/05/21 14:08:16 s [{10854265 true false} {10827827 true true} {10826201 false true}]
+2023/05/21 14:08:18 sense A false
+2023/05/21 14:08:18 sense B false
+2023/05/21 14:08:18 s [{10855823 false false} {10854265 true false} {10827827 true true}]
+2023/05/21 14:08:18 att1l attitude(0 0 159.178mm/s 85.95612km/h 10855823 nf)
+2023/05/21 14:08:18 vel 159178
+2023/05/21 14:08:18 curPos 0
+2023/05/21 14:08:21 sense A false
+2023/05/21 14:08:21 sense B true
+2023/05/21 14:08:21 s [{10858836 false true} {10855823 false false} {10854265 true false}]
+2023/05/21 14:08:21 att2l attitude(0 727604 159.178mm/s 85.95612km/h 10858836 nb) cars727604 pos727604
+2023/05/21 14:08:21 bodge-timing-data {"Power":80,"Attitude":{"State":0,"Position":727604,"Velocity":159178,"Monotonic":10858836,"Time":"2023-05-21T14:08:21.29144827+01:00","Certain":false,"Front":false}}
+2023/05/21 14:08:21 power 81
+2023/05/21 14:08:21 vel 159178
+/dev/ttyACM0: send 7 CAAN081
+2023/05/21 14:08:21 curPos 727604
+2023/05/21 14:08:22 sense A true
+2023/05/21 14:08:22 sense B true
+2023/05/21 14:08:22 s [{10860441 true true} {10858836 false true} {10855823 false false}]
+2023/05/21 14:08:48 sense B false
+2023/05/21 14:08:48 sense A true
+2023/05/21 14:08:48 s [{10886496 true false} {10860441 true true} {10858836 false true}]
+2023/05/21 14:08:50 sense A false
+2023/05/21 14:08:50 sense B false
+2023/05/21 14:08:50 s [{10888009 false false} {10886496 true false} {10860441 true true}]
+2023/05/21 14:08:50 att1l attitude(0 0 163.912mm/s 88.51248km/h 10888009 nf)
+2023/05/21 14:08:50 vel 163912
+2023/05/21 14:08:50 curPos 0
+2023/05/21 14:08:53 sense A false
+2023/05/21 14:08:53 sense B true
+2023/05/21 14:08:53 s [{10890934 false true} {10888009 false false} {10886496 true false}]
+2023/05/21 14:08:53 att2l attitude(0 727444 163.912mm/s 88.51248km/h 10890934 nb) cars727444 pos727444
+2023/05/21 14:08:53 bodge-timing-data {"Power":81,"Attitude":{"State":0,"Position":727444,"Velocity":163912,"Monotonic":10890934,"Time":"2023-05-21T14:08:53.393412598+01:00","Certain":false,"Front":false}}
+2023/05/21 14:08:53 power 82
+2023/05/21 14:08:53 vel 163912
+/dev/ttyACM0: send 7 CAAN082
+2023/05/21 14:08:53 curPos 727444
+2023/05/21 14:08:54 sense A true
+2023/05/21 14:08:54 sense B true
+2023/05/21 14:08:54 s [{10892513 true true} {10890934 false true} {10888009 false false}]
+2023/05/21 14:09:20 sense B false
+2023/05/21 14:09:20 sense A true
+2023/05/21 14:09:20 s [{10918110 true false} {10892513 true true} {10890934 false true}]
+2023/05/21 14:09:22 sense A false
+2023/05/21 14:09:22 sense B false
+2023/05/21 14:09:22 s [{10919621 false false} {10918110 true false} {10892513 true true}]
+2023/05/21 14:09:22 att1l attitude(0 0 164.129mm/s 88.62966km/h 10919621 nf)
+2023/05/21 14:09:22 vel 164129
+2023/05/21 14:09:22 curPos 0
+2023/05/21 14:09:25 sense A false
+2023/05/21 14:09:25 sense B true
+2023/05/21 14:09:25 s [{10922540 false true} {10919621 false false} {10918110 true false}]
+2023/05/21 14:09:25 att2l attitude(0 727094 164.129mm/s 88.62966km/h 10922540 nb) cars727094 pos727094
+2023/05/21 14:09:25 bodge-timing-data {"Power":82,"Attitude":{"State":0,"Position":727094,"Velocity":164129,"Monotonic":10922540,"Time":"2023-05-21T14:09:25.006523014+01:00","Certain":false,"Front":false}}
+2023/05/21 14:09:25 power 83
+2023/05/21 14:09:25 vel 164129
+/dev/ttyACM0: send 7 CAAN083
+2023/05/21 14:09:25 curPos 727094
+2023/05/21 14:09:26 sense A true
+2023/05/21 14:09:26 sense B true
+2023/05/21 14:09:26 s [{10924082 true true} {10922540 false true} {10919621 false false}]
+2023/05/21 14:09:51 sense A true
+2023/05/21 14:09:51 sense B false
+2023/05/21 14:09:51 s [{10949237 true false} {10924082 true true} {10922540 false true}]
+2023/05/21 14:09:53 sense A false
+2023/05/21 14:09:53 sense B false
+2023/05/21 14:09:53 s [{10950720 false false} {10949237 true false} {10924082 true true}]
+2023/05/21 14:09:53 att1l attitude(0 0 167.228mm/s 90.30312km/h 10950720 nf)
+2023/05/21 14:09:53 vel 167228
+2023/05/21 14:09:53 curPos 0
+2023/05/21 14:09:56 sense A false
+2023/05/21 14:09:56 sense B true
+2023/05/21 14:09:56 s [{10953610 false true} {10950720 false false} {10949237 true false}]
+2023/05/21 14:09:56 att2l attitude(0 731290 167.228mm/s 90.30312km/h 10953610 nb) cars731290 pos731290
+2023/05/21 14:09:56 bodge-timing-data {"Power":83,"Attitude":{"State":0,"Position":731290,"Velocity":167228,"Monotonic":10953610,"Time":"2023-05-21T14:09:56.082446915+01:00","Certain":false,"Front":false}}
+2023/05/21 14:09:56 power 84
+2023/05/21 14:09:56 vel 167228
+2023/05/21 14:09:56 curPos 731290
+/dev/ttyACM0: send 7 CAAN084
+2023/05/21 14:09:57 sense B true
+2023/05/21 14:09:57 sense A true
+2023/05/21 14:09:57 s [{10955136 true true} {10953610 false true} {10950720 false false}]
+2023/05/21 14:10:22 sense A true
+2023/05/21 14:10:22 sense B false
+2023/05/21 14:10:22 s [{10979996 true false} {10955136 true true} {10953610 false true}]
+2023/05/21 14:10:23 sense A false
+2023/05/21 14:10:23 sense B false
+2023/05/21 14:10:23 s [{10981457 false false} {10979996 true false} {10955136 true true}]
+2023/05/21 14:10:23 att1l attitude(0 0 169.746mm/s 91.66284km/h 10981457 nf)
+2023/05/21 14:10:23 vel 169746
+2023/05/21 14:10:23 curPos 0
+2023/05/21 14:10:26 sense B true
+2023/05/21 14:10:26 sense A false
+2023/05/21 14:10:26 s [{10984303 false true} {10981457 false false} {10979996 true false}]
+2023/05/21 14:10:26 att2l attitude(0 731099 169.746mm/s 91.66284km/h 10984303 nb) cars731099 pos731099
+2023/05/21 14:10:26 bodge-timing-data {"Power":84,"Attitude":{"State":0,"Position":731099,"Velocity":169746,"Monotonic":10984303,"Time":"2023-05-21T14:10:26.781411402+01:00","Certain":false,"Front":false}}
+2023/05/21 14:10:26 vel 169746
+2023/05/21 14:10:26 curPos 731099
+2023/05/21 14:10:26 power 85
+/dev/ttyACM0: send 7 CAAN085
+2023/05/21 14:10:28 sense A true
+2023/05/21 14:10:28 sense B true
+2023/05/21 14:10:28 s [{10985806 true true} {10984303 false true} {10981457 false false}]
+2023/05/21 14:10:52 sense B false
+2023/05/21 14:10:52 sense A true
+2023/05/21 14:10:52 s [{11010325 true false} {10985806 true true} {10984303 false true}]
+2023/05/21 14:10:54 sense B false
+2023/05/21 14:10:54 sense A false
+2023/05/21 14:10:54 s [{11011765 false false} {11010325 true false} {10985806 true true}]
+2023/05/21 14:10:54 att1l attitude(0 0 172.222mm/s 92.99988km/h 11011765 nf)
+2023/05/21 14:10:54 vel 172222
+2023/05/21 14:10:54 curPos 0
+2023/05/21 14:10:57 sense A false
+2023/05/21 14:10:57 sense B true
+2023/05/21 14:10:57 s [{11014579 false true} {11011765 false false} {11010325 true false}]
+2023/05/21 14:10:57 att2l attitude(0 732633 172.222mm/s 92.99988km/h 11014579 nb) cars732633 pos732633
+2023/05/21 14:10:57 bodge-timing-data {"Power":85,"Attitude":{"State":0,"Position":732633,"Velocity":172222,"Monotonic":11014579,"Time":"2023-05-21T14:10:57.062705115+01:00","Certain":false,"Front":false}}
+2023/05/21 14:10:57 power 86
+2023/05/21 14:10:57 vel 172222
+/dev/ttyACM0: send 7 CAAN086
+2023/05/21 14:10:57 curPos 732633
+2023/05/21 14:10:58 sense A true
+2023/05/21 14:10:58 sense B true
+2023/05/21 14:10:58 s [{11016059 true true} {11014579 false true} {11011765 false false}]
+2023/05/21 14:11:22 sense A true
+2023/05/21 14:11:22 sense B false
+2023/05/21 14:11:22 s [{11040223 true false} {11016059 true true} {11014579 false true}]
+2023/05/21 14:11:24 sense A false
+2023/05/21 14:11:24 sense B false
+2023/05/21 14:11:24 s [{11041647 false false} {11040223 true false} {11016059 true true}]
+2023/05/21 14:11:24 att1l attitude(0 0 174.157mm/s 94.04478km/h 11041647 nf)
+2023/05/21 14:11:24 vel 174157
+2023/05/21 14:11:24 curPos 0
+2023/05/21 14:11:26 sense A false
+2023/05/21 14:11:26 sense B true
+2023/05/21 14:11:26 s [{11044430 false true} {11041647 false false} {11040223 true false}]
+2023/05/21 14:11:26 att2l attitude(0 732679 174.157mm/s 94.04478km/h 11044430 nb) cars732679 pos732679
+2023/05/21 14:11:26 bodge-timing-data {"Power":86,"Attitude":{"State":0,"Position":732679,"Velocity":174157,"Monotonic":11044430,"Time":"2023-05-21T14:11:26.918197043+01:00","Certain":false,"Front":false}}
+2023/05/21 14:11:26 power 87
+2023/05/21 14:11:26 vel 174157
+2023/05/21 14:11:26 curPos 732679
+/dev/ttyACM0: send 7 CAAN087
+2023/05/21 14:11:28 sense A true
+2023/05/21 14:11:28 sense B true
+2023/05/21 14:11:28 s [{11045894 true true} {11044430 false true} {11041647 false false}]
+2023/05/21 14:11:52 sense A true
+2023/05/21 14:11:52 sense B false
+2023/05/21 14:11:52 s [{11069854 true false} {11045894 true true} {11044430 false true}]
+2023/05/21 14:11:53 sense A false
+2023/05/21 14:11:53 sense B false
+2023/05/21 14:11:53 s [{11071259 false false} {11069854 true false} {11045894 true true}]
+2023/05/21 14:11:53 att1l attitude(0 0 176.512mm/s 95.31648km/h 11071259 nf)
+2023/05/21 14:11:53 vel 176512
+2023/05/21 14:11:53 curPos 0
+2023/05/21 14:11:56 sense A false
+2023/05/21 14:11:56 sense B true
+2023/05/21 14:11:56 s [{11074013 false true} {11071259 false false} {11069854 true false}]
+2023/05/21 14:11:56 att2l attitude(0 734115 176.512mm/s 95.31648km/h 11074013 nb) cars734115 pos734115
+2023/05/21 14:11:56 vel 176512
+2023/05/21 14:11:56 curPos 734115
+2023/05/21 14:11:56 bodge-timing-data {"Power":87,"Attitude":{"State":0,"Position":734115,"Velocity":176512,"Monotonic":11074013,"Time":"2023-05-21T14:11:56.505966509+01:00","Certain":false,"Front":false}}
+2023/05/21 14:11:56 power 88
+/dev/ttyACM0: send 7 CAAN088
+2023/05/21 14:11:57 sense B true
+2023/05/21 14:11:57 sense A true
+2023/05/21 14:11:57 s [{11075461 true true} {11074013 false true} {11071259 false false}]
+2023/05/21 14:12:21 sense A true
+2023/05/21 14:12:21 sense B false
+2023/05/21 14:12:21 s [{11099130 true false} {11075461 true true} {11074013 false true}]
+2023/05/21 14:12:23 sense A false
+2023/05/21 14:12:23 sense B false
+2023/05/21 14:12:23 s [{11100517 false false} {11099130 true false} {11075461 true true}]
+2023/05/21 14:12:23 att1l attitude(0 0 178.803mm/s 96.55362km/h 11100517 nf)
+2023/05/21 14:12:23 vel 178803
+2023/05/21 14:12:23 curPos 0
+2023/05/21 14:12:25 sense A false
+2023/05/21 14:12:25 sense B true
+2023/05/21 14:12:25 s [{11103244 false true} {11100517 false false} {11099130 true false}]
+2023/05/21 14:12:25 att2l attitude(0 735596 178.803mm/s 96.55362km/h 11103244 nb) cars735596 pos735596
+2023/05/21 14:12:25 bodge-timing-data {"Power":88,"Attitude":{"State":0,"Position":735596,"Velocity":178803,"Monotonic":11103244,"Time":"2023-05-21T14:12:25.741614957+01:00","Certain":false,"Front":false}}
+2023/05/21 14:12:25 power 89
+2023/05/21 14:12:25 vel 178803
+2023/05/21 14:12:25 curPos 735596
+/dev/ttyACM0: send 7 CAAN089
+2023/05/21 14:12:27 sense A true
+2023/05/21 14:12:27 sense B true
+2023/05/21 14:12:27 s [{11104673 true true} {11103244 false true} {11100517 false false}]
+2023/05/21 14:12:50 sense A true
+2023/05/21 14:12:50 sense B false
+2023/05/21 14:12:50 s [{11128020 true false} {11104673 true true} {11103244 false true}]
+2023/05/21 14:12:51 sense A false
+2023/05/21 14:12:51 sense B false
+2023/05/21 14:12:51 s [{11129394 false false} {11128020 true false} {11104673 true true}]
+2023/05/21 14:12:51 att1l attitude(0 0 180.494mm/s 97.46676km/h 11129394 nf)
+2023/05/21 14:12:51 vel 180494
+2023/05/21 14:12:51 curPos 0
+2023/05/21 14:12:54 sense A false
+2023/05/21 14:12:54 sense B true
+2023/05/21 14:12:54 s [{11132084 false true} {11129394 false false} {11128020 true false}]
+2023/05/21 14:12:54 att2l attitude(0 733531 180.494mm/s 97.46676km/h 11132084 nb) cars733531 pos733531
+2023/05/21 14:12:54 bodge-timing-data {"Power":89,"Attitude":{"State":0,"Position":733531,"Velocity":180494,"Monotonic":11132084,"Time":"2023-05-21T14:12:54.585899197+01:00","Certain":false,"Front":false}}
+2023/05/21 14:12:54 power 90
+2023/05/21 14:12:54 vel 180494
+2023/05/21 14:12:54 curPos 733531
+/dev/ttyACM0: send 7 CAAN090
+2023/05/21 14:12:55 sense A true
+2023/05/21 14:12:55 sense B true
+2023/05/21 14:12:55 s [{11133496 true true} {11132084 false true} {11129394 false false}]
+2023/05/21 14:13:19 sense A true
+2023/05/21 14:13:19 sense B false
+2023/05/21 14:13:19 s [{11156559 true false} {11133496 true true} {11132084 false true}]
+2023/05/21 14:13:20 sense A false
+2023/05/21 14:13:20 sense B false
+2023/05/21 14:13:20 s [{11157917 false false} {11156559 true false} {11133496 true true}]
+2023/05/21 14:13:20 att1l attitude(0 0 182.621mm/s 98.61534km/h 11157917 nf)
+2023/05/21 14:13:20 vel 182621
+2023/05/21 14:13:20 curPos 0
+2023/05/21 14:13:23 sense A false
+2023/05/21 14:13:23 sense B true
+2023/05/21 14:13:23 s [{11160582 false true} {11157917 false false} {11156559 true false}]
+2023/05/21 14:13:23 att2l attitude(0 734686 182.621mm/s 98.61534km/h 11160582 nb) cars734686 pos734686
+2023/05/21 14:13:23 bodge-timing-data {"Power":90,"Attitude":{"State":0,"Position":734686,"Velocity":182621,"Monotonic":11160582,"Time":"2023-05-21T14:13:23.088076451+01:00","Certain":false,"Front":false}}
+2023/05/21 14:13:23 power 91
+2023/05/21 14:13:23 vel 182621
+2023/05/21 14:13:23 curPos 734686
+/dev/ttyACM0: send 7 CAAN091
+2023/05/21 14:13:24 sense A true
+2023/05/21 14:13:24 sense B true
+2023/05/21 14:13:24 s [{11161978 true true} {11160582 false true} {11157917 false false}]
+2023/05/21 14:13:47 sense A true
+2023/05/21 14:13:47 sense B false
+2023/05/21 14:13:47 s [{11184737 true false} {11161978 true true} {11160582 false true}]
+2023/05/21 14:13:48 sense A false
+2023/05/21 14:13:48 sense B false
+2023/05/21 14:13:48 s [{11186079 false false} {11184737 true false} {11161978 true true}]
+2023/05/21 14:13:48 att1l attitude(0 0 184.798mm/s 99.79092km/h 11186079 nf)
+2023/05/21 14:13:48 vel 184798
+2023/05/21 14:13:48 curPos 0
+2023/05/21 14:13:51 sense A false
+2023/05/21 14:13:51 sense B true
+2023/05/21 14:13:51 s [{11188712 false true} {11186079 false false} {11184737 true false}]
+2023/05/21 14:13:51 att2l attitude(0 734575 184.798mm/s 99.79092km/h 11188712 nb) cars734575 pos734575
+2023/05/21 14:13:51 vel 184798
+2023/05/21 14:13:51 curPos 734575
+2023/05/21 14:13:51 bodge-timing-data {"Power":91,"Attitude":{"State":0,"Position":734575,"Velocity":184798,"Monotonic":11188712,"Time":"2023-05-21T14:13:51.222161599+01:00","Certain":false,"Front":false}}
+2023/05/21 14:13:51 power 92
+/dev/ttyACM0: send 7 CAAN092
+2023/05/21 14:13:52 sense A true
+2023/05/21 14:13:52 sense B true
+2023/05/21 14:13:52 s [{11190086 true true} {11188712 false true} {11186079 false false}]
+2023/05/21 14:14:15 sense A true
+2023/05/21 14:14:15 sense B false
+2023/05/21 14:14:15 s [{11212487 true false} {11190086 true true} {11188712 false true}]
+2023/05/21 14:14:16 sense A false
+2023/05/21 14:14:16 sense B false
+2023/05/21 14:14:16 s [{11213804 false false} {11212487 true false} {11190086 true true}]
+2023/05/21 14:14:16 att1l attitude(0 0 188.306mm/s 101.68524km/h 11213804 nf)
+2023/05/21 14:14:16 vel 188306
+2023/05/21 14:14:16 curPos 0
+2023/05/21 14:14:18 sense B true
+2023/05/21 14:14:18 sense A false
+2023/05/21 14:14:18 s [{11216407 false true} {11213804 false false} {11212487 true false}]
+2023/05/21 14:14:18 att2l attitude(0 738162 188.306mm/s 101.68524km/h 11216407 nb) cars738162 pos738162
+2023/05/21 14:14:18 bodge-timing-data {"Power":92,"Attitude":{"State":0,"Position":738162,"Velocity":188306,"Monotonic":11216407,"Time":"2023-05-21T14:14:18.921200777+01:00","Certain":false,"Front":false}}
+2023/05/21 14:14:18 power 93
+2023/05/21 14:14:18 vel 188306
+2023/05/21 14:14:18 curPos 738162
+/dev/ttyACM0: send 7 CAAN093
+2023/05/21 14:14:20 sense B true
+2023/05/21 14:14:20 sense A true
+2023/05/21 14:14:20 s [{11217766 true true} {11216407 false true} {11213804 false false}]
+2023/05/21 14:14:42 sense A true
+2023/05/21 14:14:42 sense B false
+2023/05/21 14:14:42 s [{11239865 true false} {11217766 true true} {11216407 false true}]
+2023/05/21 14:14:43 sense A false
+2023/05/21 14:14:43 sense B false
+2023/05/21 14:14:43 s [{11241166 false false} {11239865 true false} {11217766 true true}]
+2023/05/21 14:14:43 att1l attitude(0 0 190.622mm/s 102.93588km/h 11241166 nf)
+2023/05/21 14:14:43 vel 190622
+2023/05/21 14:14:43 curPos 0
+2023/05/21 14:14:46 sense A false
+2023/05/21 14:14:46 sense B true
+2023/05/21 14:14:46 s [{11243730 false true} {11241166 false false} {11239865 true false}]
+2023/05/21 14:14:46 att2l attitude(0 736756 190.622mm/s 102.93588km/h 11243730 nb) cars736756 pos736756
+2023/05/21 14:14:46 bodge-timing-data {"Power":93,"Attitude":{"State":0,"Position":736756,"Velocity":190622,"Monotonic":11243730,"Time":"2023-05-21T14:14:46.248012587+01:00","Certain":false,"Front":false}}
+2023/05/21 14:14:46 power 94
+2023/05/21 14:14:46 vel 190622
+2023/05/21 14:14:46 curPos 736756
+/dev/ttyACM0: send 7 CAAN094
+2023/05/21 14:14:47 sense A true
+2023/05/21 14:14:47 sense B true
+2023/05/21 14:14:47 s [{11245063 true true} {11243730 false true} {11241166 false false}]
+2023/05/21 14:15:09 sense A true
+2023/05/21 14:15:09 sense B false
+2023/05/21 14:15:09 s [{11266860 true false} {11245063 true true} {11243730 false true}]
+2023/05/21 14:15:10 sense A false
+2023/05/21 14:15:10 sense B false
+2023/05/21 14:15:10 s [{11268144 false false} {11266860 true false} {11245063 true true}]
+2023/05/21 14:15:10 att1l attitude(0 0 193.146mm/s 104.29884km/h 11268144 nf)
+2023/05/21 14:15:10 vel 193146
+2023/05/21 14:15:10 curPos 0
+2023/05/21 14:15:13 sense B true
+2023/05/21 14:15:13 sense A false
+2023/05/21 14:15:13 s [{11270680 false true} {11268144 false false} {11266860 true false}]
+2023/05/21 14:15:13 att2l attitude(0 737819 193.146mm/s 104.29884km/h 11270680 nb) cars737819 pos737819
+2023/05/21 14:15:13 bodge-timing-data {"Power":94,"Attitude":{"State":0,"Position":737819,"Velocity":193146,"Monotonic":11270680,"Time":"2023-05-21T14:15:13.201846648+01:00","Certain":false,"Front":false}}
+2023/05/21 14:15:13 power 95
+2023/05/21 14:15:13 vel 193146
+2023/05/21 14:15:13 curPos 737819
+/dev/ttyACM0: send 7 CAAN095
+2023/05/21 14:15:14 sense A true
+2023/05/21 14:15:14 sense B true
+2023/05/21 14:15:14 s [{11272002 true true} {11270680 false true} {11268144 false false}]
+2023/05/21 14:15:36 sense A true
+2023/05/21 14:15:36 sense B false
+2023/05/21 14:15:36 s [{11293595 true false} {11272002 true true} {11270680 false true}]
+2023/05/21 14:15:37 sense A false
+2023/05/21 14:15:37 sense B false
+2023/05/21 14:15:37 s [{11294867 false false} {11293595 true false} {11272002 true true}]
+2023/05/21 14:15:37 att1l attitude(0 0 194.968mm/s 105.28272km/h 11294867 nf)
+2023/05/21 14:15:37 vel 194968
+2023/05/21 14:15:37 curPos 0
+2023/05/21 14:15:39 sense B true
+2023/05/21 14:15:39 sense A false
+2023/05/21 14:15:39 s [{11297383 false true} {11294867 false false} {11293595 true false}]
+2023/05/21 14:15:39 att2l attitude(0 738540 194.968mm/s 105.28272km/h 11297383 nb) cars738540 pos738540
+2023/05/21 14:15:39 bodge-timing-data {"Power":95,"Attitude":{"State":0,"Position":738540,"Velocity":194968,"Monotonic":11297383,"Time":"2023-05-21T14:15:39.908552474+01:00","Certain":false,"Front":false}}
+2023/05/21 14:15:39 power 96
+2023/05/21 14:15:39 vel 194968
+2023/05/21 14:15:39 curPos 738540
+/dev/ttyACM0: send 7 CAAN096
+2023/05/21 14:15:41 sense A true
+2023/05/21 14:15:41 sense B true
+2023/05/21 14:15:41 s [{11298691 true true} {11297383 false true} {11294867 false false}]
+2023/05/21 14:16:02 sense A true
+2023/05/21 14:16:02 sense B false
+2023/05/21 14:16:02 s [{11319944 true false} {11298691 true true} {11297383 false true}]
+2023/05/21 14:16:03 sense A false
+2023/05/21 14:16:03 sense B false
+2023/05/21 14:16:03 s [{11321195 false false} {11319944 true false} {11298691 true true}]
+2023/05/21 14:16:03 att1l attitude(0 0 198.241mm/s 107.05014km/h 11321195 nf)
+2023/05/21 14:16:03 vel 198241
+2023/05/21 14:16:03 curPos 0
+2023/05/21 14:16:06 sense A false
+2023/05/21 14:16:06 sense B true
+2023/05/21 14:16:06 s [{11323677 false true} {11321195 false false} {11319944 true false}]
+2023/05/21 14:16:06 att2l attitude(0 740035 198.241mm/s 107.05014km/h 11323677 nb) cars740035 pos740035
+2023/05/21 14:16:06 bodge-timing-data {"Power":96,"Attitude":{"State":0,"Position":740035,"Velocity":198241,"Monotonic":11323677,"Time":"2023-05-21T14:16:06.206259323+01:00","Certain":false,"Front":false}}
+2023/05/21 14:16:06 power 97
+2023/05/21 14:16:06 vel 198241
+2023/05/21 14:16:06 curPos 740035
+/dev/ttyACM0: send 7 CAAN097
+2023/05/21 14:16:07 sense A true
+2023/05/21 14:16:07 sense B true
+2023/05/21 14:16:07 s [{11324964 true true} {11323677 false true} {11321195 false false}]
+2023/05/21 14:16:28 sense A true
+2023/05/21 14:16:28 sense B false
+2023/05/21 14:16:28 s [{11346073 true false} {11324964 true true} {11323677 false true}]
+2023/05/21 14:16:29 sense A false
+2023/05/21 14:16:29 sense B false
+2023/05/21 14:16:29 s [{11347312 false false} {11346073 true false} {11324964 true true}]
+2023/05/21 14:16:29 att1l attitude(0 0 200.161mm/s 108.08694km/h 11347312 nf)
+2023/05/21 14:16:29 vel 200161
+2023/05/21 14:16:29 curPos 0
+2023/05/21 14:16:32 sense A false
+2023/05/21 14:16:32 sense B true
+2023/05/21 14:16:32 s [{11349768 false true} {11347312 false false} {11346073 true false}]
+2023/05/21 14:16:32 att2l attitude(0 739596 200.161mm/s 108.08694km/h 11349768 nb) cars739596 pos739596
+2023/05/21 14:16:32 bodge-timing-data {"Power":97,"Attitude":{"State":0,"Position":739596,"Velocity":200161,"Monotonic":11349768,"Time":"2023-05-21T14:16:32.300859243+01:00","Certain":false,"Front":false}}
+2023/05/21 14:16:32 power 98
+2023/05/21 14:16:32 vel 200161
+2023/05/21 14:16:32 curPos 739596
+/dev/ttyACM0: send 7 CAAN098
+2023/05/21 14:16:33 sense A true
+2023/05/21 14:16:33 sense B true
+2023/05/21 14:16:33 s [{11351040 true true} {11349768 false true} {11347312 false false}]
+2023/05/21 14:16:54 sense A true
+2023/05/21 14:16:54 sense B false
+2023/05/21 14:16:54 s [{11371844 true false} {11351040 true true} {11349768 false true}]
+2023/05/21 14:16:55 sense A false
+2023/05/21 14:16:55 sense B false
+2023/05/21 14:16:55 s [{11373068 false false} {11371844 true false} {11351040 true true}]
+2023/05/21 14:16:55 att1l attitude(0 0 202.614mm/s 109.41156km/h 11373068 nf)
+2023/05/21 14:16:55 vel 202614
+2023/05/21 14:16:55 curPos 0
+2023/05/21 14:16:58 sense A false
+2023/05/21 14:16:58 sense B true
+2023/05/21 14:16:58 s [{11375498 false true} {11373068 false false} {11371844 true false}]
+2023/05/21 14:16:58 att2l attitude(0 740352 202.614mm/s 109.41156km/h 11375498 nb) cars740352 pos740352
+2023/05/21 14:16:58 bodge-timing-data {"Power":98,"Attitude":{"State":0,"Position":740352,"Velocity":202614,"Monotonic":11375498,"Time":"2023-05-21T14:16:58.034435185+01:00","Certain":false,"Front":false}}
+2023/05/21 14:16:58 power 99
+2023/05/21 14:16:58 vel 202614
+2023/05/21 14:16:58 curPos 740352
+/dev/ttyACM0: send 7 CAAN099
+2023/05/21 14:16:59 sense A true
+2023/05/21 14:16:59 sense B true
+2023/05/21 14:16:59 s [{11376756 true true} {11375498 false true} {11373068 false false}]
+2023/05/21 14:17:19 sense A true
+2023/05/21 14:17:19 sense B false
+2023/05/21 14:17:19 s [{11397390 true false} {11376756 true true} {11375498 false true}]
+2023/05/21 14:17:21 sense A false
+2023/05/21 14:17:21 sense B false
+2023/05/21 14:17:21 s [{11398606 false false} {11397390 true false} {11376756 true true}]
+2023/05/21 14:17:21 att1l attitude(0 0 203.947mm/s 110.13138km/h 11398606 nf)
+2023/05/21 14:17:21 vel 203947
+2023/05/21 14:17:21 curPos 0
+2023/05/21 14:17:23 sense A false
+2023/05/21 14:17:23 sense B true
+2023/05/21 14:17:23 s [{11401019 false true} {11398606 false false} {11397390 true false}]
+2023/05/21 14:17:23 att2l attitude(0 740125 203.947mm/s 110.13138km/h 11401019 nb) cars740125 pos740125
+2023/05/21 14:17:23 bodge-timing-data {"Power":99,"Attitude":{"State":0,"Position":740125,"Velocity":203947,"Monotonic":11401019,"Time":"2023-05-21T14:17:23.558965047+01:00","Certain":false,"Front":false}}
+2023/05/21 14:17:23 vel 203947
+2023/05/21 14:17:23 curPos 740125
+/dev/ttyACM0: send 7 CABY000
+2023/05/21 17:42:30 interrupt
+exit status 1
+Traceback (most recent call last):
+  File "/home/nyiyui/hato/./serial-proxy", line 18, in <module>
+    l = input()
+EOFError: EOF when reading a line
+Traceback (most recent call last):
+  File "/home/nyiyui/hato/./serial-proxy", line 18, in <module>
+    l = input()
+EOFError: EOF when reading a line

@@ -53,6 +53,11 @@ func breakbeam(show map[string]string) sakayukari.Actor2 {
 			return nil
 		},
 		SideEffects: true,
-		Comment:     fmt.Sprintf("breakbeam %s", keys),
+		Comment:     fmt.Sprintf("ui-breakbeam %s", keys),
 	}
+}
+
+// graphic draws a hardcoded map on the screen.
+func graphic() sakayukari.Actor2 {
+	return sakayukari.Actor2{}
 }

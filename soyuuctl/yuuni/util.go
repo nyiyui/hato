@@ -3,6 +3,7 @@ package yuuni
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"nyiyui.ca/soyuu/soyuuctl/conn"
 	"nyiyui.ca/soyuu/soyuuctl/sakayukari"
@@ -232,6 +233,30 @@ func velocity2(pointA, pointB string, interval conn.Length, position int64) saka
 			}
 			return nil
 		},
-		Comment: fmt.Sprintf("velocity %s %s", pointA, pointB),
+		Comment: fmt.Sprintf("velocity2 %s %s", pointA, pointB),
+	}
+}
+
+type TimeValue struct {
+	Value time.Time
+}
+
+func (v TimeValue) String() string {
+	return fmt.Sprintf("TimeValue %s", v.Value)
+}
+
+func ticker() sakayukari.Actor2 {
+	ch1 := time.NewTicker(1000 * time.Millisecond).C
+	_ = ch1
+	ch2 := make(chan sakayukari.Value)
+	//go func() {
+	//	for v := range ch1 {
+	//		ch2 <- TimeValue{v}
+	//	}
+	//}()
+	return sakayukari.Actor2{
+		RecvChan:    ch2,
+		SideEffects: true,
+		Comment:     "ticker",
 	}
 }

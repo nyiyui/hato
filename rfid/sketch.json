@@ -1,0 +1,7 @@
+{
+  "cpu": {
+    "fqbn": "adafruit:samd:adafruit_itsybitsy_m0",
+    "name": "Adafruit ItsyBitsy M0 Express (SAMD21)",
+    "port": "serial:///dev/ttyACM0"
+  }
+}
