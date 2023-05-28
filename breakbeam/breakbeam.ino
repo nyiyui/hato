@@ -20,8 +20,6 @@ void setup() {
   for (int i = 0; i < SENSORS_LENGTH; i++) {
     pinMode(sensors[i].pin, INPUT_PULLUP);
   }
-  pinMode(7, INPUT_PULLUP);
-  pinMode(10, INPUT_PULLUP);
   Serial.println(" Sready");
 }
 
