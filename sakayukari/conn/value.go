@@ -43,7 +43,7 @@ func (v ValAttitude) String() string {
 		certain = 'n'
 	}
 	return fmt.Sprintf(
-		"attitude(%d %v %vmm/s %vkm/h %v %c%c)",
+		"attitude(%d %vµm %vmm/s %vkm/h %v %c%c)",
 		v.State,
 		v.Position,
 		float64(v.Velocity)/1000.0,
@@ -60,8 +60,9 @@ type ValSeen struct {
 }
 
 type ValSeenSensor struct {
-	Name string
-	Seen bool
+	Name     string
+	Seen     bool
+	Position int64
 }
 
 func (v ValSeen) String() string {

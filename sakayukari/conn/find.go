@@ -50,7 +50,7 @@ func (s *State) connect(path string) {
 		return
 	}
 	defer cmd.Process.Signal(os.Interrupt)
-	_, err = stdin.Write([]byte("I\r\n"))
+	_, err = stdin.Write([]byte("I\n"))
 	if err != nil {
 		log.Printf("connect %s: %s", path, err)
 		return

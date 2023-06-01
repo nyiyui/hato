@@ -6,7 +6,14 @@ struct sensor {
   unsigned long pos; // one sensor must have a position of 0
 };
 
-static struct sensor sensors[] = {{'A', 7, 248000}, {'B', 10, 496000}, {'C', 9, 0}};
+static struct sensor sensors[] = {
+  {'A', 7, 0},
+  {'B', 10, 248000},
+  {'C', 12, 496000}
+  //{'A', 5, 0},
+  //{'B', 10, 248000},
+  //{'C', 9, 496000}
+};
 
 #define SENSORS_LENGTH sizeof(sensors) / sizeof(sensor)
 
@@ -58,8 +65,8 @@ void doLogging() {
     // ¯\_(ツ)_/¯
     bool raw = digitalRead(sensors[i].pin) == HIGH;
     weighteds[i] = update(raw, weighteds[i], elapsed);
-    bool cur = weighteds[i] > THRESHOLD;
-    changed |= cur != olds[i];
+    curs[i] = weighteds[i] > THRESHOLD;
+    changed |= curs[i] != olds[i];
 #      ifdef DEBUG
     Serial.print(" debug");
     Serial.print(sensors[i].id);
@@ -69,13 +76,13 @@ void doLogging() {
     Serial.print(elapsed);
     Serial.print("\t");
 #      endif
-    olds[i] = cur;
+    olds[i] = curs[i];
   }
 #  ifdef DEBUG
   Serial.println();
 #  endif
   if (changed) {
-    Serial.print(" DA");
+    Serial.print(" D");
     for (int i = 0; i < SENSORS_LENGTH; i++) {
       Serial.print(sensors[i].id);
       Serial.print(curs[i]);

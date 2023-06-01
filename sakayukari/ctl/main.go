@@ -36,9 +36,6 @@ func Main() error {
 	g.Actors = append(g.Actors, connActors...)
 	g.Actors = append(g.Actors, conn.Velocity2(
 		ActorRef{Index: 3},
-		"A",
-		"B",
-		248e3,
 		0,
 	))
 	g.Actors = append(g.Actors, bodge.Model(bodge.ModelConf{
