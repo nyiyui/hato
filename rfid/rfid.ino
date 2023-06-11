@@ -1,71 +1,49 @@
-/*
-void setup() {
-  Serial.begin(9600);
-  Serial.println(" Sready");
-}
-
-void loop() {
-  handleSLCP();
-  doLogging();
-}
-
-void handleSLCP() {
-  static char buffer[11];
-  if (Serial.available() == 0)
-    return;
-  int kind = Serial.read();
-  if (kind == 'I') {
-    Serial.println(" Isoyuu-rfid/adafruit:samd:adafruit_feather_m4/0");
-    int eol = Serial.read();
-    if (eol != '\n') {
-      Serial.println(" Eexpected eol");
-    }
-  } else {
-    Serial.print(" Eunknown kind ");
-    Serial.println(kind);
-  }
-}
-*/
-
-/**************************************************************************/
-/*!
-    @file     readMifare.pde
-    @author   Adafruit Industries
-	@license  BSD (see license.txt)
-
-    This example will wait for any ISO14443A card or tag, and
-    depending on the size of the UID will attempt to read from it.
-
-    If the card has a 4-byte UID it is probably a Mifare
-    Classic card, and the following steps are taken:
-
-    - Authenticate block 4 (the first block of Sector 1) using
-      the default KEYA of 0XFF 0XFF 0XFF 0XFF 0XFF 0XFF
-    - If authentication succeeds, we can then read any of the
-      4 blocks in that sector (though only block 4 is read here)
-
-    If the card has a 7-byte UID it is probably a Mifare
-    Ultralight card, and the 4 byte pages can be read directly.
-    Page 4 is read by default since this is the first 'general-
-    purpose' page on the tags.
-
-
-This is an example sketch for the Adafruit PN532 NFC/RFID breakout boards
-This library works with the Adafruit NFC breakout
-  ----> https://www.adafruit.com/products/364
-
-Check out the links above for our tutorials and wiring diagrams
-These chips use SPI or I2C to communicate.
-
-Adafruit invests time and resources providing this open source code,
-please support Adafruit and open-source hardware by purchasing
-products from Adafruit!
-
-*/
-/**************************************************************************/
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <Adafruit_NeoPixel.h>
+
+#define VARIANT "adafruit:samd:adafruit_feather_m4/0"
+
+struct meta {
+  unsigned long pos; // position of the RFID sensor coil
+};
+
+static struct meta meta = {
+  .pos = 0,
+};
+
+// built-in NeoPixel (Feather M4)
+Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
+
+/** Based on sample code (readMifare.pde) generously provided by Adafruit
+ * Software License Agreement (BSD License)
+ * 
+ * Copyright (c) 2012, Adafruit Industries
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holders nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 // If using the breakout with SPI, define the pins for SPI communication.
 #define PN532_SCK  (25)
@@ -96,30 +74,66 @@ Adafruit_PN532 nfc(PN532_SS);
 // Or use hardware Serial:
 //Adafruit_PN532 nfc(PN532_RESET, &Serial1);
 
-
-void setup(void) {
+void setup() {
+  strip.begin();
+  strip.show();
+  strip.setPixelColor(0, 32, 32, 0);
+  strip.show();
   Serial.begin(115200);
-  while (!Serial) delay(10); // for Leonardo/Micro/Zero
+  while (!Serial) delay(10); // the whole point of this board is to transmit RFID data using serial...
 
-  Serial.println("Hello!");
-
+  Serial.println("init: PN53x");
   nfc.begin();
 
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (! versiondata) {
-    Serial.print("Didn't find PN53x board");
+    strip.setPixelColor(0, 255, 0, 0);
+    strip.show();
+    Serial.println("Didn't find PN53x board");
+    Serial.println(" Serror");
     while (1); // halt
   }
-  // Got ok data, print it out!
   Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX);
   Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC);
   Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
 
-  Serial.println("Waiting for an ISO14443A Card ...");
+  Serial.println(" Sready");
+  strip.setPixelColor(0, 32, 32, 32);
+  strip.show();
 }
 
+void loop() {
+  handleSLCP();
+  readRFID();
+}
 
-void loop(void) {
+void handleSLCP() {
+  static char buffer[11];
+  if (Serial.available() == 0)
+    return;
+  int kind = Serial.read();
+  if (kind == 'I') {
+    Serial.println(" Isoyuu-rfid/" VARIANT);
+    int eol = Serial.read();
+    if (eol != '\n') {
+      Serial.println(" Eexpected eol");
+    }
+  } else if (kind == 'J') {
+    int eol = Serial.read();
+    if (eol != '\n') {
+      Serial.println(" Eexpected eol");
+    }
+    Serial.print(" Isoyuu-rfid/" VARIANT ";");
+    Serial.print("J0P");
+    Serial.print(meta.pos);
+    Serial.println();
+  } else {
+    Serial.print(" Eunknown kind ");
+    Serial.println(kind);
+  }
+}
+
+void readRFID() {
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -130,26 +144,30 @@ void loop(void) {
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
   if (success) {
-    // Display some basic information about the card
-    Serial.println("Found an ISO14443A card");
-    Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-    Serial.print("  UID Value: ");
-    nfc.PrintHex(uid, uidLength);
-
-    if (uidLength == 4)
-    {
-      // We probably have a Mifare Classic card ...
-      uint32_t cardid = uid[0];
-      cardid <<= 8;
-      cardid |= uid[1];
-      cardid <<= 8;
-      cardid |= uid[2];
-      cardid <<= 8;
-      cardid |= uid[3];
-      Serial.print("Seems to be a Mifare Classic card #");
-      Serial.println(cardid);
-    }
-    Serial.println("");
+    Serial.print(" Dcard1 L");
+    Serial.print(uidLength, DEC);
+    Serial.print(" V");
+    for (int i = 0; i < 7; i ++)
+      Serial.print(uid[i], HEX);
+    Serial.println();
+    // Serial.println("Found an ISO14443A card");
+    // Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
+    // Serial.print("  UID Value: ");
+    // nfc.PrintHex(uid, uidLength);
+    // if (uidLength == 4)
+    // {
+    //   // We probably have a Mifare Classic card ...
+    //   uint32_t cardid = uid[0];
+    //   cardid <<= 8;
+    //   cardid |= uid[1];
+    //   cardid <<= 8;
+    //   cardid |= uid[2];
+    //   cardid <<= 8;
+    //   cardid |= uid[3];
+    //   Serial.print("Seems to be a Mifare Classic card #");
+    //   Serial.println(cardid);
+    // }
+    // Serial.println("");
   }
 }
 
