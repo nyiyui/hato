@@ -82,6 +82,47 @@ func (_ handlerBreakbeam) HandleConn(a Actor, c *Conn) {
 			})
 		}
 		a.OutputCh <- Diffuse1{Value: v}
+		// TODO: velocity2 hangs
+		/*
+		   23/06/01 08:18:53 connecting to /dev/ttyACM1
+		   /dev/ttyACM0: ready
+		   /dev/ttyACM0: send 1 I
+		   /dev/ttyACM0: recv 21 b' Isoyuu-line-mega-0\r\n'
+		   2023/06/01 08:18:53 handling /dev/ttyACM0 soyuu-line-mega-0/-
+		   /dev/ttyACM1: ready
+		   /dev/ttyACM1: send 1 I
+		   /dev/ttyACM1: recv 32 b' Isoyuu-breakbeam/itsybitsy0/0\r\n'
+		   2023/06/01 08:18:53 handling /dev/ttyACM1 soyuu-breakbeam/itsybitsy0-0
+		   /dev/ttyACM1: send 1 J
+		   /dev/ttyACM1: recv 57 b' Isoyuu-breakbeam/itsybitsy0/0;JAP0 JBP248000 JCP496000\r\n'
+		   2023/06/01 08:18:53 breakbeam: J:  Isoyuu-breakbeam/itsybitsy0/0;JAP0 JBP248000 JCP496000
+		   /dev/ttyACM1: recv 19 b' DA1B1C0T21572396\r\n'
+		   2023/06/01 08:18:59 outputting
+		   2023/06/01 08:18:59 output ok
+		   2023/06/01 08:18:59 w0s [{21572396 true true} {0 false false} {0 false false}]
+		   2023/06/01 08:18:59 w1s [{21572396 true false} {0 false false} {0 false false}]
+		   /dev/ttyACM1: recv 19 b' DA1B0C0T21574178\r\n'
+		   2023/06/01 08:19:00 outputting
+		   2023/06/01 08:19:00 output ok
+		   2023/06/01 08:19:00 w0s [{21574178 true false} {21572396 true true} {0 false false}]
+		   2023/06/01 08:19:00 w1s [{21574178 false false} {21572396 true false} {0 false false}]
+		   2023/06/01 08:19:00 ATT1l w1 attitude(0 248000µm -139.169mm/s -75.15126km/h 21574178 nf)
+		   2023/06/01 08:19:00 vel -139169
+		   2023/06/01 08:19:00 curPos 248000
+		   /dev/ttyACM1: recv 19 b' DA0B0C0T21575394\r\n'
+		   2023/06/01 08:19:02 outputting
+		   2023/06/01 08:19:02 output ok
+		   2023/06/01 08:19:02 w0s [{21575394 false false} {21574178 true false} {21572396 true true}]
+		   2023/06/01 08:19:02 w1equiv {21574178 false false} and {21575394 false false}
+		   2023/06/01 08:19:02 ATT1l w0 attitude(0 0µm -203.947mm/s -110.13138km/h 21575394 nf)
+		   2023/06/01 08:19:02 ATT1l w1 attitude(0 248000µm -139.169mm/s -75.15126km/h 21574178 nf)
+		   2023/06/01 08:19:02 vel -203947
+		   2023/06/01 08:19:02 curPos 0
+		   /dev/ttyACM1: recv 19 b' DA0B0C1T21576967\r\n'
+		   2023/06/01 08:19:03 outputting
+		   /dev/ttyACM1: recv 19 b' DA0B1C1T21578206\r\n'
+		   /dev/ttyACM1: recv 19 b' DA1B1C1T21580509\r\n'
+		*/
 	}
 }
 
@@ -120,58 +161,28 @@ func parse(line string) (values map[string]bool, monotonic int64, err error) {
 
 type velocity2Single struct {
 	Monotonic int64
-	Points    []bool
+	PointA    bool
+	PointB    bool
 }
 
 func (s *velocity2Single) String() string {
-	return fmt.Sprintf("%#v %d", s.Points, s.Monotonic)
+	return fmt.Sprintf("%t %t %d", s.PointA, s.PointB, s.Monotonic)
 }
 
 type velocity2State struct {
-	// History contains previous single point values. Index 0 contains the latest, while the last contains the oldest value.
-	History []velocity2Single
+	// Histories contains histories for each window. A history contains previous single point values. Index 0 contains the latest, while the last contains the oldest value.
+	Histories [][]velocity2Single
 }
 
 func newVelocity2State() *velocity2State {
-	return &velocity2State{
-		History: make([]velocity2Single, 16), // TODO: History slices per window (to have an upper limit on memory) (length was arbitrarily chosen)
-	}
+	return &velocity2State{}
 }
 
-func (s *velocity2State) Shift(single velocity2Single) {
-	for i := len(s.History) - 1; i > 0; i-- {
-		s.History[i] = s.History[i-1]
+func (s *velocity2State) Shift(window int, single velocity2Single) {
+	for i := len(s.Histories[window]) - 1; i > 0; i-- {
+		s.Histories[window][i] = s.Histories[window][i-1]
 	}
-	s.History[0] = single
-}
-
-// GetHistory returns the oldest history entry for index i that has changes (w.r.t. prev entry) to pointA and pointB
-func (s *velocity2State) GetHistory(pointA, pointB, i int) velocity2Single {
-	wh := make([]velocity2Single, 0, 3) // windowed history
-	for i := 0; i < len(s.History)-1; i++ {
-		prev := s.History[i+1]
-		cur := s.History[i]
-		if cur.Points[pointA] == prev.Points[pointA] && cur.Points[pointB] == prev.Points[pointB] {
-			fmt.Printf("%d cur %#v\n", i, cur)
-			fmt.Printf("%d prev %#v\n", i, prev)
-			fmt.Printf("%d continue\n", i)
-			continue
-		}
-		if len(wh) != 0 {
-			last := wh[len(wh)-1]
-			if cur.Points[pointA] == last.Points[pointA] && cur.Points[pointB] == last.Points[pointB] {
-				// make sure it's the oldest only
-				wh[len(wh)-1] = cur
-			} else {
-				wh = append(wh, cur)
-			}
-		} else {
-			wh = append(wh, cur)
-		}
-	}
-	wh = append(wh, s.History[len(s.History)-1])
-	fmt.Printf("wh %#v\n", wh)
-	return wh[i]
+	s.Histories[window][0] = single
 }
 
 func sliceEqual(a, b []bool) bool {
@@ -218,14 +229,13 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 
 	go func() {
 		s := newVelocity2State()
-	ActorLoop:
 		for d := range actor.InputCh {
 			if d.Origin != breakbeam {
 				panic(fmt.Sprintf("unknown origin %s", d.Origin))
 			}
 			now := time.Now()
 			v := d.Value.(ValSeen)
-			if sps == nil {
+			if sps == nil || s.Histories == nil {
 				sps = make([]sensorPoint, 0, len(v.Sensors))
 				for _, sensor := range v.Sensors {
 					sps = append(sps, sensorPoint{
@@ -234,45 +244,53 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 					})
 				}
 				sort.Slice(sps, func(i, j int) bool { return sps[i].ID < sps[i].ID })
+				s.Histories = make([][]velocity2Single, len(sps)-1)
+				for window := 0; window < len(sps)-1; window++ {
+					s.Histories[window] = make([]velocity2Single, 3)
+				}
 			}
-			single := velocity2Single{
-				Monotonic: v.Monotonic,
-				Points:    make([]bool, len(sps)),
-			}
+			points := make([]bool, len(sps))
 			for _, sensor := range v.Sensors {
 				for i, sp := range sps {
 					if sensor.Name == string(sp.ID) {
-						single.Points[i] = sensor.Seen
+						points[i] = sensor.Seen
 					}
 				}
 			}
-			if sliceEqual(s.History[0].Points, single.Points) {
-				// equivalent to before
-				continue ActorLoop
-			}
-			s.Shift(single)
-			log.Printf("s %v", s.History)
 			for window := 0; window < len(sps)-1; window++ {
-				h0 := single
-				h0A := single.Points[window]
-				h0B := single.Points[window+1]
-				h1 := s.History[1]
-				h1A := indexOrZero(s.History[1].Points, window)
-				h1B := indexOrZero(s.History[1].Points, window+1)
-				h2 := s.History[2]
-				h2A := indexOrZero(s.History[2].Points, window)
-				h2B := indexOrZero(s.History[2].Points, window+1)
+				single := velocity2Single{
+					Monotonic: v.Monotonic,
+					PointA:    points[window],
+					PointB:    points[window+1],
+				}
+				if len(s.Histories[0]) != 0 && s.Histories[window][0].PointA == single.PointA && s.Histories[window][0].PointB == single.PointB {
+					// log.Printf("w%dequiv %v and %v", window, s.Histories[window][0], single)
+					// equivalent to before
+					continue
+				}
+				s.Shift(window, single)
+				log.Printf("w%ds %v", window, s.Histories[window])
+			}
+			for window := 0; window < len(sps)-1; window++ {
+				history := s.Histories[window]
+				h0 := history[0]
+				h0A := history[0].PointA
+				h0B := history[0].PointB
+				h1 := history[1]
+				h1A := history[1].PointA
+				h1B := history[1].PointB
+				h2 := history[2]
+				h2A := history[2].PointA
+				h2B := history[2].PointB
 				position := position + sps[window].Point
 				interval := sps[window].Point - sps[window+1].Point
-				log.Printf("pos %v int %v", position, interval)
-				log.Printf("monotonic h0 %v h1 %v h2 %v", h0.Monotonic, h1.Monotonic, h2.Monotonic)
+				// log.Printf("pos %v int %v", position, interval)
+				// log.Printf("monotonic h0 %v h1 %v h2 %v", h0.Monotonic, h1.Monotonic, h2.Monotonic)
 
 				a := ValAttitude{
 					Monotonic: h0.Monotonic,
 					Time:      now,
 				}
-
-				// === Longer-than-interval cars
 
 				//   --> true direction/velocity means A → B
 				//   A B
@@ -281,7 +299,7 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 				if h1A != h1B && h0A == false && h0B == false {
 					a.Front = true
 					dt := h0.Monotonic - h1.Monotonic
-					log.Printf("dt %v", dt)
+					// log.Printf("dt %v", dt)
 					if dt != 0 {
 						if h1A {
 							// train is near pointA now
@@ -298,7 +316,7 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 							a.Position = position + interval
 						}
 						a.Velocity = interval * 1000 / dt
-						log.Printf("att1l %s", a)
+						log.Printf("ATT1l w%d %s", window, a)
 						actor.OutputCh <- Diffuse1{Value: a}
 					}
 				}
@@ -329,47 +347,10 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 							a.Position = position + carsLength
 						}
 						a.Velocity = interval * 1000 / dt
-						log.Printf("att2l %s cars%d pos%d", a, carsLength, a.Position)
+						log.Printf("ATT2l w%d %s cars%d pos%d", window, a, carsLength, a.Position)
 						actor.OutputCh <- Diffuse1{Value: a}
 					}
 				}
-
-				/*
-					// === Shorter-than-interval Cars
-
-					//   A B
-					// 2 o x
-					// 1 o o
-					// 0 x o
-					if h2A != h2B && h1A == true && h1B == true && h0A != h0B {
-						a.Front = true
-						dt := h2.Monotonic - h0.Monotonic
-						if dt != 0 {
-							a.Velocity = interval * 1000 / dt
-							if h0A {
-								// A---B
-								//     <=[
-								//    <=[  // ignored
-								//   <=[   // ignored
-								//  <=[
-								// <=[
-								a.Position = position
-								a.Velocity = -a.Velocity
-							} else {
-								//   A---B
-								// ]=>
-								//  ]=>    // ignored
-								//   ]=>   // ignored
-								//    ]=>
-								//     ]=>
-								a.Position = position + interval
-							}
-							log.Printf("att1s %s", a)
-							actor.OutputCh <- Diffuse1{Value: a}
-						}
-					}
-					// TODO: Shorter-than-interval carsLength
-				*/
 			}
 		}
 	}()

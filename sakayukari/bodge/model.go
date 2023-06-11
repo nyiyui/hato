@@ -64,6 +64,7 @@ func Model(conf ModelConf) Actor {
 			log.Printf("vel %v", state.Velocity)
 			log.Printf("curPos %v", state.GetCurrentPosition(val.Time))
 			a.OutputCh <- Diffuse1{Value: val}
+			// TODO: model freezes when a long train runs
 		}
 	}()
 	go func() {

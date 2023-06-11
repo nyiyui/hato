@@ -31,20 +31,3 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
-
-func TestHistory(t *testing.T) {
-	pointA, pointB := 0, 1
-	s := &velocity2State{
-		History: []velocity2Single{
-			{2, []bool{true, true, true}},
-			{1, []bool{true, false, true}},
-			{0, []bool{true, false, true}},
-		},
-	}
-	if s.GetHistory(pointA, pointB, 0).Monotonic != 2 {
-		t.Fatal("GetHistory 0 failed")
-	}
-	if s.GetHistory(pointA, pointB, 1).Monotonic != 0 {
-		t.Fatal("GetHistory 1 failed")
-	}
-}
