@@ -14,18 +14,18 @@ struct ina219_line ina219_lines[4] = { 0 };
 int ina219_weight = 92;
 
 void ina219_init() {
-    while (!ina2190.begin())
-        Serial.println(" Sina2190 init failed"), delay(1000);
-    // while (!ina2191.begin())
-    //     Serial.println(" Sina2191 init failed"), delay(1000);
-    // while (!ina2192.begin())
-    //     Serial.println(" Sina2192 init failed"), delay(1000);
-    // while (!ina2193.begin())
-    //     Serial.println(" Sina2193 init failed"), delay(1000);
-    // ina2190.setCalibration_32V_1A();
-    // ina2191.setCalibration_32V_1A();
-    // ina2192.setCalibration_32V_1A();
-    // ina2193.setCalibration_32V_1A();
+  while (!ina2190.begin())
+    Serial.println(" Sina2190 init failed"), delay(1000);
+  while (!ina2191.begin())
+    Serial.println(" Sina2191 init failed"), delay(1000);
+  while (!ina2192.begin())
+    Serial.println(" Sina2192 init failed"), delay(1000);
+  while (!ina2193.begin())
+    Serial.println(" Sina2193 init failed"), delay(1000);
+  ina2190.setCalibration_32V_1A();
+  ina2191.setCalibration_32V_1A();
+  ina2192.setCalibration_32V_1A();
+  ina2193.setCalibration_32V_1A();
 }
 
 static const long CLAMP_LIMIT = 300;
@@ -48,9 +48,9 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219) {
 
 void ina219_update() {
   ina219_update_single(0, &ina2190);
-  // ina219_update_single(1, &ina2191);
-  // ina219_update_single(2, &ina2192);
-  // ina219_update_single(3, &ina2193);
+  ina219_update_single(1, &ina2191);
+  ina219_update_single(2, &ina2192);
+  ina219_update_single(3, &ina2193);
 }
 
 #undef INA219_LENGTH
