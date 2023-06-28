@@ -8,7 +8,7 @@ Adafruit_INA219 ina2190;
 Adafruit_INA219 ina2191(0x41);
 Adafruit_INA219 ina2192(0x44);
 Adafruit_INA219 ina2193(0x45);
-struct ina219_line ina219_lines[4] = { 0 };
+struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
 int ina219_weight = 92;
@@ -43,7 +43,10 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219) {
   Serial.print("direct_uA:");
   Serial.print(current * 1000);
   Serial.print(",");
-  ina219_lines[i].weighted_uA = (ina219_lines[i].weighted_uA * ina219_weight + (long) (current * 1000) * (100-ina219_weight))/100;
+  ina219_lines[i].weighted_uA =
+      (ina219_lines[i].weighted_uA * ina219_weight +
+       (long)(current * 1000) * (100 - ina219_weight)) /
+      100;
 }
 
 void ina219_update() {

@@ -1,5 +1,5 @@
-#include <Adafruit_MotorShield.h>
 #include "ina219.h"
+#include <Adafruit_MotorShield.h>
 
 typedef struct Line {
   Adafruit_DCMotor *motor;
@@ -8,10 +8,22 @@ typedef struct Line {
 
 Adafruit_MotorShield shield0 = Adafruit_MotorShield();
 
-static Line lineA = { .motor = shield0.getMotor(1), .direction = true, };
-static Line lineB = { .motor = shield0.getMotor(2), .direction = true, };
-static Line lineC = { .motor = shield0.getMotor(3), .direction = true, };
-static Line lineD = { .motor = shield0.getMotor(4), .direction = true, };
+static Line lineA = {
+    .motor = shield0.getMotor(1),
+    .direction = true,
+};
+static Line lineB = {
+    .motor = shield0.getMotor(2),
+    .direction = true,
+};
+static Line lineC = {
+    .motor = shield0.getMotor(3),
+    .direction = true,
+};
+static Line lineD = {
+    .motor = shield0.getMotor(4),
+    .direction = true,
+};
 
 void Line_setDirection(Line *line, bool direction) {
   line->direction = direction;
@@ -61,10 +73,14 @@ void handleShort(bool isShort) {
   Serial.print(" Pline ");
   Serial.println(line);
   Line *t;
-  if (line == 'A') t = &lineA;
-  else if (line == 'B') t = &lineB;
-  else if (line == 'C') t = &lineC;
-  else if (line == 'D') t = &lineD;
+  if (line == 'A')
+    t = &lineA;
+  else if (line == 'B')
+    t = &lineB;
+  else if (line == 'C')
+    t = &lineC;
+  else if (line == 'D')
+    t = &lineD;
   else {
     Serial.print(" Einvalid line ");
     Serial.println(line);
@@ -96,8 +112,10 @@ void handleShort(bool isShort) {
   Serial.println(".");
 
   Serial.println(" Pstarting");
-  if (direction == 'A') Line_setDirection(t, true);
-  else if (direction == 'B') Line_setDirection(t, false);
+  if (direction == 'A')
+    Line_setDirection(t, true);
+  else if (direction == 'B')
+    Line_setDirection(t, false);
   Line_setPwm(t, speed, brake == 'Y');
   if (isShort) {
     Serial.println(" Pwaiting");
@@ -112,7 +130,8 @@ void handleShort(bool isShort) {
 // handle in/out of soyuu line control protocol
 void handleSLCP() {
   static char buffer[11];
-  if (Serial.available() == 0) return;
+  if (Serial.available() == 0)
+    return;
   int kind = Serial.read();
   if (kind == 'I') {
     Serial.println(" Isoyuu-line-mega-0");
