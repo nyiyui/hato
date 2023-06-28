@@ -33,6 +33,7 @@ type Handler interface {
 var handlers = map[string]Handler{
 	"soyuu-line-mega-0": handlerLine{},
 	"soyuu-breakbeam":   handlerBreakbeam{},
+	"soyuu-rfid":        handlerRFID{},
 }
 
 type Path = string

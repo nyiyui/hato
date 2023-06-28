@@ -283,7 +283,7 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 				h2A := history[2].PointA
 				h2B := history[2].PointB
 				position := position + sps[window].Point
-				interval := sps[window].Point - sps[window+1].Point
+				interval := sps[window+1].Point - sps[window].Point
 				// log.Printf("pos %v int %v", position, interval)
 				// log.Printf("monotonic h0 %v h1 %v h2 %v", h0.Monotonic, h1.Monotonic, h2.Monotonic)
 
@@ -301,6 +301,7 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 					dt := h0.Monotonic - h1.Monotonic
 					// log.Printf("dt %v", dt)
 					if dt != 0 {
+						a.Velocity = interval * 1000 / dt
 						if h1A {
 							// train is near pointA now
 							// A---B
@@ -315,7 +316,6 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 							// ]===>
 							a.Position = position + interval
 						}
-						a.Velocity = interval * 1000 / dt
 						log.Printf("ATT1l w%d %s", window, a)
 						actor.OutputCh <- Diffuse1{Value: a}
 					}
@@ -330,24 +330,27 @@ func Velocity2(breakbeam ActorRef, position int64) Actor {
 					log.Printf("dt2 %v", dt)
 					if dt != 0 {
 						carsLength := interval*(h0.Monotonic-h1.Monotonic)/dt + interval
+						a.Velocity = interval * 1000 / dt
 						if h0A {
-							// train is near pointB now
-							//   A---B
-							//       <
-							//   <====[
-							// <====[
-							a.Position = position + interval - carsLength
-							a.Velocity = -a.Velocity
-						} else {
-							// train is near pointA now
+							// train is near point A + length now
 							// A---B
 							// >
 							// ]====>
 							//  ]====>
+							a.Position = position + interval + carsLength
+							log.Print("h0A")
+						} else {
+							// train is near point B - length now
+							//   A---B
+							//       <
+							//   <====[
+							// <====[
 							a.Position = position + carsLength
+							a.Velocity = -a.Velocity
+							log.Print("!h0A")
 						}
-						a.Velocity = interval * 1000 / dt
 						log.Printf("ATT2l w%d %s cars%d pos%d", window, a, carsLength, a.Position)
+						log.Printf("pos%d interval%d cars%d", position, interval, carsLength)
 						actor.OutputCh <- Diffuse1{Value: a}
 					}
 				}

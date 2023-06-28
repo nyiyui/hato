@@ -55,8 +55,10 @@ func (v ValAttitude) String() string {
 }
 
 type ValSeen struct {
+	Start     time.Time
 	Monotonic int64
 	Sensors   []ValSeenSensor
+	ID        []ValID
 }
 
 type ValSeenSensor struct {
@@ -67,4 +69,8 @@ type ValSeenSensor struct {
 
 func (v ValSeen) String() string {
 	return fmt.Sprintf("seen(%d %#v)", v.Monotonic, v.Sensors)
+}
+
+type ValID struct {
+	RFID []byte
 }

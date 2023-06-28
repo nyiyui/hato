@@ -134,6 +134,8 @@ void handleSLCP() {
 }
 
 void readRFID() {
+  // TODO: consider using this https://forum.arduino.cc/t/nonblocking-rfid-nfc-reads/177587/5
+  static boolean led_type = false;
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -144,30 +146,19 @@ void readRFID() {
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
   if (success) {
-    Serial.print(" Dcard1 L");
+    if (led_type)
+      strip.setPixelColor(0, 0, 0, 32);
+    else
+      strip.setPixelColor(0, 8, 8, 16);
+    strip.show();
+    led_type = !led_type;
+    Serial.print(" DNcard1 L");
     Serial.print(uidLength, DEC);
     Serial.print(" V");
-    for (int i = 0; i < 7; i ++)
-      Serial.print(uid[i], HEX);
+    char buf[7*2+1] = {0};
+    sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5], uid[6]);
+    Serial.print(buf);
     Serial.println();
-    // Serial.println("Found an ISO14443A card");
-    // Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
-    // Serial.print("  UID Value: ");
-    // nfc.PrintHex(uid, uidLength);
-    // if (uidLength == 4)
-    // {
-    //   // We probably have a Mifare Classic card ...
-    //   uint32_t cardid = uid[0];
-    //   cardid <<= 8;
-    //   cardid |= uid[1];
-    //   cardid <<= 8;
-    //   cardid |= uid[2];
-    //   cardid <<= 8;
-    //   cardid |= uid[3];
-    //   Serial.print("Seems to be a Mifare Classic card #");
-    //   Serial.println(cardid);
-    // }
-    // Serial.println("");
   }
 }
 
