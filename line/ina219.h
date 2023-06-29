@@ -11,7 +11,8 @@ Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
-int ina219_weight = 92;
+int ina219_weight = 86;
+float ina219_elapsed_weight = 1.0;
 
 void ina219_init() {
   while (!ina2190.begin())
@@ -38,22 +39,28 @@ static long clamp(long a) {
   return a;
 }
 
-static void ina219_update_single(int i, Adafruit_INA219 *ina219) {
+static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
   float current = ina219->getCurrent_mA();
-  Serial.print("direct_uA:");
-  Serial.print(current * 1000);
-  Serial.print(",");
+#  ifdef DEBUG
+  if (i == 0) {
+    Serial.print("direct_uA:");
+    Serial.print(current * 1000);
+    Serial.print(",");
+  }
+#  endif
+  int weight = ina219_weight + (int) (ina219_elapsed_weight * (float) elapsed);
+  // TODO: ina219 moving average is highly affected my timing
   ina219_lines[i].weighted_uA =
-      (ina219_lines[i].weighted_uA * ina219_weight +
-       (long)(current * 1000) * (100 - ina219_weight)) /
+      (ina219_lines[i].weighted_uA * weight +
+       (long)(current * 1000) * (100 - weight)) /
       100;
 }
 
-void ina219_update() {
-  ina219_update_single(0, &ina2190);
-  ina219_update_single(1, &ina2191);
-  ina219_update_single(2, &ina2192);
-  ina219_update_single(3, &ina2193);
+void ina219_update(int elapsed) {
+  ina219_update_single(0, &ina2190, elapsed);
+  ina219_update_single(1, &ina2191, elapsed);
+  ina219_update_single(2, &ina2192, elapsed);
+  ina219_update_single(3, &ina2193, elapsed);
 }
 
 #undef INA219_LENGTH

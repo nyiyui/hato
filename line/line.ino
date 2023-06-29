@@ -1,3 +1,4 @@
+//#define DEBUG
 #include "ina219.h"
 #include <Adafruit_MotorShield.h>
 
@@ -53,13 +54,28 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long next = 0;
-  unsigned long now = millis();
-  if (next <= now) {
-    ina219_update();
-    next = now + 5;
-    Serial.print("weighted0_uA:");
+  static unsigned long prev = 0;
+  unsigned long now = micros();
+  if (prev + 3000 <= now) {
+    ina219_update((now - prev)/1000);
+#    ifdef DEBUG
+    Serial.print("elapsed:");
+    Serial.print(now-prev);
+    Serial.print(",weighted0_uA:");
     Serial.println(ina219_lines[0].weighted_uA);
+#    endif
+    Serial.print(" D");
+    Serial.print("A");
+    Serial.print(ina219_lines[0].weighted_uA);
+    Serial.print("B");
+    Serial.print(ina219_lines[1].weighted_uA);
+    Serial.print("C");
+    Serial.print(ina219_lines[2].weighted_uA);
+    Serial.print("D");
+    Serial.print(ina219_lines[3].weighted_uA);
+    Serial.print("T");
+    Serial.println(now);
+    prev = now;
   }
   handleSLCP();
 }
@@ -151,6 +167,17 @@ void handleSLCP() {
     ina219_weight = atoi(buffer);
     Serial.print("ina219_weight set to ");
     Serial.print(ina219_weight);
+    Serial.println(". Note: this is only saved to RAM.");
+  } else if (kind == 'E') {
+    buffer[0] = Serial.read();
+    buffer[1] = Serial.read();
+    buffer[2] = Serial.read();
+    buffer[3] = Serial.read();
+    buffer[4] = Serial.read();
+    buffer[5] = '\0';
+    ina219_elapsed_weight = atof(buffer);
+    Serial.print("ina219_elapsed_weight set to ");
+    Serial.print(ina219_elapsed_weight);
     Serial.println(". Note: this is only saved to RAM.");
   } else {
     Serial.print(" Eunknown kind ");
