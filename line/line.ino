@@ -54,6 +54,7 @@ void setup() {
 }
 
 void loop() {
+  static unsigned long lastAbsTime = 0;
   static unsigned long prev = 0;
   unsigned long now = micros();
   if (prev + 3000 <= now) {
@@ -73,8 +74,14 @@ void loop() {
     Serial.print(ina219_lines[2].weighted_uA);
     Serial.print("D");
     Serial.print(ina219_lines[3].weighted_uA);
-    Serial.print("T");
-    Serial.println(now);
+    if (now - lastAbsTime > 1000000) {
+      Serial.print("T");
+      Serial.println(now);
+      lastAbsTime = now;
+    } else {
+      Serial.print("t");
+      Serial.println(now-prev);
+    }
     prev = now;
   }
   handleSLCP();
