@@ -60,29 +60,24 @@ void loop() {
   static bool prevC = false;
   static bool prevD = false;
   unsigned long now = micros();
-#    ifdef DEBUG
-  static int show_debug = 0;
-#    endif
   if (prev + 3000 <= now) {
     ina219_update((now - prev)/1000);
 #    ifdef DEBUG
-    if (show_debug == 0) {
-      Serial.print("elapsed:");
-      Serial.print(now-prev);
-      Serial.print(",A:");
-      Serial.print(ina219_lines[0].weighted_uA);
-      Serial.print(",B:");
-      Serial.print(ina219_lines[1].weighted_uA);
-      Serial.print(",C:");
-      Serial.print(ina219_lines[2].weighted_uA);
-      Serial.print(",D:");
-      Serial.print(ina219_lines[3].weighted_uA);
-      Serial.print(",threshold:");
-      Serial.print(ina219_threshold);
-      Serial.println();
-    }
-    show_debug ++;
-    show_debug % 10;
+    Serial.print("elapsed:");
+    Serial.print(now-prev);
+#      define show(i, letter) \
+    Serial.print(",w" #letter ":"); Serial.print(ina219_lines[i].weighted_uA); \
+    Serial.print(",d" #letter ":"); Serial.print(ina219_lines[i].direct_uA);
+    show(0, A)
+    show(1, B)
+    show(2, C)
+    show(3, D)
+#      undef show
+    Serial.print(",thresholdPositive:");
+    Serial.print(ina219_threshold);
+    Serial.print(",thresholdNegative:");
+    Serial.print(-ina219_threshold);
+    Serial.println();
 #    endif
     bool nowA = abs(ina219_lines[0].weighted_uA) > ina219_threshold;
     bool nowB = abs(ina219_lines[1].weighted_uA) > ina219_threshold;
