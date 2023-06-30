@@ -2,6 +2,7 @@ package conn
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -73,4 +74,26 @@ func (v ValSeen) String() string {
 
 type ValID struct {
 	RFID []byte
+}
+
+type ValCurrent struct {
+	Values []ValCurrentInner
+}
+
+func (v ValCurrent) String() string {
+	b := new(strings.Builder)
+	fmt.Fprint(b, "current")
+	for _, val := range v.Values {
+		flow := '0'
+		if val.Flow {
+			flow = '1'
+		}
+		fmt.Fprintf(b, " %s%c", val.Line, flow)
+	}
+	return b.String()
+}
+
+type ValCurrentInner struct {
+	Line LineName
+	Flow bool
 }
