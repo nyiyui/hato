@@ -11,7 +11,7 @@ Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
-int ina219_weight = 90;
+int ina219_weight = 92;
 float ina219_elapsed_weight = 1.0;
 int ina219_threshold = 2000; // measured on E233-3016 tail lamp
 

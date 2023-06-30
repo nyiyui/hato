@@ -60,20 +60,29 @@ void loop() {
   static bool prevC = false;
   static bool prevD = false;
   unsigned long now = micros();
+#    ifdef DEBUG
+  static int show_debug = 0;
+#    endif
   if (prev + 3000 <= now) {
     ina219_update((now - prev)/1000);
 #    ifdef DEBUG
-    Serial.print("elapsed:");
-    Serial.print(now-prev);
-    Serial.print(",A:");
-    Serial.print(ina219_lines[0].weighted_uA);
-    Serial.print(",B:");
-    Serial.print(ina219_lines[1].weighted_uA);
-    Serial.print(",C:");
-    Serial.print(ina219_lines[2].weighted_uA);
-    Serial.print(",D:");
-    Serial.print(ina219_lines[3].weighted_uA);
-    Serial.println();
+    if (show_debug == 0) {
+      Serial.print("elapsed:");
+      Serial.print(now-prev);
+      Serial.print(",A:");
+      Serial.print(ina219_lines[0].weighted_uA);
+      Serial.print(",B:");
+      Serial.print(ina219_lines[1].weighted_uA);
+      Serial.print(",C:");
+      Serial.print(ina219_lines[2].weighted_uA);
+      Serial.print(",D:");
+      Serial.print(ina219_lines[3].weighted_uA);
+      Serial.print(",threshold:");
+      Serial.print(ina219_threshold);
+      Serial.println();
+    }
+    show_debug ++;
+    show_debug % 10;
 #    endif
     bool nowA = abs(ina219_lines[0].weighted_uA) > ina219_threshold;
     bool nowB = abs(ina219_lines[1].weighted_uA) > ina219_threshold;
@@ -201,6 +210,15 @@ void handleSLCP() {
     ina219_elapsed_weight = atof(buffer);
     Serial.print("ina219_elapsed_weight set to ");
     Serial.print(ina219_elapsed_weight);
+    Serial.println(". Note: this is only saved to RAM.");
+  } else if (kind == 'F') {
+    buffer[0] = Serial.read();
+    buffer[1] = Serial.read();
+    buffer[2] = Serial.read();
+    buffer[3] = '\0';
+    ina219_threshold = atoi(buffer);
+    Serial.print("ina219_threshold set to ");
+    Serial.print(ina219_threshold);
     Serial.println(". Note: this is only saved to RAM.");
   } else {
     Serial.print(" Eunknown kind ");
