@@ -1,11 +1,7 @@
 #include <Adafruit_INA219.h>
 
 struct ina219_line {
-  int elapsed;
-  long cleaned_uA;
-#  ifdef DEBUG
-  long direct_uA;
-#  endif
+  long weighted_uA;
 };
 
 Adafruit_INA219 ina2190;
@@ -15,7 +11,8 @@ Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
-int ina219_lag = 30000;
+int ina219_weight = 92;
+float ina219_elapsed_weight = 1.0;
 int ina219_threshold = 2000; // measured on E233-3016 tail lamp
 
 void ina219_init() {
@@ -44,19 +41,20 @@ static long clamp(long a) {
 }
 
 static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
-  // Assume spikes are from PWM, and as all we want to know is if there is a load or not, we can ignore the not-in-duty-cycle parts (non-spikes).
-  // Assume spikes' max values are representative of the load. Also not detrimental if it's overestimating.
-#  define line2 ina219_lines[i];
-  ina219_line line = ina219_lines[i];
-  line2->elapsed += elapsed;
-  long current_uA;
-  float current_mA = ina219->getCurrent_mA();
-  current_uA = current_mA * 1000;
-  line2->direct_uA = current_uA;
-  if (line2->elapsed > ina219_lag || line.cleaned_uA < current_uA) {
-    line2->cleaned_uA = current_uA;
-    line2->elapsed = 0;
+  float current = ina219->getCurrent_mA();
+#  ifdef DEBUG
+  if (i == 0) {
+    Serial.print("direct_uA:");
+    Serial.print(current * 1000);
+    Serial.print(",");
   }
+#  endif
+  int weight = ina219_weight + (int) (ina219_elapsed_weight * (float) elapsed);
+  // TODO: ina219 moving average is highly affected my timing
+  ina219_lines[i].weighted_uA =
+      (ina219_lines[i].weighted_uA * weight +
+       (long)(current * 1000) * (100 - weight)) /
+      100;
 }
 
 void ina219_update(int elapsed) {
