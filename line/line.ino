@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 #include "ina219.h"
 #include <Adafruit_MotorShield.h>
 
@@ -54,35 +54,51 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long lastAbsTime = 0;
   static unsigned long prev = 0;
+  static bool prevA = false;
+  static bool prevB = false;
+  static bool prevC = false;
+  static bool prevD = false;
   unsigned long now = micros();
   if (prev + 3000 <= now) {
     ina219_update((now - prev)/1000);
 #    ifdef DEBUG
     Serial.print("elapsed:");
     Serial.print(now-prev);
-    Serial.print(",weighted0_uA:");
-    Serial.println(ina219_lines[0].weighted_uA);
-#    endif
-    Serial.print(" D");
-    Serial.print("A");
+    Serial.print(",A:");
     Serial.print(ina219_lines[0].weighted_uA);
-    Serial.print("B");
+    Serial.print(",B:");
     Serial.print(ina219_lines[1].weighted_uA);
-    Serial.print("C");
+    Serial.print(",C:");
     Serial.print(ina219_lines[2].weighted_uA);
-    Serial.print("D");
+    Serial.print(",D:");
     Serial.print(ina219_lines[3].weighted_uA);
-    if (now - lastAbsTime > 1000000) {
+    Serial.println();
+#    endif
+    bool nowA = abs(ina219_lines[0].weighted_uA) > ina219_threshold;
+    bool nowB = abs(ina219_lines[1].weighted_uA) > ina219_threshold;
+    bool nowC = abs(ina219_lines[2].weighted_uA) > ina219_threshold;
+    bool nowD = abs(ina219_lines[3].weighted_uA) > ina219_threshold;
+#    define same(letter) now ## letter == prev ## letter
+    if (!(same(A) && same(B) && same(C) && same(D))) {
+#    undef same
+      Serial.print(" D");
+      Serial.print("A");
+      Serial.print(nowA);
+      Serial.print("B");
+      Serial.print(nowB);
+      Serial.print("C");
+      Serial.print(nowC);
+      Serial.print("D");
+      Serial.print(nowD);
       Serial.print("T");
       Serial.println(now);
-      lastAbsTime = now;
-    } else {
-      Serial.print("t");
-      Serial.println(now-prev);
     }
     prev = now;
+    prevA = nowA;
+    prevB = nowB;
+    prevC = nowC;
+    prevD = nowD;
   }
   handleSLCP();
 }
