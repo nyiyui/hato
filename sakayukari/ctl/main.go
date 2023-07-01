@@ -10,7 +10,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/bodge"
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/runtime"
-	"nyiyui.ca/hato/sakayukari/ui"
+	"nyiyui.ca/hato/sakayukari/tal"
 )
 
 func Main() error {
@@ -46,7 +46,12 @@ func Main() error {
 	}))
 	// g.Actors = append(g.Actors, Control(ActorRef{Index: 0}, ActorRef{Index: 2}, "A", "C", "D"))
 	// g.Actors = append(g.Actors, bodge.Timing(ActorRef{Index: 2}, ActorRef{Index: 4}))
-	g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
+	// g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
+	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
+		Lines: []tal.LineConf{
+			{Actor: ActorRef{Index: 2}, Conn: conn.Id{Type: "soyuu-line-mega-0"}},
+		},
+	}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

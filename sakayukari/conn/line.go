@@ -20,54 +20,10 @@ type lineState struct {
 func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
 	state := new(lineState)
-	for {
-		select {
-		case v := <-a.InputCh:
-			switch req := v.Value.(type) {
-			case ReqLine:
-				var err error
-				func() {
-					state.fileLock.Lock()
-					defer state.fileLock.Unlock()
-					_, err = fmt.Fprintf(c.F, "%s\n", req.String())
-				}()
-				if err != nil {
-					log.Printf("commit %s: %s", req, err)
-				}
-			case ReqSwitch:
-				afterCh := time.After(req.Timeout)
-				go func() {
-					<-afterCh
-					var err error
-					func() {
-						state.fileLock.Lock()
-						defer state.fileLock.Unlock()
-						_, err = fmt.Fprintf(c.F, "%s\n", ReqLine{
-							Line:  req.Line,
-							Brake: req.BrakeAfter,
-							Power: 0,
-						}.String())
-					}()
-					if err != nil {
-						log.Printf("commit(timeout) %s: %s", req, err)
-					}
-				}()
-				req2 := ReqLine{
-					Line:      req.Line,
-					Direction: req.Direction,
-					Power:     req.Power,
-				}
-				var err error
-				func() {
-					state.fileLock.Lock()
-					defer state.fileLock.Unlock()
-					_, err = fmt.Fprintf(c.F, "%s\n", req2.String())
-				}()
-				if err != nil {
-					log.Printf("commit(switch) %s: %s", req, err)
-				}
-			}
-		default:
+	go func() {
+		for {
+			// NOTE: this may be blocking HandleConn from receiving more stuff
+			// TODO: make this a diff goroutine -> done?
 			lineRaw, err := reader.ReadString('\n')
 			if err != nil {
 				log.Printf("%s: read line: %s", c.Path, err)
@@ -93,6 +49,55 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 			}
 			a.OutputCh <- Diffuse1{Value: v}
 		}
+	}()
+	for v := range a.InputCh {
+		switch req := v.Value.(type) {
+		case ReqLine:
+			log.Printf("ReqLine %s", req)
+			var err error
+			func() {
+				state.fileLock.Lock()
+				defer state.fileLock.Unlock()
+				_, err = fmt.Fprintf(c.F, "%s\n", req.String())
+			}()
+			if err != nil {
+				log.Printf("commit %s: %s", req, err)
+			}
+			log.Printf("ReqLineDone %s", req)
+		case ReqSwitch:
+			afterCh := time.After(req.Timeout)
+			go func() {
+				<-afterCh
+				var err error
+				func() {
+					state.fileLock.Lock()
+					defer state.fileLock.Unlock()
+					_, err = fmt.Fprintf(c.F, "%s\n", ReqLine{
+						Line:  req.Line,
+						Brake: req.BrakeAfter,
+						Power: 0,
+					}.String())
+				}()
+				if err != nil {
+					log.Printf("commit(timeout) %s: %s", req, err)
+				}
+			}()
+			req2 := ReqLine{
+				Line:      req.Line,
+				Direction: req.Direction,
+				Power:     req.Power,
+			}
+			var err error
+			func() {
+				state.fileLock.Lock()
+				defer state.fileLock.Unlock()
+				_, err = fmt.Fprintf(c.F, "%s\n", req2.String())
+			}()
+			if err != nil {
+				log.Printf("commit(switch) %s: %s", req, err)
+			}
+		}
+		log.Print("WAITING")
 	}
 }
 

@@ -76,6 +76,16 @@ func (r ReqSwitch) String() string {
 	return fmt.Sprintf("switch(%s %s %d %s)", r.Line, opts, r.Power, r.Timeout)
 }
 
+func AbsClampPower(power int) uint8 {
+	if power < 0 {
+		power *= -1
+	}
+	if power > 255 {
+		power = 255
+	}
+	return uint8(power)
+}
+
 type ReqLine struct {
 	Line      LineName
 	Brake     bool

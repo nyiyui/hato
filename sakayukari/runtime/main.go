@@ -74,6 +74,12 @@ func (i *Instance) Diffuse() error {
 		if d.Origin == (ActorRef{}) {
 			// self if blank
 			d.Origin = ActorRef{Index: caseI}
+			// only do dependencies if the actor itself publishes a new value; if the actor sends it to a different actor, that actor can decide to publichs a new value or not
+			// log.Printf("%s dependsOn %#v", d.Origin, dependsOn[d.Origin.Index])
+			for _, j := range dependsOn[d.Origin.Index] {
+				dep := i.g.Actors[j]
+				dep.InputCh <- d
+			}
 		} else {
 			// if not self, this Diffuse1 is a set to another actor
 			state[d.Origin.Index] = d.Value
@@ -81,13 +87,11 @@ func (i *Instance) Diffuse() error {
 			if !origin.Type.Input {
 				panic(fmt.Sprintf("input to non-input actor %s %s", d.Origin, origin.Comment))
 			}
+			//log.Printf("send to %s: %s", d.Origin, d)
 			origin.InputCh <- d
+			//log.Printf("sent to %s: %s", d.Origin, d)
 		}
-		// log.Printf("%s dependsOn %#v", d.Origin, dependsOn[d.Origin.Index])
-		for _, j := range dependsOn[d.Origin.Index] {
-			dep := i.g.Actors[j]
-			dep.InputCh <- d
-		}
+		//log.Print("done this loop")
 		// TODO: handle hanging actors
 	}
 }

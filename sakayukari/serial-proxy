@@ -10,7 +10,7 @@ with serial.Serial(path, timeout=1) as f:
         if f.in_waiting:
             l = f.readline()
             if not l.startswith((b'1 ', b' S1')):
-                #print(f'{path}: recv {len(l)} {l}', file=sys.stderr)
+                print(f'{path}: recv {len(l)} {l}', file=sys.stderr)
                 pass
             print(l.decode('utf-8'))
             sys.stdout.flush()
