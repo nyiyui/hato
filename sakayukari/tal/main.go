@@ -36,13 +36,12 @@ type train struct {
 	power int
 
 	// dynamic fields
-	current LineID
-	// TODO: multiple current fields for lines still taken (by the trailing cars)
-	next LineID
+	currents []LineID
+	next     LineID
 }
 
 func (t *train) String() string {
-	return fmt.Sprintf("power%d cur%s next%s", t.power, t.current, t.next)
+	return fmt.Sprintf("power%d cur%s next%s", t.power, t.currents, t.next)
 }
 
 type line struct {
@@ -78,9 +77,9 @@ func Guide(conf GuideConf) Actor {
 		lines:  make([]line, 0),
 	}
 	g.trains = append(g.trains, train{
-		power:   70,
-		current: LineID{Conn: conf.Lines[0].Conn, Line: "A"},
-		next:    LineID{Conn: conf.Lines[0].Conn, Line: "B"},
+		power:    70,
+		currents: []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "A"}},
+		next:     LineID{Conn: conf.Lines[0].Conn, Line: "B"},
 	})
 	for _, lc := range conf.Lines {
 		lines := []string{"A", "B", "C", "D"}
@@ -126,7 +125,9 @@ func (g *guide) next(t train, li LineID) (li2 LineID, exists bool, err error) {
 func (g *guide) single() {
 	for ti, t := range g.trains {
 		log.Printf("train %d: %s", ti, &t)
-		g.apply(t.current, t.power)
+		for _, cur := range t.currents {
+			g.apply(cur, t.power)
+		}
 		g.apply(t.next, t.power)
 	}
 	for diffuse := range g.actor.InputCh {
@@ -148,39 +149,88 @@ func (g *guide) single() {
 				log.Print("diff conn")
 				continue
 			}
+			removeCurrents := make([]LineID, 0, len(t.currents))
+			for _, inner := range cur.Values {
+				for _, cur := range t.currents {
+					if inner.Line == cur.Line && !inner.Flow {
+						removeCurrents = append(removeCurrents, cur)
+					}
+				}
+			}
+			for _, cur := range removeCurrents {
+				g.unlock(cur)
+				g.apply(cur, 0)
+			}
+			newCurrents := make([]LineID, len(t.currents))
+			for i, cur := range t.currents {
+				newCurrents[i] = cur
+			}
+			for _, inner := range cur.Values {
+				for _, cur := range t.currents {
+					if inner.Line == cur.Line && inner.Flow {
+						newCurrents = append(newCurrents, cur)
+					}
+				}
+			}
+			t.currents = newCurrents
 			for _, inner := range cur.Values {
 				if inner.Line == t.next.Line && inner.Flow {
-					log.Printf("train: next")
-					g.unlock(t.current)
-					g.apply(t.current, 0)
-					g.lock(t.next, ti)
-					newCurrent, exists, err := g.next(t, t.current)
+					log.Printf("train: next: %s", &t)
+					t.currents = append(t.currents, t.next)
+					err := g.recalcNext(&t)
 					if err != nil {
 						log.Printf("train %d: %s", ti, err)
 						panic("not implemented yet")
 					}
-					if !exists {
-						panic("what‽")
-					}
-					newNext, exists, err := g.next(t, t.next)
-					if err != nil {
-						log.Printf("train %d: %s", ti, err)
-						panic("not implemented yet")
-					}
-					if !exists {
-						t.power = 0
-					}
-					t.current = newCurrent
-					t.next = newNext
-					g.apply(t.current, t.power)
-					if t.next != (LineID{}) {
-						g.apply(t.next, t.power)
+					ok := g.lock(t.next, ti)
+					if !ok {
+						panic("lock failed")
 					}
 				}
 				// TODO: locking mechanism (not for now because we only have 1 train)
 			}
+			if t.next.Line == "D" {
+				log.Print("aiya")
+				err := g.setPower(&t, -40)
+				if err != nil {
+					panic(err)
+				}
+			}
+			for _, cur := range t.currents {
+				g.apply(cur, t.power)
+			}
+			if t.next != (LineID{}) {
+				g.apply(t.next, t.power)
+			}
 		}
 	}
+}
+
+func reverse[S ~[]E, E any](s S) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
+func (g *guide) setPower(t *train, power int) error {
+	// make sure we don't leave train in a bad state
+	if power == 0 {
+	} else if (t.power > 0) != (power > 0) {
+		reverse(t.currents)
+	}
+	t.power = power
+	return g.recalcNext(t)
+}
+
+func (g *guide) recalcNext(t *train) error {
+	newNext, exists, err := g.next(*t, t.currents[len(t.currents)-1])
+	if err != nil {
+		return err
+	}
+	if exists {
+		t.next = newNext
+	}
+	return nil
 }
 
 // Returns -1 if nonexistent.
@@ -193,11 +243,18 @@ func (g *guide) findLine(li LineID) int {
 	return -1
 }
 
-func (g *guide) lock(li LineID, ti int) {
-	g.lines[g.findLine(li)].TakenBy = ti
+func (g *guide) lock(li LineID, ti int) (ok bool) {
+	i := g.findLine(li)
+	if g.lines[i].TakenBy != -1 && g.lines[i].TakenBy != ti {
+		return false
+	}
+	log.Printf("LOCK %s", li)
+	g.lines[i].TakenBy = ti
+	return true
 }
 
 func (g *guide) unlock(li LineID) {
+	log.Printf("UNLOCK %s", li)
 	g.lines[g.findLine(li)].TakenBy = -1
 }
 
@@ -207,7 +264,7 @@ func (g *guide) apply(li LineID, power int) {
 		Direction: power > 0,
 		Power:     conn.AbsClampPower(power),
 	}
-	log.Printf("apply %s %s", li, rl)
+	// log.Printf("apply %s %s", li, rl)
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.lines[g.findLine(li)].Actor,
 		Value:  rl,
