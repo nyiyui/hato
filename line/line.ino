@@ -1,4 +1,4 @@
-//#define DEBUG
+#define DEBUG
 #include "ina219.h"
 #include <Adafruit_MotorShield.h>
 
@@ -8,6 +8,7 @@ typedef struct Line {
 } line;
 
 Adafruit_MotorShield shield0 = Adafruit_MotorShield();
+bool debug = false;
 
 static Line lineA = {
     .motor = shield0.getMotor(1),
@@ -61,31 +62,32 @@ void loop() {
   static bool prevD = false;
   unsigned long now = micros();
   if (prev + 3000 <= now) {
-    ina219_update((now - prev)/1000);
-#    ifdef DEBUG
-    Serial.print("elapsed:");
-    Serial.print(now-prev);
-#      define show(i, letter) \
-    Serial.print(",w" #letter ":"); Serial.print(ina219_lines[i].weighted_uA); \
-    Serial.print(",d" #letter ":"); Serial.print(ina219_lines[i].direct_uA);
-    show(0, A)
-    show(1, B)
-    show(2, C)
-    show(3, D)
-#      undef show
-    Serial.print(",thresholdPositive:");
-    Serial.print(ina219_threshold);
-    Serial.print(",thresholdNegative:");
-    Serial.print(-ina219_threshold);
-    Serial.println();
-#    endif
+    ina219_update((now - prev) / 1000);
+#ifdef DEBUG
+    if (debug) {
+      Serial.print("elapsed:");
+      Serial.print(now - prev);
+#define show(i, letter)                                                        \
+  Serial.print(",w" #letter ":");                                              \
+  Serial.print(ina219_lines[i].weighted_uA);                                   \
+  Serial.print(",d" #letter ":");                                              \
+  Serial.print(ina219_lines[i].direct_uA);
+      show(0, A) show(1, B) show(2, C) show(3, D)
+#undef show
+          Serial.print(",thresholdPositive:");
+      Serial.print(ina219_threshold);
+      Serial.print(",thresholdNegative:");
+      Serial.print(-ina219_threshold);
+      Serial.println();
+    }
+#endif
     bool nowA = abs(ina219_lines[0].weighted_uA) > ina219_threshold;
     bool nowB = abs(ina219_lines[1].weighted_uA) > ina219_threshold;
     bool nowC = abs(ina219_lines[2].weighted_uA) > ina219_threshold;
     bool nowD = abs(ina219_lines[3].weighted_uA) > ina219_threshold;
-#    define same(letter) now ## letter == prev ## letter
+#define same(letter) now##letter == prev##letter
     if (!(same(A) && same(B) && same(C) && same(D))) {
-#    undef same
+#undef same
       Serial.print(" D");
       Serial.print("A");
       Serial.print(nowA);
@@ -111,10 +113,9 @@ void handleShort(bool isShort) {
   static char digitBuffer[4];
   Serial.println(" Psc");
   // TODO: error checking
-  // Serial.readBytesUntil('\n', buffer, 10);
   int line = Serial.read();
-  Serial.print(" Pline ");
-  Serial.println(line);
+  Serial.print(" PL");
+  Serial.print(line);
   Line *t;
   if (line == 'A')
     t = &lineA;
@@ -146,11 +147,11 @@ void handleShort(bool isShort) {
     Serial.println(" Eexpected eol");
     return;
   }
-  Serial.print(" Pact dir");
+  Serial.print(" D");
   Serial.print(direction);
-  Serial.print(" brk");
+  Serial.print(" B");
   Serial.print(brake);
-  Serial.print(" spd");
+  Serial.print(" S");
   Serial.print(speed);
   Serial.println(".");
 
@@ -215,6 +216,8 @@ void handleSLCP() {
     Serial.print("ina219_threshold set to ");
     Serial.print(ina219_threshold);
     Serial.println(". Note: this is only saved to RAM.");
+  } else if (kind == 'G') {
+    debug = !debug;
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);
