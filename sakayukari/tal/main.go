@@ -144,38 +144,37 @@ func (g *guide) single() {
 		}
 		cur := diffuse.Value.(conn.ValCurrent)
 		for ti, t := range g.trains {
-			log.Printf("try train %d", ti)
 			if t.next.Conn != ci {
-				log.Print("diff conn")
 				continue
 			}
-			removeCurrents := make([]LineID, 0, len(t.currents))
-			for _, inner := range cur.Values {
-				for _, cur := range t.currents {
-					if inner.Line == cur.Line && !inner.Flow {
-						removeCurrents = append(removeCurrents, cur)
+			{
+				removeCurrents := make([]LineID, 0, len(t.currents))
+				for _, inner := range cur.Values {
+					for _, cur := range t.currents {
+						if inner.Line == cur.Line && !inner.Flow {
+							removeCurrents = append(removeCurrents, cur)
+						}
 					}
 				}
-			}
-			for _, cur := range removeCurrents {
-				g.unlock(cur)
-				g.apply(cur, 0)
-			}
-			newCurrents := make([]LineID, len(t.currents))
-			for i, cur := range t.currents {
-				newCurrents[i] = cur
-			}
-			for _, inner := range cur.Values {
-				for _, cur := range t.currents {
-					if inner.Line == cur.Line && inner.Flow {
-						newCurrents = append(newCurrents, cur)
-					}
+				for _, cur := range removeCurrents {
+					g.unlock(cur)
+					g.apply(cur, 0)
 				}
 			}
-			t.currents = newCurrents
+			{
+				keepCurrents := make([]LineID, 0, len(t.currents))
+				for _, inner := range cur.Values {
+					for _, cur := range t.currents {
+						if inner.Line == cur.Line && inner.Flow {
+							keepCurrents = append(keepCurrents, cur)
+						}
+					}
+				}
+				t.currents = keepCurrents
+			}
+		NextLoop:
 			for _, inner := range cur.Values {
 				if inner.Line == t.next.Line && inner.Flow {
-					log.Printf("train: next: %s", &t)
 					t.currents = append(t.currents, t.next)
 					err := g.recalcNext(&t)
 					if err != nil {
@@ -184,24 +183,32 @@ func (g *guide) single() {
 					}
 					ok := g.lock(t.next, ti)
 					if !ok {
-						panic("lock failed")
+						panic("lock next failed")
 					}
-				}
-				// TODO: locking mechanism (not for now because we only have 1 train)
-			}
-			if t.next.Line == "D" {
-				log.Print("aiya")
-				err := g.setPower(&t, -40)
-				if err != nil {
-					panic(err)
+					log.Printf("train: postnext: %s", &t)
+					break NextLoop
 				}
 			}
 			for _, cur := range t.currents {
+				if cur.Line == "D" {
+					log.Print("aiya")
+					err := g.setPower(&t, 0)
+					if err != nil {
+						panic(err)
+					}
+				}
+			}
+			log.Print("apply", t.currents)
+			for _, cur := range t.currents {
 				g.apply(cur, t.power)
+				log.Print("apply2", cur, t.power)
 			}
 			if t.next != (LineID{}) {
 				g.apply(t.next, t.power)
 			}
+			log.Print("apply3", t.currents)
+			log.Printf("train: postshow: %s", &t)
+			g.trains[ti] = t
 		}
 	}
 }
@@ -215,6 +222,9 @@ func reverse[S ~[]E, E any](s S) {
 func (g *guide) setPower(t *train, power int) error {
 	// make sure we don't leave train in a bad state
 	if power == 0 {
+		t.power = power
+		t.next = LineID{}
+		return nil
 	} else if (t.power > 0) != (power > 0) {
 		reverse(t.currents)
 	}
