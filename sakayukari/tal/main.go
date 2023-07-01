@@ -37,7 +37,8 @@ type train struct {
 
 	// dynamic fields
 	current LineID
-	next    LineID
+	// TODO: multiple current fields for lines still taken (by the trailing cars)
+	next LineID
 }
 
 func (t *train) String() string {
@@ -77,7 +78,7 @@ func Guide(conf GuideConf) Actor {
 		lines:  make([]line, 0),
 	}
 	g.trains = append(g.trains, train{
-		power:   40,
+		power:   70,
 		current: LineID{Conn: conf.Lines[0].Conn, Line: "A"},
 		next:    LineID{Conn: conf.Lines[0].Conn, Line: "B"},
 	})
@@ -142,14 +143,16 @@ func (g *guide) single() {
 		}
 		cur := diffuse.Value.(conn.ValCurrent)
 		for ti, t := range g.trains {
+			log.Printf("try train %d", ti)
 			if t.next.Conn != ci {
 				log.Print("diff conn")
 				continue
 			}
 			for _, inner := range cur.Values {
 				if inner.Line == t.next.Line && inner.Flow {
-					log.Printf("train %d: next")
+					log.Printf("train: next")
 					g.unlock(t.current)
+					g.apply(t.current, 0)
 					g.lock(t.next, ti)
 					newCurrent, exists, err := g.next(t, t.current)
 					if err != nil {
@@ -170,7 +173,9 @@ func (g *guide) single() {
 					t.current = newCurrent
 					t.next = newNext
 					g.apply(t.current, t.power)
-					g.apply(t.next, t.power)
+					if t.next != (LineID{}) {
+						g.apply(t.next, t.power)
+					}
 				}
 				// TODO: locking mechanism (not for now because we only have 1 train)
 			}
@@ -202,7 +207,7 @@ func (g *guide) apply(li LineID, power int) {
 		Direction: power > 0,
 		Power:     conn.AbsClampPower(power),
 	}
-	//log.Printf("apply %s", rl)
+	log.Printf("apply %s %s", li, rl)
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.lines[g.findLine(li)].Actor,
 		Value:  rl,
