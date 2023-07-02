@@ -86,6 +86,10 @@ func AbsClampPower(power int) uint8 {
 	return uint8(power)
 }
 
+type ReqLines struct {
+	ReqLines []ReqLine
+}
+
 type ReqLine struct {
 	Line      LineName
 	Brake     bool

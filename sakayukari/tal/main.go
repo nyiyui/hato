@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
 )
@@ -65,6 +67,39 @@ type guide struct {
 	actor  Actor
 	trains []train
 	lines  []line
+	state  *widgets.Paragraph
+}
+
+func (g *guide) render() {
+	b := new(strings.Builder)
+	fmt.Fprint(b, "-  unlocked\n")
+	fmt.Fprint(b, "[] current, next available\n")
+	fmt.Fprint(b, "|  current, next not available\n")
+	fmt.Fprint(b, "<> next\n")
+	for ti, t := range g.trains {
+		line := []byte("----")
+		var currentSymbol byte
+		if t.power > 0 {
+			currentSymbol = ']'
+		} else {
+			currentSymbol = '['
+		}
+		if t.nextAvail {
+			if t.power > 0 {
+				line[t.next.Line[0]-'A'] = '>'
+			} else {
+				line[t.next.Line[0]-'A'] = '<'
+			}
+		} else {
+			currentSymbol = '|'
+		}
+		for _, cur := range t.currents {
+			line[cur.Line[0]-'A'] = currentSymbol
+		}
+		fmt.Fprintf(b, "%d p%d %s\n", ti, t.power, line)
+	}
+	g.state.Text = b.String()
+	termui.Render(g.state)
 }
 
 func Guide(conf GuideConf) Actor {
@@ -86,7 +121,9 @@ func Guide(conf GuideConf) Actor {
 		actor:  a,
 		trains: make([]train, 0),
 		lines:  make([]line, 0),
+		state:  widgets.NewParagraph(),
 	}
+	g.state.SetRect(0, 6, 30, 16)
 	g.trains = append(g.trains, train{
 		power:     70,
 		currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "A"}},
@@ -189,30 +226,20 @@ func (g *guide) single() {
 						log.Printf("train %d: %s", ti, err)
 						panic("not implemented yet")
 					}
-					ok := g.lock(t.next, ti)
-					if !ok {
-						t.nextAvail = false
+					if t.nextAvail {
+						ok := g.lock(t.next, ti)
+						if !ok {
+							t.nextAvail = false
+						}
 					}
 					break NextLoop
 				}
 			}
 
-			// for testing
-			/*
-				for _, cur := range t.currents {
-					if cur.Line == "C" {
-						log.Print("aiya")
-						err := g.setPower(&t, 0)
-						if err != nil {
-							panic(err)
-						}
-					}
-				}
-			*/
-
 			g.reify(&t)
 			log.Printf("train: postshow: %s", &t)
 			g.trains[ti] = t
+			g.render()
 		}
 	}
 }
@@ -243,6 +270,10 @@ func (g *guide) recalcNext(t *train) error {
 	}
 	if exists {
 		t.next = newNext
+		t.nextAvail = true
+	} else {
+		t.next = LineID{}
+		t.nextAvail = false
 	}
 	return nil
 }
@@ -270,25 +301,6 @@ func (g *guide) reify(t *train) {
 	}
 }
 
-func (g *guide) lock(li LineID, ti int) (ok bool) {
-	// for testing
-	if li.Line == "D" {
-		return false
-	}
-	i := g.findLine(li)
-	if g.lines[i].TakenBy != -1 && g.lines[i].TakenBy != ti {
-		return false
-	}
-	log.Printf("LOCK %s", li)
-	g.lines[i].TakenBy = ti
-	return true
-}
-
-func (g *guide) unlock(li LineID) {
-	log.Printf("UNLOCK %s", li)
-	g.lines[g.findLine(li)].TakenBy = -1
-}
-
 func (g *guide) apply(li LineID, power int) {
 	rl := conn.ReqLine{
 		Line:      li.Line,
@@ -301,4 +313,28 @@ func (g *guide) apply(li LineID, power int) {
 		Value:  rl,
 	}
 	//log.Printf("apply2 %s", rl)
+}
+
+func (g *guide) lock(li LineID, ti int) (ok bool) {
+	// for testing
+	/*
+		if li.Line == "D" {
+			return false
+		}
+	*/
+	i := g.findLine(li)
+	if i == -1 {
+		panic(fmt.Sprintf("lock: LineID %s nonexistent", li))
+	}
+	if g.lines[i].TakenBy != -1 && g.lines[i].TakenBy != ti {
+		return false
+	}
+	log.Printf("LOCK %s", li)
+	g.lines[i].TakenBy = ti
+	return true
+}
+
+func (g *guide) unlock(li LineID) {
+	log.Printf("UNLOCK %s", li)
+	g.lines[g.findLine(li)].TakenBy = -1
 }
