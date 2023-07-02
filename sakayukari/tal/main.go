@@ -10,7 +10,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
-const idlePower = 20
+const idlePower = 15
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -137,10 +137,7 @@ func (g *guide) next(t train, li LineID) (li2 LineID, exists bool, err error) {
 func (g *guide) single() {
 	for ti, t := range g.trains {
 		log.Printf("train %d: %s", ti, &t)
-		for _, cur := range t.currents {
-			g.apply(cur, t.power)
-		}
-		g.apply(t.next, t.power)
+		g.reify(&t)
 	}
 	for diffuse := range g.actor.InputCh {
 		var ci conn.Id
@@ -276,7 +273,7 @@ func (g *guide) reify(t *train) {
 func (g *guide) lock(li LineID, ti int) (ok bool) {
 	// for testing
 	if li.Line == "D" {
-		//return false
+		return false
 	}
 	i := g.findLine(li)
 	if g.lines[i].TakenBy != -1 && g.lines[i].TakenBy != ti {
