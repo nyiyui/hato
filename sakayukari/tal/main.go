@@ -4,10 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
 )
+
+const idlePower = 20
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -36,12 +39,20 @@ type train struct {
 	power int
 
 	// dynamic fields
-	currents []LineID
-	next     LineID
+	currents  []LineID
+	next      LineID
+	nextAvail bool
 }
 
 func (t *train) String() string {
-	return fmt.Sprintf("power%d cur%s next%s", t.power, t.currents, t.next)
+	b := new(strings.Builder)
+	fmt.Fprintf(b, "power%d cur%s", t.power, t.currents)
+	if t.nextAvail {
+		fmt.Fprintf(b, " next%s", t.next)
+	} else {
+		fmt.Fprintf(b, " next-NA")
+	}
+	return b.String()
 }
 
 type line struct {
@@ -77,9 +88,10 @@ func Guide(conf GuideConf) Actor {
 		lines:  make([]line, 0),
 	}
 	g.trains = append(g.trains, train{
-		power:    70,
-		currents: []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "A"}},
-		next:     LineID{Conn: conf.Lines[0].Conn, Line: "B"},
+		power:     70,
+		currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "A"}},
+		next:      LineID{Conn: conf.Lines[0].Conn, Line: "B"},
+		nextAvail: true,
 	})
 	for _, lc := range conf.Lines {
 		lines := []string{"A", "B", "C", "D"}
@@ -131,7 +143,6 @@ func (g *guide) single() {
 		g.apply(t.next, t.power)
 	}
 	for diffuse := range g.actor.InputCh {
-		log.Print("new diffuse")
 		var ci conn.Id
 		for _, l := range g.lines {
 			if l.Actor == diffuse.Origin {
@@ -183,30 +194,26 @@ func (g *guide) single() {
 					}
 					ok := g.lock(t.next, ti)
 					if !ok {
-						panic("lock next failed")
+						t.nextAvail = false
 					}
-					log.Printf("train: postnext: %s", &t)
 					break NextLoop
 				}
 			}
-			for _, cur := range t.currents {
-				if cur.Line == "D" {
-					log.Print("aiya")
-					err := g.setPower(&t, 0)
-					if err != nil {
-						panic(err)
+
+			// for testing
+			/*
+				for _, cur := range t.currents {
+					if cur.Line == "C" {
+						log.Print("aiya")
+						err := g.setPower(&t, 0)
+						if err != nil {
+							panic(err)
+						}
 					}
 				}
-			}
-			log.Print("apply", t.currents)
-			for _, cur := range t.currents {
-				g.apply(cur, t.power)
-				log.Print("apply2", cur, t.power)
-			}
-			if t.next != (LineID{}) {
-				g.apply(t.next, t.power)
-			}
-			log.Print("apply3", t.currents)
+			*/
+
+			g.reify(&t)
 			log.Printf("train: postshow: %s", &t)
 			g.trains[ti] = t
 		}
@@ -253,7 +260,24 @@ func (g *guide) findLine(li LineID) int {
 	return -1
 }
 
+func (g *guide) reify(t *train) {
+	if t.nextAvail {
+		for _, cur := range t.currents {
+			g.apply(cur, t.power)
+		}
+		g.apply(t.next, t.power)
+	} else {
+		for _, cur := range t.currents {
+			g.apply(cur, idlePower)
+		}
+	}
+}
+
 func (g *guide) lock(li LineID, ti int) (ok bool) {
+	// for testing
+	if li.Line == "D" {
+		//return false
+	}
 	i := g.findLine(li)
 	if g.lines[i].TakenBy != -1 && g.lines[i].TakenBy != ti {
 		return false
