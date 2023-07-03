@@ -17,5 +17,8 @@ with serial.Serial(path, timeout=1) as f:
         if select.select([sys.stdin], [], [], 0)[0]:
             l = input()
             print(f'{path}: send {len(l)} {l}', file=sys.stderr)
+            if '_' in l:
+                l = l.split('_', 1)[0]
+            print(f'{path}: send2 {len(l)} {l}', file=sys.stderr)
             f.write(l.encode('ascii') + b'\n')
             print(f'{path}: sent {len(l)} {l}', file=sys.stderr)

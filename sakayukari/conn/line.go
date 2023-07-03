@@ -30,9 +30,10 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 					state.fileLock.Lock()
 					defer state.fileLock.Unlock()
 					_, err = fmt.Fprintf(c.F, "%s\n", req.String())
-					for i := 0; i < 10; i++ {
-						_, err = fmt.Fprint(c.F, "A")
-					}
+					b := make([]byte, 64000)
+					b[0] = '_'
+					b[len(b)-1] = '\n'
+					_, err = c.F.Write(b)
 				}()
 				if err != nil {
 					log.Printf("commit %s: %s", req, err)
