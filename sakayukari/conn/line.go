@@ -24,11 +24,23 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
+				log.Printf("ReqLine %s", req)
 				var err error
 				func() {
 					state.fileLock.Lock()
 					defer state.fileLock.Unlock()
 					_, err = fmt.Fprintf(c.F, "%s\n", req.String())
+				}()
+				if err != nil {
+					log.Printf("commit %s: %s", req, err)
+				}
+			case ReqLines:
+				log.Printf("ReqLines %s", req)
+				var err error
+				func() {
+					state.fileLock.Lock()
+					defer state.fileLock.Unlock()
+					_, err = fmt.Fprintf(c.F, "%s", req.String())
 				}()
 				if err != nil {
 					log.Printf("commit %s: %s", req, err)

@@ -31,9 +31,9 @@ type Handler interface {
 }
 
 var handlers = map[string]Handler{
-	"soyuu-line-mega-0": handlerLine{},
-	"soyuu-breakbeam":   handlerBreakbeam{},
-	"soyuu-rfid":        handlerRFID{},
+	"soyuu-line":      handlerLine{},
+	"soyuu-breakbeam": handlerBreakbeam{},
+	"soyuu-rfid":      handlerRFID{},
 }
 
 type Path = string
@@ -88,6 +88,14 @@ func AbsClampPower(power int) uint8 {
 
 type ReqLines struct {
 	ReqLines []ReqLine
+}
+
+func (r ReqLines) String() string {
+	b := new(strings.Builder)
+	for _, rl := range r.ReqLines {
+		fmt.Fprintf(b, "%s\n", rl)
+	}
+	return b.String()
 }
 
 type ReqLine struct {

@@ -130,6 +130,12 @@ func Guide(conf GuideConf) Actor {
 		next:      LineID{Conn: conf.Lines[0].Conn, Line: "B"},
 		nextAvail: true,
 	})
+	//g.trains = append(g.trains, train{
+	//	power:     100,
+	//	currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "C"}},
+	//	next:      LineID{Conn: conf.Lines[0].Conn, Line: "D"},
+	//	nextAvail: true,
+	//})
 	for _, lc := range conf.Lines {
 		lines := []string{"A", "B", "C", "D"}
 		for _, l := range lines {
@@ -171,9 +177,37 @@ func (g *guide) next(t train, li LineID) (li2 LineID, exists bool, err error) {
 	return LineID{li.Conn, list[i]}, true, nil
 }
 
+// patchCurrents fixes currents that don't make sense.
+// For example, a train on lines A and C but not B, which is between the two, would obviously be on B (maybe the ammeter had a problem).
+func (g *guide) patchCurrents(t *train) {
+	currents := make([]LineID, len(t.currents))
+	for ci, cur := range t.currents {
+		currents[ci] = cur
+	}
+	for ci, cur := range currents {
+		if ci == len(currents)-1 {
+			continue
+		}
+		next, exists, err := g.next(*t, cur)
+		if !exists {
+			panic(fmt.Sprintf("next of %s's %d index current is nonexistent", t, ci))
+		}
+		if err != nil {
+			panic("what‽")
+		}
+		_ = next
+		if next != currents[ci+1] {
+			// missing a line in between
+			log.Printf("patched to add %s", next)
+			currents = append(append(currents[:ci+1], next), currents[ci+1:]...)
+		}
+		// TODO: test this
+	}
+	t.currents = currents
+}
+
 func (g *guide) single() {
-	for ti, t := range g.trains {
-		log.Printf("train %d: %s", ti, &t)
+	for _, t := range g.trains {
 		g.reify(&t)
 	}
 	for diffuse := range g.actor.InputCh {
@@ -236,6 +270,7 @@ func (g *guide) single() {
 				}
 			}
 
+			g.patchCurrents(&t)
 			g.reify(&t)
 			log.Printf("train: postshow: %s", &t)
 			g.trains[ti] = t
@@ -289,6 +324,7 @@ func (g *guide) findLine(li LineID) int {
 }
 
 func (g *guide) reify(t *train) {
+	log.Printf("REIFY: %s", t)
 	if t.nextAvail {
 		for _, cur := range t.currents {
 			g.apply(cur, t.power)
@@ -299,6 +335,7 @@ func (g *guide) reify(t *train) {
 			g.apply(cur, idlePower)
 		}
 	}
+	log.Printf("REIFY DONE: %s", t)
 }
 
 func (g *guide) apply(li LineID, power int) {
@@ -316,12 +353,6 @@ func (g *guide) apply(li LineID, power int) {
 }
 
 func (g *guide) lock(li LineID, ti int) (ok bool) {
-	// for testing
-	/*
-		if li.Line == "D" {
-			return false
-		}
-	*/
 	i := g.findLine(li)
 	if i == -1 {
 		panic(fmt.Sprintf("lock: LineID %s nonexistent", li))

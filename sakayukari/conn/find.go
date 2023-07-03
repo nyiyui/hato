@@ -77,6 +77,7 @@ func (s *State) connect(path string) {
 		Path: path,
 		F:    &combinedReadWriter{r: stdout, w: stdin},
 	}
+	// TODO: flush stdin on write
 	s.conns[path] = c
 	s.handleConn(c)
 }

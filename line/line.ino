@@ -2,6 +2,8 @@
 #include "ina219.h"
 #include <Adafruit_MotorShield.h>
 
+#define VARIANT "v1/1"
+
 typedef struct Line {
   Adafruit_DCMotor *motor;
   bool direction;
@@ -178,7 +180,7 @@ void handleSLCP() {
     return;
   int kind = Serial.read();
   if (kind == 'I') {
-    Serial.println(" Isoyuu-line-mega-0");
+    Serial.println(" Isoyuu-line/" VARIANT);
     int eol = Serial.read();
     if (eol != '\n') {
       Serial.println(" Eexpected eol");
