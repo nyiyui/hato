@@ -14,7 +14,7 @@ with serial.Serial(path, timeout=1) as f:
                 pass
             print(l.decode('utf-8'))
             sys.stdout.flush()
-        if select.select([sys.stdin, ], [], [], 0.0)[0]:
+        if select.select([sys.stdin], [], [], 0)[0]:
             l = input()
             print(f'{path}: send {len(l)} {l}', file=sys.stderr)
             f.write(l.encode('ascii') + b'\n')

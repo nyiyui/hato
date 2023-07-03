@@ -26,7 +26,7 @@ func Main() error {
 		},
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
-		conn.Id{Type: "soyuu-line"},
+		conn.Id{"soyuu-line", "v1", "1"},
 		conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
 		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 	})
