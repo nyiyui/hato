@@ -12,7 +12,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
-const idlePower = 15
+const idlePower = 10
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -125,17 +125,16 @@ func Guide(conf GuideConf) Actor {
 	}
 	g.state.SetRect(0, 6, 30, 16)
 	g.trains = append(g.trains, train{
-		power:     70,
+		power:     30,
 		currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "A"}},
-		next:      LineID{Conn: conf.Lines[0].Conn, Line: "B"},
+		nextAvail: false,
+	})
+	g.trains = append(g.trains, train{
+		power:     30,
+		currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "B"}},
+		next:      LineID{Conn: conf.Lines[0].Conn, Line: "C"},
 		nextAvail: true,
 	})
-	//g.trains = append(g.trains, train{
-	//	power:     100,
-	//	currents:  []LineID{LineID{Conn: conf.Lines[0].Conn, Line: "C"}},
-	//	next:      LineID{Conn: conf.Lines[0].Conn, Line: "D"},
-	//	nextAvail: true,
-	//})
 	for _, lc := range conf.Lines {
 		lines := []string{"A", "B", "C", "D"}
 		for _, l := range lines {
@@ -190,7 +189,7 @@ func (g *guide) patchCurrents(t *train) {
 		}
 		next, exists, err := g.next(*t, cur)
 		if !exists {
-			panic(fmt.Sprintf("next of %s's %d index current is nonexistent", t, ci))
+			panic(fmt.Sprintf("next of %s's %d index current (current = %s) is nonexistent", t, ci, cur))
 		}
 		if err != nil {
 			panic("what‽")
@@ -207,9 +206,11 @@ func (g *guide) patchCurrents(t *train) {
 }
 
 func (g *guide) single() {
-	for _, t := range g.trains {
+	for ti, t := range g.trains {
+		g.ensureLock(ti)
 		g.reify(&t)
 	}
+	g.render()
 	for diffuse := range g.actor.InputCh {
 		var ci conn.Id
 		for _, l := range g.lines {
@@ -251,31 +252,31 @@ func (g *guide) single() {
 				}
 				t.currents = keepCurrents
 			}
-		NextLoop:
-			for _, inner := range cur.Values {
-				if inner.Line == t.next.Line && inner.Flow {
-					t.currents = append(t.currents, t.next)
-					err := g.recalcNext(&t)
-					if err != nil {
-						log.Printf("train %d: %s", ti, err)
-						panic("not implemented yet")
-					}
-					if t.nextAvail {
-						ok := g.lock(t.next, ti)
-						if !ok {
-							t.nextAvail = false
+			if t.nextAvail {
+			NextLoop:
+				for _, inner := range cur.Values {
+					if inner.Line == t.next.Line && inner.Flow {
+						t.currents = append(t.currents, t.next)
+						err := g.recalcNextAndLock(ti, &t)
+						if err != nil {
+							log.Printf("train %d: %s", ti, err)
+							panic("not implemented yet")
 						}
+						break NextLoop
 					}
-					break NextLoop
 				}
 			}
-
 			g.patchCurrents(&t)
-			g.reify(&t)
-			log.Printf("train: postshow: %s", &t)
 			g.trains[ti] = t
-			g.render()
+			log.Printf("train: postshow: %s", &t)
 		}
+		g.render()
+		for ti, t := range g.trains {
+			g.recalcNextAndLock(ti, &t)
+			g.reify(&t)
+			g.trains[ti] = t
+		}
+		g.render()
 	}
 }
 
@@ -285,6 +286,7 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
+// check if we should use recalcNextAndLock
 func (g *guide) setPower(t *train, power int) error {
 	// make sure we don't leave train in a bad state
 	if power == 0 {
@@ -298,7 +300,26 @@ func (g *guide) setPower(t *train, power int) error {
 	return g.recalcNext(t)
 }
 
+func (g *guide) recalcNextAndLock(ti int, t *train) error {
+	err := g.recalcNext(t)
+	if err != nil {
+		return err
+	}
+	log.Printf("recalcNextAndLock %d: next: %s", ti, t.next)
+	if t.nextAvail {
+		ok := g.lock(t.next, ti)
+		if !ok {
+			t.nextAvail = false
+		}
+		log.Printf("recalcNextAndLock %d: lock: %t", ti, ok)
+	}
+	return nil
+}
+
 func (g *guide) recalcNext(t *train) error {
+	if len(t.currents) == 0 {
+		return errors.New("no currents")
+	}
 	newNext, exists, err := g.next(*t, t.currents[len(t.currents)-1])
 	if err != nil {
 		return err
@@ -350,6 +371,24 @@ func (g *guide) apply(li LineID, power int) {
 		Value:  rl,
 	}
 	//log.Printf("apply2 %s", rl)
+}
+
+// ensureLock verifies locking of all currents and next (if nextAvail is true) of a train.
+func (g *guide) ensureLock(ti int) {
+	t := g.trains[ti]
+	for ci, cur := range t.currents {
+		ok := g.lock(cur, ti)
+		if !ok {
+			panic(fmt.Sprintf("train %s currents %d: locking failed", &t, ci))
+		}
+	}
+	if t.nextAvail {
+		ok := g.lock(t.next, ti)
+		if !ok {
+			panic(fmt.Sprintf("train %s netx: locking failed", &t))
+		}
+	}
+	g.trains[ti] = t
 }
 
 func (g *guide) lock(li LineID, ti int) (ok bool) {
