@@ -1,7 +1,6 @@
 package tal
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -14,6 +13,7 @@ import (
 )
 
 type LineID = layout.LineID
+type LinePort = layout.LinePort
 
 const idlePower = 10
 
@@ -21,33 +21,47 @@ const idlePower = 10
 // adjuster - adjusts power level etc
 
 type GuideConf struct {
-	Layout *layout.Layout
-	Actors map[LineID]ActorRef
+	Layout        *layout.Layout
+	Actors        map[LineID]ActorRef
+	actorsReverse map[ActorRef]conn.Id
 }
+
+type trainState int
+
+const (
+	trainStateNextAvail  trainState = 1
+	trainStateNextLocked trainState = 2
+	trainStateGoal       trainState = 3
+)
 
 type train struct {
 	// static fields
 	power int
 
 	// dynamic fields
-	currents  []int
-	next      int
-	nextAvail bool
+	currents []int
+	goal     int
+	path     []LinePort
+	state    trainState
 }
 
 func (t *train) String() string {
 	b := new(strings.Builder)
-	fmt.Fprintf(b, "power%d cur%s", t.power, t.currents)
-	if t.nextAvail {
-		fmt.Fprintf(b, " next%s", t.next)
-	} else {
-		fmt.Fprintf(b, " next-NA")
+	fmt.Fprintf(b, "power%d cur%#v", t.power, t.currents)
+	switch t.state {
+	case trainStateNextAvail:
+		fmt.Fprintf(b, " next%d", t.path[0].LineI)
+	case trainStateNextLocked:
+		fmt.Fprintf(b, " locked")
+	case trainStateGoal:
+		fmt.Fprintf(b, " goal")
 	}
 	return b.String()
 }
 
 type guide struct {
 	actor      Actor
+	conf       GuideConf
 	trains     []train
 	lineStates []lineState
 	y          *layout.Layout
@@ -64,7 +78,7 @@ type lineState struct {
 func (g *guide) render() {
 	b := new(strings.Builder)
 	for ti, t := range g.trains {
-		fmt.Fprintf(b, "%d %s", ti, t)
+		fmt.Fprintf(b, "%d %#v", ti, t)
 	}
 	g.state.Text = b.String()
 	termui.Render(g.state)
@@ -88,7 +102,12 @@ func Guide(conf GuideConf) Actor {
 			a.Inputs = append(a.Inputs, conf.Actors[l.SwitchConn])
 		}
 	}
+	conf.actorsReverse = map[ActorRef]conn.Id{}
+	for li, ar := range conf.Actors {
+		conf.actorsReverse[ar] = li.Conn
+	}
 	g := guide{
+		conf:       conf,
 		actor:      a,
 		trains:     make([]train, 0),
 		lineStates: make([]lineState, len(conf.Layout.Lines)),
@@ -96,12 +115,15 @@ func Guide(conf GuideConf) Actor {
 		state:      widgets.NewParagraph(),
 	}
 	g.state.SetRect(0, 6, 30, 16)
-	g.trains = append(g.trains, train{
-		power:     30,
-		currents:  []int{conf.Layout.MustLookupIndex("5")},
-		next:      conf.Layout.MustLookupIndex("4"),
-		nextAvail: true,
-	})
+	t1 := train{
+		power:    30,
+		currents: []int{conf.Layout.MustLookupIndex("5")},
+		goal:     conf.Layout.MustLookupIndex("1"),
+		state:    trainStateNextAvail,
+	}
+	t1.path = g.y.PathTo(t1.currents[0], t1.goal)
+	g.trains = append(g.trains, t1)
+
 	go g.loop()
 	return a
 }
@@ -110,24 +132,6 @@ func (g *guide) loop() {
 	for {
 		g.single()
 	}
-}
-
-func (g *guide) next(t train, li LineID) (li2 LineID, exists bool, err error) {
-	list := []string{"A", "B", "C", "D"}
-	i := li.Line[0] - 'A'
-	if t.power == 0 {
-		return LineID{}, false, errors.New("no power")
-	}
-	if t.power > 0 {
-		i++
-	}
-	if t.power < 0 {
-		i--
-	}
-	if i < 0 || i > 3 {
-		return LineID{}, false, nil
-	}
-	return LineID{li.Conn, list[i]}, true, nil
 }
 
 // patchCurrents fixes currents that don't make sense.
@@ -141,15 +145,25 @@ func (g *guide) patchCurrents(t *train) {
 		if ci == len(currents)-1 {
 			continue
 		}
-		next, exists := g.y.Step(cur, t.power > 0)
-		if !exists {
-			panic(fmt.Sprintf("next of %s's %d index current (current = %s) is nonexistent", t, ci, cur))
+		dest := currents[ci+1]
+		ok := false
+		for i := 0; i < 2; i++ {
+			p := g.y.Lines[cur].GetPort(i)
+			if !p.ConnFilled {
+				continue
+			}
+			if p.ConnI == dest {
+				ok = true
+			}
 		}
-		_ = next
-		if next != currents[ci+1] {
-			// missing a line in between
-			log.Printf("patched to add %s", next)
-			currents = append(append(currents[:ci+1], next), currents[ci+1:]...)
+		if !ok {
+			lps := g.y.PathTo(cur, dest)
+			missing := make([]int, 0, len(lps))
+			for _, lp := range lps {
+				missing = append(missing, lp.LineI)
+			}
+			log.Printf("patched to add %#v", missing)
+			currents = append(append(currents[:ci+1], missing...), currents[ci+1:]...)
 		}
 		// TODO: test this
 	}
@@ -166,7 +180,7 @@ func (g *guide) single() {
 		var ci conn.Id
 		for _, ls := range g.lineStates {
 			if ls.PowerActor == diffuse.Origin {
-				ci = ls.ID.Conn
+				ci = g.conf.actorsReverse[diffuse.Origin]
 			}
 		}
 		if ci == (conn.Id{}) {
@@ -177,43 +191,49 @@ func (g *guide) single() {
 		cur := diffuse.Value.(conn.ValCurrent)
 		for ti, t := range g.trains {
 			{
-				removeCurrents := make([]LineID, 0, len(t.currents))
+				removeCurrents := make([]int, 0, len(t.currents))
 				for _, inner := range cur.Values {
 					for _, li := range t.currents {
 						l := g.y.Lines[li]
 						if ci == l.PowerConn.Conn && inner.Line == l.PowerConn.Line && !inner.Flow {
-							removeCurrents = append(removeCurrents, cur)
+							removeCurrents = append(removeCurrents, li)
 						}
 					}
 				}
-				for _, cur := range removeCurrents {
-					g.unlock(cur)
-					g.apply(cur, 0)
+				for _, li := range removeCurrents {
+					g.unlock(li)
+					g.apply(li, 0)
 				}
 			}
 			{
-				keepCurrents := make([]LineID, 0, len(t.currents))
+				keepCurrents := make([]int, 0, len(t.currents))
 				for _, inner := range cur.Values {
 					for _, li := range t.currents {
 						l := g.y.Lines[li]
 						if ci == l.PowerConn.Conn && inner.Line == l.PowerConn.Line && inner.Flow {
-							keepCurrents = append(keepCurrents, cur)
+							keepCurrents = append(keepCurrents, li)
 						}
 					}
 				}
 				t.currents = keepCurrents
 			}
-			if t.nextAvail {
-			NextLoop:
+			{
+				for _, li := range t.currents {
+					if li == t.goal {
+						t.state = trainStateGoal
+						break
+					}
+				}
+			}
+			if t.state == trainStateNextAvail {
 				for _, inner := range cur.Values {
-					if inner.Line == t.next.Line && inner.Flow {
-						t.currents = append(t.currents, t.next)
-						err := g.recalcNextAndLock(ti, &t)
-						if err != nil {
-							log.Printf("train %d: %s", ti, err)
-							panic("not implemented yet")
-						}
-						break NextLoop
+					nextI := t.path[0].LineI
+					next := g.y.Lines[nextI]
+					if ci == next.PowerConn.Conn && inner.Line == next.PowerConn.Line && inner.Flow {
+						t.currents = append(t.currents, nextI)
+						t.path = t.path[1:]
+						g.tryLockingNext(ti, &t)
+						break
 					}
 				}
 			}
@@ -223,12 +243,25 @@ func (g *guide) single() {
 		}
 		g.render()
 		for ti, t := range g.trains {
-			g.recalcNextAndLock(ti, &t)
+			g.tryLockingNext(ti, &t)
 			g.reify(&t)
 			g.trains[ti] = t
 		}
 		g.render()
 	}
+}
+
+func (g *guide) tryLockingNext(ti int, t *train) {
+	// try locking next again
+	nextI := t.path[0].LineI
+	ok := g.lock(nextI, ti)
+	if ok {
+		t.state = trainStateNextAvail
+	} else {
+		t.state = trainStateNextLocked
+		log.Printf("train %d: failed to lock %d", ti, nextI)
+	}
+	g.ensureLock(ti)
 }
 
 func reverse[S ~[]E, E any](s S) {
@@ -237,48 +270,16 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
-func (g *guide) recalcNextAndLock(ti int, t *train) error {
-	err := g.recalcNext(t)
-	if err != nil {
-		return err
-	}
-	log.Printf("recalcNextAndLock %d: next: %s", ti, t.next)
-	if t.nextAvail {
-		ok := g.lock(t.next, ti)
-		if !ok {
-			t.nextAvail = false
-		}
-		log.Printf("recalcNextAndLock %d: lock: %t", ti, ok)
-	}
-	return nil
-}
-
-func (g *guide) recalcNext(t *train) error {
-	if len(t.currents) == 0 {
-		return errors.New("no currents")
-	}
-	newNext, exists, err := g.next(*t, t.currents[len(t.currents)-1])
-	if err != nil {
-		return err
-	}
-	if exists {
-		t.next = newNext
-		t.nextAvail = true
-	} else {
-		t.next = -1
-		t.nextAvail = false
-	}
-	return nil
-}
-
 func (g *guide) reify(t *train) {
+	// TODO: handle switches
 	log.Printf("REIFY: %s", t)
-	if t.nextAvail {
+	switch t.state {
+	case trainStateNextAvail:
 		for _, li := range t.currents {
 			g.apply(li, t.power)
 		}
-		g.apply(t.next, t.power)
-	} else {
+		g.apply(t.path[0].LineI, t.power)
+	case trainStateNextLocked, trainStateGoal:
 		for _, li := range t.currents {
 			g.apply(li, idlePower)
 		}
@@ -288,20 +289,20 @@ func (g *guide) reify(t *train) {
 
 func (g *guide) apply(li int, power int) {
 	rl := conn.ReqLine{
-		Line:      li.Line,
+		Line:      g.y.Lines[li].PowerConn.Line,
 		Direction: power > 0,
 		Power:     conn.AbsClampPower(power),
 	}
 	// TODO: fix direction to follow layout.Layout rules
 	// log.Printf("apply %s %s", li, rl)
 	g.actor.OutputCh <- Diffuse1{
-		Origin: g.y.Lines[li].PowerConn,
+		Origin: g.conf.Actors[g.y.Lines[li].PowerConn],
 		Value:  rl,
 	}
 	//log.Printf("apply2 %s", rl)
 }
 
-// ensureLock verifies locking of all currents and next (if nextAvail is true) of a train.
+// ensureLock verifies locking of all currents and next (if next is available) of a train.
 func (g *guide) ensureLock(ti int) {
 	t := g.trains[ti]
 	for ci, cur := range t.currents {
@@ -310,8 +311,8 @@ func (g *guide) ensureLock(ti int) {
 			panic(fmt.Sprintf("train %s currents %d: locking failed", &t, ci))
 		}
 	}
-	if t.nextAvail {
-		ok := g.lock(t.next, ti)
+	if t.state == trainStateNextAvail {
+		ok := g.lock(t.path[0].LineI, ti)
 		if !ok {
 			panic(fmt.Sprintf("train %s netx: locking failed", &t))
 		}
@@ -320,16 +321,16 @@ func (g *guide) ensureLock(ti int) {
 }
 
 func (g *guide) lock(li, ti int) (ok bool) {
-	if g.lineStates[i].Taken && g.lineStates[i].TakenBy != ti {
+	if g.lineStates[li].Taken && g.lineStates[li].TakenBy != ti {
 		return false
 	}
-	log.Printf("LOCK %s", li)
-	g.lineStates[i].Taken = true
-	g.lineStates[i].TakenBy = ti
+	log.Printf("LOCK %d: %s", li, g.y.Lines[li].Comment)
+	g.lineStates[li].Taken = true
+	g.lineStates[li].TakenBy = ti
 	return true
 }
 
 func (g *guide) unlock(li int) {
-	log.Printf("UNLOCK %s", li)
+	log.Printf("UNLOCK %d: %s", li, g.y.Lines[li].Comment)
 	g.lineStates[li].Taken = false
 }

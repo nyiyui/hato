@@ -11,6 +11,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/runtime"
 	"nyiyui.ca/hato/sakayukari/tal"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 func Main() error {
@@ -27,7 +28,8 @@ func Main() error {
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
 		conn.Id{"soyuu-line", "v1", "1"},
-		conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
+		conn.Id{"soyuu-line", "v2", "1"},
+		//conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
 		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 	})
 	err = connState.Find()
@@ -47,9 +49,21 @@ func Main() error {
 	// g.Actors = append(g.Actors, Control(ActorRef{Index: 0}, ActorRef{Index: 2}, "A", "C", "D"))
 	// g.Actors = append(g.Actors, bodge.Timing(ActorRef{Index: 2}, ActorRef{Index: 4}))
 	// g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
+	y, err := layout.InitTestbench()
+	if err != nil {
+		panic(err)
+	}
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
-		Lines: []tal.LineConf{
-			{Actor: ActorRef{Index: 2}, Conn: conn.Id{Type: "soyuu-line"}},
+		Layout: y,
+		Actors: map[layout.LineID]ActorRef{
+			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "A"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "B"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "C"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "D"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "A"}: ActorRef{Index: 3},
+			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "B"}: ActorRef{Index: 3},
+			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "C"}: ActorRef{Index: 3},
+			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "D"}: ActorRef{Index: 3},
 		},
 	}))
 

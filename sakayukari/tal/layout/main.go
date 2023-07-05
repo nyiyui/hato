@@ -6,6 +6,12 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
+func reverse[S ~[]E, E any](s S) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
 type LineID struct {
 	Conn conn.Id
 	// Usually A, B, C, or D.
@@ -60,7 +66,7 @@ func (y *Layout) MustLookupIndex(comment string) int {
 
 func (y *Layout) Step(pi LinePort) (next LinePort, exists bool) {
 	y.checkLinePort(pi)
-	p := y.Lines[pi.LineI].getPort(pi.PortI)
+	p := y.Lines[pi.LineI].GetPort(pi.PortI)
 	if !p.notZero() || !p.ConnFilled {
 		return LinePort{}, false
 	}
@@ -83,7 +89,7 @@ func (y *Layout) Opposite(pi LinePort) (opposite LinePort, exists bool) {
 	} else { // B/C always goes to A
 		oppP = 0
 	}
-	p := y.Lines[pi.LineI].getPort(oppP)
+	p := y.Lines[pi.LineI].GetPort(oppP)
 	if !p.notZero() || !p.ConnFilled {
 		return LinePort{}, false
 	}
@@ -139,7 +145,7 @@ func Turnout(lengthA, lengthB uint32, reverse []Line) Line {
 	}
 }
 
-func (l *Line) getPort(p int) Port {
+func (l *Line) GetPort(p int) Port {
 	if p == 0 {
 		return l.PortA
 	}
@@ -270,7 +276,7 @@ func (y *Layout) countLength() uint32 {
 	var sum uint32 = 0
 	for {
 		l := y.Lines[i]
-		port := l.getPort(p)
+		port := l.GetPort(p)
 		sum += port.Length
 		if port.ConnFilled {
 			i = port.ConnI
@@ -280,4 +286,41 @@ func (y *Layout) countLength() uint32 {
 		}
 	}
 	return sum
+}
+
+func (y *Layout) PathTo(from, goal int) []LinePort {
+	visited := make([]bool, len(y.Lines))
+	distance := make([]int, len(y.Lines))
+	using := make([]LinePort, len(y.Lines))
+	for i := range distance {
+		if i == 0 {
+			continue
+		}
+		distance[i] = -1
+	}
+	queue := make([]int, 0, len(y.Lines))
+	queue = append(queue, from)
+	for current := from; len(queue) > 0; current, queue = queue[0], queue[1:] {
+		l := y.Lines[current]
+		for i := 0; i < 2; i++ {
+			p := l.GetPort(i)
+			if !p.ConnFilled {
+				continue
+			}
+			distance[p.ConnI] = distance[current] + 1
+			using[p.ConnI] = LinePort{current, i}
+			queue = append(queue, p.ConnI)
+		}
+		visited[current] = true
+		if distance[goal] != -1 {
+			break
+		}
+	}
+	lps := make([]LinePort, 0, distance[goal])
+	for i := goal; i != from; i = using[i].LineI {
+		lps = append(lps, using[i])
+	}
+	// NOTE: technically you could do like lps[len(lps)-j] and make j increment...
+	reverse(lps)
+	return lps
 }
