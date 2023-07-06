@@ -28,7 +28,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
-				log.Printf("ReqLine %s", req)
+				//log.Printf("ReqLine %s", req)
 				var err error
 				func() {
 					state.fileLock.Lock()
@@ -101,7 +101,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 				Flow: flow,
 			})
 		}
-		log.Printf("diffuse %s", v)
+		// log.Printf("diffuse %s", v)
 		a.OutputCh <- Diffuse1{Value: v}
 		// log.Printf("diffuse DONE %s", v)
 	}
