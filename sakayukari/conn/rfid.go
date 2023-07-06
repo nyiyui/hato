@@ -13,6 +13,10 @@ import (
 
 type handlerRFID struct{}
 
+func (_ handlerRFID) String() string {
+	return "rfid"
+}
+
 func (_ handlerRFID) NewBlankActor() Actor {
 	return Actor{
 		Comment:  "blank handlerRFID",

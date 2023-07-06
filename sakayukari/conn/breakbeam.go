@@ -20,6 +20,10 @@ type sensor struct {
 
 type handlerBreakbeam struct{}
 
+func (_ handlerBreakbeam) String() string {
+	return "breakbeam"
+}
+
 func (_ handlerBreakbeam) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
 	_, err := fmt.Fprint(c.F, "J\n")

@@ -2,6 +2,7 @@ package layout
 
 import (
 	"fmt"
+	"log"
 
 	"nyiyui.ca/hato/sakayukari/conn"
 )
@@ -166,6 +167,7 @@ func Connect(lines []Line) (Layout, error) {
 
 func (y *Layout) connect(baseI int, lines []Line) error {
 	i := baseI
+	// TODO: test connInline (layouts with switches)
 	// only do prev→next line connections here; next→prev conns are added later
 	for li, l := range lines {
 		if l.PortB.notZero() {
@@ -288,12 +290,17 @@ func (y *Layout) countLength() uint32 {
 	return sum
 }
 
+// PathTo returns a list of outgoing LinePorts in the order they should be followed.
 func (y *Layout) PathTo(from, goal int) []LinePort {
+	log.Printf("PathTo %d → %d", from, goal)
+	if from == goal {
+		return nil
+	}
 	visited := make([]bool, len(y.Lines))
 	distance := make([]int, len(y.Lines))
 	using := make([]LinePort, len(y.Lines))
 	for i := range distance {
-		if i == 0 {
+		if i == from {
 			continue
 		}
 		distance[i] = -1
@@ -302,25 +309,33 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 	queue = append(queue, from)
 	for current := from; len(queue) > 0; current, queue = queue[0], queue[1:] {
 		l := y.Lines[current]
+		log.Printf("current %d", current)
 		for i := 0; i < 2; i++ {
+			log.Printf("%d/%d", current, i)
 			p := l.GetPort(i)
 			if !p.ConnFilled {
 				continue
 			}
-			distance[p.ConnI] = distance[current] + 1
-			using[p.ConnI] = LinePort{current, i}
-			queue = append(queue, p.ConnI)
+			if distance[p.ConnI] == -1 || distance[current] < distance[p.ConnI] {
+				distance[p.ConnI] = distance[current] + 1
+				using[p.ConnI] = LinePort{current, i}
+				queue = append(queue, p.ConnI)
+			}
 		}
+		log.Printf("queue: %#v", queue)
+		log.Printf("distance: %#v", distance)
 		visited[current] = true
 		if distance[goal] != -1 {
 			break
 		}
 	}
-	lps := make([]LinePort, 0, distance[goal])
-	for i := goal; i != from; i = using[i].LineI {
-		lps = append(lps, using[i])
+	log.Printf("queue %#v", queue)
+	log.Printf("distance %#v", distance)
+	log.Printf("using %#v", using)
+	lps := make([]LinePort, distance[goal])
+	for i, j := goal, 0; i != from; i, j = using[i].LineI, j+1 {
+		lps[len(lps)-1-j] = using[i]
 	}
 	// NOTE: technically you could do like lps[len(lps)-j] and make j increment...
-	reverse(lps)
 	return lps
 }

@@ -1,9 +1,9 @@
 package layout
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestConnect(t *testing.T) {
@@ -21,24 +21,48 @@ func TestConnect(t *testing.T) {
 	}
 }
 
+func MustConnect(t *testing.T, lines []Line) *Layout {
+	y, err := Connect(lines)
+	if err != nil {
+		t.Fatalf("connect: %s", err)
+	}
+	return &y
+}
+
 func TestPathTo(t *testing.T) {
-	y, err := Connect([]Line{
+	type setup struct {
+		Comment string
+		Layout  *Layout
+		From    int
+		Goal    int
+	}
+	y := MustConnect(t, []Line{
 		StraightLine(312000),
 		StraightLine(312000),
 		StraightLine(312000),
 	})
-	if err != nil {
-		t.Fatalf("error: %s", err)
-	}
 	y.Lines[1].PortA.ConnI = 2
 	y.Lines[1].PortB.ConnI = 0
-	t.Logf("layout: %#v", y)
-	expected := []LinePort{LinePort{LineI: 0, PortI: 1}, LinePort{LineI: 1, PortI: 0}}
-	got := y.PathTo(0, 2)
-	if !cmp.Equal(got, expected) {
-		t.Logf("PathTo expected: %#v", expected)
-		t.Logf("PathTo got: %#v", got)
-		t.Fatalf("PathTo diff: %s", cmp.Diff(got, expected))
+	setups := []setup{
+		{"normal", y, 0, 2},
+		{"reverse", y, 2, 0},
+	}
+	for i, s := range setups {
+		t.Run(fmt.Sprintf("%d-%s", i, s.Comment), func(t *testing.T) {
+			t.Logf("layout: %#v", y)
+			data, _ := json.Marshal(y)
+			t.Logf("layout-json: %s", data)
+			path := y.PathTo(s.From, s.Goal)
+			current := -1
+			for i, lp := range path {
+				next := y.Lines[lp.LineI].GetPort(lp.PortI)
+				t.Logf("%d: %d → %s", i, current, next)
+				current = next.ConnI
+			}
+			if current != s.Goal {
+				t.Fatalf("did not reach goal (%d): reached %d instead", s.Goal, current)
+			}
+		})
 	}
 }
 

@@ -28,6 +28,7 @@ func ConnActors(expected []Id) (*State, []Actor) {
 type Handler interface {
 	HandleConn(a Actor, c *Conn)
 	NewBlankActor() Actor
+	String() string
 }
 
 var handlers = map[string]Handler{
@@ -161,6 +162,6 @@ func (s *State) handleConn(c *Conn) {
 		log.Printf("no handler found for %s %s", c.Path, c.Id)
 		return
 	}
-	log.Printf("handling %s %s", c.Path, c.Id)
+	log.Printf("handling %s %s with %s", c.Path, c.Id, handler)
 	handler.HandleConn(s.actors[c.Id], c)
 }

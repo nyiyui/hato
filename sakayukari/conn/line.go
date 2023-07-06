@@ -17,6 +17,10 @@ type lineState struct {
 	fileLock sync.Mutex
 }
 
+func (_ handlerLine) String() string {
+	return "line"
+}
+
 func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
 	state := new(lineState)
