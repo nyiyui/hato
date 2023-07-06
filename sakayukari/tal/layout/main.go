@@ -2,7 +2,6 @@ package layout
 
 import (
 	"fmt"
-	"log"
 
 	"nyiyui.ca/hato/sakayukari/conn"
 )
@@ -292,7 +291,6 @@ func (y *Layout) countLength() uint32 {
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.
 func (y *Layout) PathTo(from, goal int) []LinePort {
-	log.Printf("PathTo %d → %d", from, goal)
 	if from == goal {
 		return nil
 	}
@@ -309,9 +307,7 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 	queue = append(queue, from)
 	for current := from; len(queue) > 0; current, queue = queue[0], queue[1:] {
 		l := y.Lines[current]
-		log.Printf("current %d", current)
 		for i := 0; i < 2; i++ {
-			log.Printf("%d/%d", current, i)
 			p := l.GetPort(i)
 			if !p.ConnFilled {
 				continue
@@ -322,16 +318,11 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 				queue = append(queue, p.ConnI)
 			}
 		}
-		log.Printf("queue: %#v", queue)
-		log.Printf("distance: %#v", distance)
 		visited[current] = true
 		if distance[goal] != -1 {
 			break
 		}
 	}
-	log.Printf("queue %#v", queue)
-	log.Printf("distance %#v", distance)
-	log.Printf("using %#v", using)
 	lps := make([]LinePort, distance[goal])
 	for i, j := goal, 0; i != from; i, j = using[i].LineI, j+1 {
 		lps[len(lps)-1-j] = using[i]
