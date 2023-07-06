@@ -114,11 +114,11 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 		state:      widgets.NewParagraph(),
 	}
-	g.state.SetRect(0, 6, 30, 16)
+	g.state.SetRect(0, 6, 70, 20)
 	t1 := train{
 		power:    30,
-		currents: []int{conf.Layout.MustLookupIndex("5")},
-		goal:     conf.Layout.MustLookupIndex("1"),
+		currents: []int{conf.Layout.MustLookupIndex("4/A")},
+		goal:     conf.Layout.MustLookupIndex("1/D"),
 		state:    trainStateNextAvail,
 	}
 	t1.path = g.y.PathTo(t1.currents[0], t1.goal)

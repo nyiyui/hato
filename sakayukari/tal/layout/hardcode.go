@@ -17,22 +17,22 @@ func InitTestbench() (*Layout, error) {
 	}
 	y, err := Connect([]Line{
 		Line{
-			Comment:   "1",
+			Comment:   "1/D",
 			PortB:     Port{Length: 312000},
 			PowerConn: breadboard("D"),
 		},
 		Line{
-			Comment:   "2",
+			Comment:   "2/C",
 			PortB:     Port{Length: 312000},
 			PowerConn: breadboard("C"),
 		},
 		Line{
-			Comment:   "3",
+			Comment:   "3/B",
 			PortB:     Port{Length: 312000},
 			PowerConn: breadboard("B"),
 		},
 		Line{
-			Comment:   "4",
+			Comment:   "4/A",
 			PortB:     Port{Length: 312000},
 			PowerConn: breadboard("A"),
 		},

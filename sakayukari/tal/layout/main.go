@@ -106,6 +106,10 @@ type LinePort struct {
 	PortI int
 }
 
+func (lp LinePort) String() string {
+	return fmt.Sprintf("l%dp%d", lp.LineI, lp.PortI)
+}
+
 type Line struct {
 	// Comment is a human-readable comment about the line.
 	Comment string
