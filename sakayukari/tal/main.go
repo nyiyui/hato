@@ -324,13 +324,14 @@ func (g *guide) lock(li, ti int) (ok bool) {
 	if g.lineStates[li].Taken && g.lineStates[li].TakenBy != ti {
 		return false
 	}
-	log.Printf("LOCK %d: %s", li, g.y.Lines[li].Comment)
+	log.Printf("LOCK %d(%s) by %d", li, g.y.Lines[li].Comment, ti)
 	g.lineStates[li].Taken = true
 	g.lineStates[li].TakenBy = ti
 	return true
 }
 
 func (g *guide) unlock(li int) {
-	log.Printf("UNLOCK %d: %s", li, g.y.Lines[li].Comment)
+	log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
 	g.lineStates[li].Taken = false
+	g.lineStates[li].TakenBy = -1
 }
