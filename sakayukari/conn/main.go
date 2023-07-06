@@ -87,18 +87,6 @@ func AbsClampPower(power int) uint8 {
 	return uint8(power)
 }
 
-type ReqLines struct {
-	ReqLines []ReqLine
-}
-
-func (r ReqLines) String() string {
-	b := new(strings.Builder)
-	for _, rl := range r.ReqLines {
-		fmt.Fprintf(b, "%s\n", rl)
-	}
-	return b.String()
-}
-
 type ReqLine struct {
 	Line      LineName
 	Brake     bool

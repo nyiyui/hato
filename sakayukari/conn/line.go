@@ -26,6 +26,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	state := new(lineState)
 	go func() {
 		for v := range a.InputCh {
+			log.Printf("InputCh %s", v)
 			switch req := v.Value.(type) {
 			case ReqLine:
 				log.Printf("ReqLine %s", req)
@@ -38,17 +39,6 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 					b[0] = '_'
 					b[len(b)-1] = '\n'
 					_, err = c.F.Write(b)
-				}()
-				if err != nil {
-					log.Printf("commit %s: %s", req, err)
-				}
-			case ReqLines:
-				log.Printf("ReqLines %s", req)
-				var err error
-				func() {
-					state.fileLock.Lock()
-					defer state.fileLock.Unlock()
-					_, err = fmt.Fprintf(c.F, "%s", req.String())
 				}()
 				if err != nil {
 					log.Printf("commit %s: %s", req, err)
@@ -114,6 +104,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		}
 		log.Printf("diffuse %s", v)
 		a.OutputCh <- Diffuse1{Value: v}
+		log.Printf("diffuse DONE %s", v)
 	}
 }
 

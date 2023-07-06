@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 
 	. "nyiyui.ca/hato/sakayukari"
@@ -21,12 +22,29 @@ func (i *Instance) ReplaceActor(ref ActorRef, a Actor) {
 
 // TODO: change Graph while reducing execution interruption
 
+func removeDuplicate[T comparable](sliceList []T) []T {
+	allKeys := make(map[T]bool)
+	list := []T{}
+	for _, item := range sliceList {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
+}
+
 func (i *Instance) dependsOn() [][]int {
 	dependsOn := make([][]int, len(i.g.Actors))
 	for j, actor := range i.g.Actors {
 		for _, k := range actor.Inputs {
 			dependsOn[k.Index] = append(dependsOn[k.Index], j)
 		}
+	}
+	// deduplication is needed to prevent sending the same Diffuse1 multiple times to an Actor
+	for j, actor := range i.g.Actors {
+		dependsOn[j] = removeDuplicate(dependsOn[j])
+		log.Printf("--- INPUTS %d: %#v", j, actor.Inputs)
 	}
 	return dependsOn
 }
@@ -64,6 +82,7 @@ func (i *Instance) Diffuse() error {
 	dependsOn := i.dependsOn()
 	state := make([]Value, len(i.g.Actors))
 	for {
+		log.Printf("WAITING")
 		chosen, recv, recvOK := reflect.Select(cases)
 		if !recvOK {
 			panic("recvOK is false but only SelectRecv is used")
@@ -71,11 +90,12 @@ func (i *Instance) Diffuse() error {
 		var caseI int
 		caseI = caseIs[chosen]
 		d := recv.Interface().(Diffuse1)
+		log.Printf("got: %s", d)
 		if d.Origin == (ActorRef{}) {
 			// self if blank
 			d.Origin = ActorRef{Index: caseI}
 			// only do dependencies if the actor itself publishes a new value; if the actor sends it to a different actor, that actor can decide to publichs a new value or not
-			// log.Printf("%s dependsOn %#v", d.Origin, dependsOn[d.Origin.Index])
+			log.Printf("sending to deps of %s: %#v", d.Origin, dependsOn[d.Origin.Index])
 			for _, j := range dependsOn[d.Origin.Index] {
 				dep := i.g.Actors[j]
 				dep.InputCh <- d
@@ -87,9 +107,9 @@ func (i *Instance) Diffuse() error {
 			if !origin.Type.Input {
 				panic(fmt.Sprintf("input to non-input actor %s %s", d.Origin, origin.Comment))
 			}
-			//log.Printf("send to %s: %s", d.Origin, d)
+			log.Printf("send to %s: %s", d.Origin, d)
 			origin.InputCh <- d
-			//log.Printf("sent to %s: %s", d.Origin, d)
+			log.Printf("sent to %s: %s", d.Origin, d)
 		}
 		//log.Print("done this loop")
 		// TODO: handle hanging actors
