@@ -46,11 +46,13 @@ type train struct {
 	currentBack int
 	// currentFront is the path index of the first car's occupying line.
 	currentFront int
-	// next is the path index of the first car's net line.
-	next int
 	// path is the path of outgoing LinePorts until the goal.
 	path  []LinePort
 	state trainState
+}
+
+func (t *train) next() int {
+	return t.currentFront + 1
 }
 
 func (t *train) String() string {
@@ -58,7 +60,7 @@ func (t *train) String() string {
 	fmt.Fprintf(b, "power%d %d-%d", t.power, t.currentBack, t.currentFront)
 	switch t.state {
 	case trainStateNextAvail:
-		fmt.Fprintf(b, "→%d", t.next)
+		fmt.Fprintf(b, "→%d", t.next())
 	case trainStateNextLocked:
 		fmt.Fprintf(b, "L")
 	}
@@ -129,10 +131,9 @@ func Guide(conf GuideConf) Actor {
 		power:        30,
 		currentBack:  0,
 		currentFront: 0,
-		next:         1,
 		state:        trainStateNextAvail,
 	}
-	t1.path = g.y.PathTo(conf.Layout.MustLookupIndex("4/A"), conf.Layout.MustLookupIndex("1/D"))
+	t1.path = g.y.PathTo(conf.Layout.MustLookupIndex("5"), conf.Layout.MustLookupIndex("1/D"))
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -174,21 +175,23 @@ func (g *guide) loop() {
 				}
 				cf := g.y.Lines[t.path[t.currentFront].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
-					nextI := t.path[t.currentFront].LineI
-					g.unlock(nextI)
-					g.apply(&t, t.currentFront, 0)
-					t.currentFront--
-					t.next--
-					log.Printf("=== currentFront regression: %d", t.currentFront)
+					if t.currentFront == 0 {
+						log.Printf("=== currentFront regression (ignore): %d", t.currentFront)
+					} else {
+						nextI := t.path[t.currentFront].LineI
+						g.unlock(nextI)
+						g.apply(&t, t.currentFront, 0)
+						t.currentFront--
+						log.Printf("=== currentFront regression: %d", t.currentFront)
+					}
 				}
 				if t.state == trainStateNextAvail {
 					// if t.state ≠ trainStateNextAvail, t.next could be out of range
-					cf := g.y.Lines[t.path[t.next].LineI]
+					cf := g.y.Lines[t.path[t.next()].LineI]
 					if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
-						log.Printf("=== next succession: %d", t.next)
+						log.Printf("=== next succession: %d", t.next())
 						log.Printf("inner: %#v", inner)
 						t.currentFront++
-						t.next++
 					}
 				}
 				g.tryLockingNext(ti, &t)
@@ -211,15 +214,14 @@ func (g *guide) loop() {
 }
 
 func (g *guide) tryLockingNext(ti int, t *train) {
-	if t.next == len(t.path) {
+	if t.currentFront == len(t.path)-1 {
 		t.state = trainStateNextLocked
 		return
 	}
-	nextI := t.path[t.next].LineI
+	nextI := t.path[t.next()].LineI
 	ok := g.lock(nextI, ti)
 	if ok {
 		t.state = trainStateNextAvail
-		log.Printf("train %d: successfully locked %d", ti, nextI)
 	} else {
 		t.state = trainStateNextLocked
 		log.Printf("train %d: failed to lock %d", ti, nextI)
@@ -240,7 +242,7 @@ func (g *guide) reify(t *train) {
 	switch t.state {
 	case trainStateNextAvail:
 		power = t.power
-		g.apply(t, t.next, power)
+		g.apply(t, t.next(), power)
 	case trainStateNextLocked:
 		power = idlePower
 	}
@@ -279,7 +281,7 @@ func (g *guide) ensureLock(ti int) {
 		}
 	}
 	if t.state == trainStateNextAvail {
-		ok := g.lock(t.path[t.next].LineI, ti)
+		ok := g.lock(t.path[t.next()].LineI, ti)
 		if !ok {
 			panic(fmt.Sprintf("train %s netx: locking failed", &t))
 		}

@@ -7,7 +7,6 @@ import (
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	. "nyiyui.ca/hato/sakayukari"
-	"nyiyui.ca/hato/sakayukari/bodge"
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/runtime"
 	"nyiyui.ca/hato/sakayukari/tal"
@@ -37,15 +36,15 @@ func Main() error {
 		return fmt.Errorf("conn find: %w", err)
 	}
 	g.Actors = append(g.Actors, connActors...)
-	g.Actors = append(g.Actors, conn.Velocity2(
-		ActorRef{Index: 3},
-		0,
-	))
-	g.Actors = append(g.Actors, bodge.Model(bodge.ModelConf{
-		Attitudes: []bodge.AttitudeConf{
-			bodge.AttitudeConf{Source: ActorRef{Index: 5}},
-		},
-	}))
+	//g.Actors = append(g.Actors, conn.Velocity2(
+	//	ActorRef{Index: 3},
+	//	0,
+	//))
+	//g.Actors = append(g.Actors, bodge.Model(bodge.ModelConf{
+	//	Attitudes: []bodge.AttitudeConf{
+	//		bodge.AttitudeConf{Source: ActorRef{Index: 5}},
+	//	},
+	//}))
 	// g.Actors = append(g.Actors, Control(ActorRef{Index: 0}, ActorRef{Index: 2}, "A", "C", "D"))
 	// g.Actors = append(g.Actors, bodge.Timing(ActorRef{Index: 2}, ActorRef{Index: 4}))
 	// g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
