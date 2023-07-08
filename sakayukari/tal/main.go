@@ -133,8 +133,8 @@ func Guide(conf GuideConf) Actor {
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
-	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
+	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -183,14 +183,20 @@ func (g *guide) loop() {
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
 					if t.currentFront == 0 {
 						log.Printf("=== currentFront regression (ignore): %d", t.currentFront)
-					} else {
-						nextI := t.path[t.currentFront].LineI
-						g.unlock(nextI)
-						g.apply(&t, t.currentFront, 0)
-						t.currentFront--
-						log.Printf("=== currentFront regression: %d", t.currentFront)
+						goto NoCurrentFront
 					}
+					if t.currentFront <= t.currentBack {
+						// this can happen e.g. when the train is at 1-1→2 and then the 1st line becomes 0 (e.g. A0, B0) (currentBack moving to 0 is prevented by an if for currentBack)
+						log.Printf("=== currentFront regression (ignore as currentFront <= currentBack): %d", t.currentFront)
+						goto NoCurrentFront
+					}
+					nextI := t.path[t.currentFront].LineI
+					g.unlock(nextI)
+					g.apply(&t, t.currentFront, 0)
+					t.currentFront--
+					log.Printf("=== currentFront regression: %d", t.currentFront)
 				}
+			NoCurrentFront:
 				if t.state == trainStateNextAvail {
 					// if t.state ≠ trainStateNextAvail, t.next could be out of range
 					cf := g.y.Lines[t.path[t.next()].LineI]
@@ -221,6 +227,7 @@ func (g *guide) loop() {
 
 func (g *guide) tryLockingNext(ti int, t *train) {
 	if t.currentFront == len(t.path)-1 {
+		log.Printf("train %d: currentFront is last", ti)
 		t.state = trainStateNextLocked
 		return
 	}
@@ -277,7 +284,6 @@ func (g *guide) applySwitch(t *train, pathI int) {
 	// for debugging ends here
 	if g.y.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
-		log.Printf("noswitch")
 		return
 	}
 	// TODO: rmbr to turn off the line afterwards!
