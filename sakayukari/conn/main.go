@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
 )
@@ -54,27 +53,6 @@ type Conn struct {
 	Id   Id
 	Path string
 	F    io.ReadWriter
-}
-
-type ReqSwitch struct {
-	Line       LineName
-	BrakeAfter bool
-	Direction  bool
-	Power      uint8
-	Timeout    time.Duration
-}
-
-func (r ReqSwitch) String() string {
-	opts := ""
-	if r.BrakeAfter {
-		opts += "b"
-	}
-	if r.Direction {
-		opts += "D"
-	} else {
-		opts += "d"
-	}
-	return fmt.Sprintf("switch(%s %s %d %s)", r.Line, opts, r.Power, r.Timeout)
 }
 
 func AbsClampPower(power int) uint8 {
@@ -129,7 +107,7 @@ func (i Id) String() string {
 	return fmt.Sprintf("%s/%s-%s", i.Type, i.Variant, i.Instance)
 }
 
-func parseId(id string) Id {
+func ParseId(id string) Id {
 	ss := strings.Split(id, "/")
 	if len(ss) < 3 {
 		ss = append(ss, "")

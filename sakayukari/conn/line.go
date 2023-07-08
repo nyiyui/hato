@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
 )
@@ -28,7 +27,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
-				//log.Printf("ReqLine %s", req)
+				log.Printf("ReqLine %s", req)
 				var err error
 				func() {
 					state.fileLock.Lock()
@@ -42,38 +41,8 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 				if err != nil {
 					log.Printf("commit %s: %s", req, err)
 				}
-			case ReqSwitch:
-				afterCh := time.After(req.Timeout)
-				go func() {
-					<-afterCh
-					var err error
-					func() {
-						state.fileLock.Lock()
-						defer state.fileLock.Unlock()
-						_, err = fmt.Fprintf(c.F, "%s\n", ReqLine{
-							Line:  req.Line,
-							Brake: req.BrakeAfter,
-							Power: 0,
-						}.String())
-					}()
-					if err != nil {
-						log.Printf("commit(timeout) %s: %s", req, err)
-					}
-				}()
-				req2 := ReqLine{
-					Line:      req.Line,
-					Direction: req.Direction,
-					Power:     req.Power,
-				}
-				var err error
-				func() {
-					state.fileLock.Lock()
-					defer state.fileLock.Unlock()
-					_, err = fmt.Fprintf(c.F, "%s\n", req2.String())
-				}()
-				if err != nil {
-					log.Printf("commit(switch) %s: %s", req, err)
-				}
+			default:
+				log.Printf("unknown type %T", req)
 			}
 		}
 	}()

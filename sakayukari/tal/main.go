@@ -128,12 +128,12 @@ func Guide(conf GuideConf) Actor {
 	}
 	g.state.SetRect(0, 6, 70, 20)
 	t1 := train{
-		power:        30,
+		power:        40,
 		currentBack:  0,
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	t1.path = g.y.PathTo(conf.Layout.MustLookupIndex("5"), conf.Layout.MustLookupIndex("1/D"))
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W"))
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -167,12 +167,17 @@ func (g *guide) loop() {
 				}
 				cb := g.y.Lines[t.path[t.currentBack].LineI]
 				if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
+					if t.currentBack >= t.currentFront {
+						// this can happen e.g. when the train is at 0-0→1 and then the 0th line becomes 0 (e.g. A0, B0)
+						goto NoCurrentBack
+					}
 					nextI := t.path[t.currentBack].LineI
 					g.unlock(nextI)
 					g.apply(&t, t.currentBack, 0)
 					t.currentBack++
 					log.Printf("=== currentBack succession: %d", t.currentBack)
 				}
+			NoCurrentBack:
 				cf := g.y.Lines[t.path[t.currentFront].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
 					if t.currentFront == 0 {
@@ -221,6 +226,8 @@ func (g *guide) tryLockingNext(ti int, t *train) {
 	nextI := t.path[t.next()].LineI
 	ok := g.lock(nextI, ti)
 	if ok {
+		g.applySwitch(t, t.next())
+		// TODO: make sure while switch is moving, no trains move inside this (maybe make a "lockedUntil" field or sth)
 		t.state = trainStateNextAvail
 	} else {
 		t.state = trainStateNextLocked
@@ -236,7 +243,6 @@ func reverse[S ~[]E, E any](s S) {
 }
 
 func (g *guide) reify(t *train) {
-	// TODO: handle switches
 	log.Printf("REIFY: %s", t)
 	power := 0
 	switch t.state {
@@ -248,14 +254,49 @@ func (g *guide) reify(t *train) {
 	}
 	t.noPowerSupplied = power == 0
 	for i := t.currentBack; i <= t.currentFront; i++ {
+		g.applySwitch(t, i)
+		// TODO: race condition: applySwitch has to finish before apply (applySwitch takes 1s, so applySwitch usually loses, which is bad: car going into a *moving* switch) (see "make sure while switch is moving" TODO)
 		g.apply(t, i, power)
 	}
 }
 
+func (g *guide) applySwitch(t *train, pathI int) {
+	li := t.path[pathI].LineI
+	pi := t.path[pathI].PortI
+	if pi == 0 {
+		// merging, so no applySwitch needed
+		log.Printf("merging")
+		return
+	}
+	// for debugging
+	//if g.y.Lines[li].Comment == "W" {
+	//	return
+	//}
+	//log.Printf("line %s", g.y.Lines[li])
+	// for debugging ends here
+	if g.y.Lines[li].SwitchConn == (LineID{}) {
+		// no switch here
+		log.Printf("noswitch")
+		return
+	}
+	// TODO: rmbr to turn off the line afterwards!
+	d := Diffuse1{
+		Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
+		Value: conn.ReqLine{
+			Line:      g.y.Lines[li].SwitchConn.Line,
+			Direction: pi == 1,
+			Power:     128,
+		},
+	}
+	//log.Printf("diffuse %#v", d)
+	g.actor.OutputCh <- d
+}
+
 func (g *guide) apply(t *train, pathI int, power int) {
 	li := t.path[pathI].LineI
+	line := g.y.Lines[li]
 	rl := conn.ReqLine{
-		Line: g.y.Lines[li].PowerConn.Line,
+		Line: line.PowerConn.Line,
 		//Direction: t.path[pathI].PortI != 0,
 		Direction: t.path[pathI].PortI == 0,
 		// NOTE: reversed for now as the layout is reversed (bodge)
@@ -263,9 +304,9 @@ func (g *guide) apply(t *train, pathI int, power int) {
 		Power: conn.AbsClampPower(power),
 	}
 	// TODO: fix direction to follow layout.Layout rules
-	//log.Printf("apply %s %s", t, rl)
+	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[line.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
-		Origin: g.conf.Actors[g.y.Lines[li].PowerConn],
+		Origin: g.conf.Actors[line.PowerConn],
 		Value:  rl,
 	}
 	//log.Printf("apply2 %s", rl)

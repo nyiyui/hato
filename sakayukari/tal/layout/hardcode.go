@@ -1,8 +1,12 @@
 package layout
 
-import "nyiyui.ca/hato/sakayukari/conn"
+import (
+	"math"
 
-func InitTestbench() (*Layout, error) {
+	"nyiyui.ca/hato/sakayukari/conn"
+)
+
+func InitTestbench1() (*Layout, error) {
 	breadboard := func(line string) LineID {
 		return LineID{
 			Conn: conn.Id{"soyuu-line", "v1", "1"},
@@ -40,6 +44,49 @@ func InitTestbench() (*Layout, error) {
 			Comment:   "5",
 			PortB:     Port{Length: 312000},
 			PowerConn: newBoard("A"),
+		},
+	})
+	return &y, err
+}
+
+func InitTestbench2() (*Layout, error) {
+	breadboard := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-line", "v1", "1"},
+			Line: line,
+		}
+	}
+	newBoard := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-line", "v2", "1"},
+			Line: line,
+		}
+	}
+	_ = newBoard
+	length := 560000 + 718000*math.Pi*2*15/360
+	y, err := Connect([]Line{
+		//Line{
+		//	Comment:   "Z",
+		//	PortB:     Port{Length: 188000},
+		//	PowerConn: newBoard("A"),
+		//},
+		Line{
+			Comment: "Y",
+			PortB:   Port{Length: 746000},
+			PortC: Port{Length: uint32(length), ConnInline: []Line{
+				Line{
+					Comment:   "W",
+					PortB:     Port{Length: 560000},
+					PowerConn: breadboard("B"),
+				},
+			}},
+			PowerConn:  breadboard("A"),
+			SwitchConn: breadboard("C"),
+		},
+		Line{
+			Comment:   "X",
+			PortB:     Port{Length: 560000},
+			PowerConn: breadboard("D"),
 		},
 	})
 	return &y, err

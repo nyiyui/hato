@@ -1,7 +1,10 @@
 package layout
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
 
 	"nyiyui.ca/hato/sakayukari/conn"
 )
@@ -20,6 +23,22 @@ type LineID struct {
 
 func (li LineID) String() string {
 	return fmt.Sprintf("%s::%s", li.Conn, li.Line)
+}
+
+func (li *LineID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(li.String())
+}
+
+func (li *LineID) UnmarshalJSON(data []byte) error {
+	inner := make([]byte, 0)
+	err := json.Unmarshal(data, &inner)
+	if err != nil {
+		return err
+	}
+	parts := strings.SplitN(string(inner), "::", 2)
+	li.Line = parts[1]
+	li.Conn = conn.ParseId(parts[0])
+	return nil
 }
 
 type Layout struct {
@@ -124,6 +143,7 @@ type Line struct {
 	PowerConn LineID
 	// SwitchConn is the connection and line ID for the soyuu-line hardware controlling this line's switch.
 	// One LineID can correspond to one Line's switch.
+	// The A direction sets the switch to the normal position, and the B direction sets the switch to the reverse position.
 	SwitchConn LineID
 }
 
@@ -145,7 +165,7 @@ func Turnout(lengthA, lengthB uint32, reverse []Line) Line {
 	return Line{
 		PortA: Port{Length: 0},
 		PortB: Port{Length: lengthA},
-		PortC: Port{Length: lengthB, connInline: reverse},
+		PortC: Port{Length: lengthB, ConnInline: reverse},
 	}
 }
 
@@ -164,43 +184,54 @@ func (l *Line) GetPort(p int) Port {
 
 func Connect(lines []Line) (Layout, error) {
 	y := Layout{Lines: make([]Line, 0, len(lines))}
-	err := y.connect(0, lines)
+	err := y.connect(lines)
 	return y, err
 }
 
-func (y *Layout) connect(baseI int, lines []Line) error {
-	i := baseI
-	// TODO: test connInline (layouts with switches)
+func (y *Layout) connect(lines []Line) error {
+	originalLen := len(y.Lines)
+	// TODO: test ConnInline (layouts with switches)
 	// only do prev→next line connections here; next→prev conns are added later
-	for li, l := range lines {
-		if l.PortB.notZero() {
+	for li2, l := range lines {
+		i := len(y.Lines) - originalLen
+		if len(l.PortC.ConnInline) != 0 {
+			li := len(y.Lines)
 			y.Lines = append(y.Lines, l)
-			if i != 0 {
-				y.Lines[i-1].PortB.ConnI = i
-				y.Lines[i-1].PortB.ConnP = 0
-				y.Lines[i-1].PortB.ConnFilled = true
-			}
-		} else if l.PortC.connInline != nil {
-			inlineLen := len(l.PortC.connInline)
-			err := y.connect(i, l.PortC.connInline)
+			inlineLen := len(l.PortC.ConnInline)
+			err := y.connect(l.PortC.ConnInline)
 			if err != nil {
 				return fmt.Errorf("line %d PortC inline: %w", li, err)
 			}
-			l.PortC.ConnI = i
-			l.PortC.ConnP = 0
-			l.PortC.ConnFilled = true
-			y.Lines = append(y.Lines, l)
+			y.Lines[li].PortB.ConnI = li + 1 + inlineLen
+			y.Lines[li].PortB.ConnP = 0
+			y.Lines[li].PortB.ConnFilled = true
+			y.Lines[li].PortC.ConnI = i + 1
+			y.Lines[li].PortC.ConnP = 0
+			y.Lines[li].PortC.ConnFilled = true
+			y.Lines[li].PortC.ConnInline = nil
+			// TODO: last Line of ConnInline is not ConnI:-1
 			if i != 0 {
-				y.Lines[i-1].PortB.ConnI = i + inlineLen
-				y.Lines[i-1].PortB.ConnP = 0
-				y.Lines[i-1].PortB.ConnFilled = true
+				y.Lines[li-1].PortB.ConnI = li
+				y.Lines[li-1].PortB.ConnP = 0
+				y.Lines[li-1].PortB.ConnFilled = true
 			}
 			i += inlineLen
+		} else if l.PortB.notZero() {
+			y.Lines = append(y.Lines, l)
+			if i != 0 && y.Lines[i-1].PortB.ConnI != -1 {
+				y.Lines[li2-1].PortB.ConnI = i
+				y.Lines[li2-1].PortB.ConnP = 0
+				y.Lines[li2-1].PortB.ConnFilled = true
+			}
 		} else {
-			return fmt.Errorf("unsupported line %d: %#v", li, l)
+			return fmt.Errorf("unsupported line %d: %#v", li2, l)
 		}
 		i++
 	}
+	li := len(y.Lines) - 1
+	y.Lines[li].PortB.ConnI = -1
+	y.Lines[li].PortB.ConnP = -1
+	y.Lines[li].PortB.ConnFilled = false
 	return y.connectFix()
 }
 
@@ -257,21 +288,21 @@ type Port struct {
 	ConnI int
 	// ConnI is the port of the line this connects to in the layout. Set to -1 if there is no connection.
 	ConnP int
-	// connInline is the line for the connection.
-	connInline []Line
+	// ConnInline is the line for the connection.
+	ConnInline []Line
 	// TODO: how to represent curves?
 }
 
 func (p Port) String() string {
 	if p.ConnFilled {
-		return fmt.Sprintf("l%dµm → i%d/p%d (%#v)", p.Length, p.ConnI, p.ConnP, p.connInline)
+		return fmt.Sprintf("l%dµm → i%d/p%d (%#v)", p.Length, p.ConnI, p.ConnP, p.ConnInline)
 	} else {
-		return fmt.Sprintf("l%dµm → NA (%#v)", p.Length, p.connInline)
+		return fmt.Sprintf("l%dµm → NA (%#v)", p.Length, p.ConnInline)
 	}
 }
 
 func (p *Port) notZero() bool {
-	return p.Length != 0 || p.ConnFilled || p.ConnI != 0 || p.ConnP != 0 || p.connInline != nil
+	return p.Length != 0 || p.ConnFilled || p.ConnI != 0 || p.ConnP != 0 || p.ConnInline != nil
 }
 
 // countLength sums the length of the total layout. The layout must not contain switches.
@@ -294,7 +325,11 @@ func (y *Layout) countLength() uint32 {
 }
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.
+// This assumes all switches can be operated in both normal and reverse directions.
 func (y *Layout) PathTo(from, goal int) []LinePort {
+	// simple Dijkstra's, using the "using" slice to track the shortest path
+	const infinity = -1
+	const debug = false
 	if from == goal {
 		return nil
 	}
@@ -305,28 +340,50 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 		if i == from {
 			continue
 		}
-		distance[i] = -1
+		distance[i] = infinity
 	}
-	queue := make([]int, 0, len(y.Lines))
-	queue = append(queue, from)
-	for current := from; len(queue) > 0; current, queue = queue[0], queue[1:] {
-		l := y.Lines[current]
-		for i := 0; i < 2; i++ {
+	queue := make([]LinePort, 0, len(y.Lines))
+	queue = append(queue, LinePort{from, 1}, LinePort{from, 2})
+	for current := (LinePort{from, 0}); len(queue) > 0; current, queue = queue[0], queue[1:] {
+		if debug {
+			log.Print("---")
+			log.Printf("current %#v", current)
+			log.Printf("queue %#v", queue)
+		}
+		l := y.Lines[current.LineI]
+		for i := 0; i <= 2; i++ {
+			if debug {
+				log.Printf("port %d", i)
+			}
 			p := l.GetPort(i)
 			if !p.ConnFilled {
+				if debug {
+					log.Printf("unfilled")
+				}
 				continue
 			}
-			if distance[p.ConnI] == -1 || distance[current] < distance[p.ConnI] {
-				distance[p.ConnI] = distance[current] + 1
-				using[p.ConnI] = LinePort{current, i}
-				queue = append(queue, p.ConnI)
+			if i+current.PortI == 5 {
+				// cannot go between ports B and C
+				if debug {
+					log.Printf("between")
+				}
+				continue
+			}
+			if distance[p.ConnI] == infinity || distance[current.LineI] < distance[p.ConnI] {
+				distance[p.ConnI] = distance[current.LineI] + 1
+				using[p.ConnI] = LinePort{current.LineI, i}
+				queue = append(queue, LinePort{p.ConnI, i})
+				if debug {
+					log.Printf("add %#v", queue[len(queue)-1])
+				}
 			}
 		}
-		visited[current] = true
-		if distance[goal] != -1 {
+		visited[current.LineI] = true
+		if distance[goal] != infinity {
 			break
 		}
 	}
+	log.Printf("distance[%d]: %#v", goal, distance)
 	lps := make([]LinePort, distance[goal])
 	for i, j := goal, 0; i != from; i, j = using[i].LineI, j+1 {
 		lps[len(lps)-1-j] = using[i]

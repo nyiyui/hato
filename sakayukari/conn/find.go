@@ -79,7 +79,7 @@ func (s *State) connect(path string) {
 		return
 	}
 	line = strings.TrimSpace(line[2:])
-	id := parseId(line)
+	id := ParseId(line)
 	// log.Printf("connected to %s %s", path, id)
 	c := &Conn{
 		Id:   id,

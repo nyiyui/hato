@@ -1,6 +1,7 @@
 package ctl
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -48,10 +49,12 @@ func Main() error {
 	// g.Actors = append(g.Actors, Control(ActorRef{Index: 0}, ActorRef{Index: 2}, "A", "C", "D"))
 	// g.Actors = append(g.Actors, bodge.Timing(ActorRef{Index: 2}, ActorRef{Index: 4}))
 	// g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
-	y, err := layout.InitTestbench()
+	y, err := layout.InitTestbench2()
 	if err != nil {
 		panic(err)
 	}
+	data, _ := json.MarshalIndent(y, "", "  ")
+	log.Printf("layout: %s", data)
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
 		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
@@ -59,7 +62,7 @@ func Main() error {
 			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "B"}: ActorRef{Index: 2},
 			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "C"}: ActorRef{Index: 2},
 			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "D"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "A"}: ActorRef{Index: 3},
+			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "A"}: ActorRef{Index: 3},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "B"}: ActorRef{Index: 3},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "C"}: ActorRef{Index: 3},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "D"}: ActorRef{Index: 3},

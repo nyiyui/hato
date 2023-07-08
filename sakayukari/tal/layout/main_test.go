@@ -12,7 +12,8 @@ func TestConnect(t *testing.T) {
 		StraightLine(312000),
 	})
 	var expected uint32 = 312000 + 312000
-	t.Logf("layout: %#v", y)
+	data, _ := json.Marshal(y)
+	t.Logf("layout: %s", data)
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
@@ -43,14 +44,21 @@ func TestPathTo(t *testing.T) {
 	})
 	y.Lines[1].PortA.ConnI = 2
 	y.Lines[1].PortB.ConnI = 0
+	testbench2, err := InitTestbench2()
+	if err != nil {
+		t.Fatalf("InitTestbench2: %s", err)
+	}
 	setups := []setup{
-		{"normal", y, 0, 2},
-		{"reverse", y, 2, 0},
+		{"straight-ascend", y, 0, 2},
+		{"straight-descend", y, 2, 0},
+		{"testbench2-normal", testbench2, 0, 1},
+		{"testbench2-reverse", testbench2, 0, 2},
+		{"testbench2-YW", testbench2, testbench2.MustLookupIndex("Y"), testbench2.MustLookupIndex("W")},
 	}
 	for i, s := range setups {
 		t.Run(fmt.Sprintf("%d-%s", i, s.Comment), func(t *testing.T) {
-			t.Logf("layout: %#v", y)
-			data, _ := json.Marshal(y)
+			y := s.Layout
+			data, _ := json.MarshalIndent(y, "", "  ")
 			t.Logf("layout-json: %s", data)
 			path := y.PathTo(s.From, s.Goal)
 			current := -1
@@ -66,8 +74,15 @@ func TestPathTo(t *testing.T) {
 	}
 }
 
-func TestTestbench(t *testing.T) {
-	_, err := InitTestbench()
+func TestTestbench1(t *testing.T) {
+	_, err := InitTestbench1()
+	if err != nil {
+		t.Fatalf("error: %s", err)
+	}
+}
+
+func TestTestbench2(t *testing.T) {
+	_, err := InitTestbench2()
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}

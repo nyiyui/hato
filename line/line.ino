@@ -2,7 +2,7 @@
 #include "ina219.h"
 #include <Adafruit_MotorShield.h>
 
-#define VARIANT "v1/1"
+#define VARIANT "v2/1"
 
 typedef struct Line {
   Adafruit_DCMotor *motor;

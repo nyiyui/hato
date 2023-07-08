@@ -1,8 +1,6 @@
 package ctl
 
 import (
-	"time"
-
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	. "nyiyui.ca/hato/sakayukari"
@@ -41,20 +39,22 @@ func Control(uiEvents ActorRef, lineRef ActorRef, line, pointA, pointB string) A
 					Direction: cState.Direction,
 					Power:     (key[0] - '0') * 0x10,
 				}}
-			case "O", "o":
-				a.OutputCh <- Diffuse1{Origin: lineRef, Value: conn.ReqSwitch{
-					Line:      pointA,
-					Direction: key[0] == 'O',
-					Power:     0xff,
-					Timeout:   1 * time.Second,
-				}}
-			case "P", "p":
-				a.OutputCh <- Diffuse1{Origin: lineRef, Value: conn.ReqSwitch{
-					Line:      pointB,
-					Direction: key[0] == 'P',
-					Power:     0xff,
-					Timeout:   1 * time.Second,
-				}}
+				/*
+					case "O", "o":
+						a.OutputCh <- Diffuse1{Origin: lineRef, Value: conn.ReqSwitch{
+							Line:      pointA,
+							Direction: key[0] == 'O',
+							Power:     0xff,
+							Timeout:   1 * time.Second,
+						}}
+					case "P", "p":
+						a.OutputCh <- Diffuse1{Origin: lineRef, Value: conn.ReqSwitch{
+							Line:      pointB,
+							Direction: key[0] == 'P',
+							Power:     0xff,
+							Timeout:   1 * time.Second,
+						}}
+				*/
 			}
 			termui.Render(state)
 		}
