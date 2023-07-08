@@ -133,7 +133,8 @@ func Guide(conf GuideConf) Actor {
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W"))
+	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
