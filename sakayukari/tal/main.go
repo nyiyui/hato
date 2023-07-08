@@ -133,8 +133,8 @@ func Guide(conf GuideConf) Actor {
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
-	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
+	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -292,7 +292,7 @@ func (g *guide) applySwitch(t *train, pathI int) {
 		Value: conn.ReqLine{
 			Line:      g.y.Lines[li].SwitchConn.Line,
 			Direction: pi == 1,
-			Power:     128,
+			Power:     255,
 		},
 	}
 	//log.Printf("diffuse %#v", d)

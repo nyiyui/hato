@@ -1,16 +1,27 @@
 #define DEBUG
-#include "ina219.h"
 #include <Adafruit_MotorShield.h>
+#include <EEPROM.h>
 
-#define VARIANT "v2/1"
+#define VARIANT "v2"
+// Instance is initially set to this, if nothing exists at EEPROM_INSTANCE_ADDR.
+#define INSTANCE "7"
+
+// === EEPROM Layout
+// 00-10  version string
+// 10-31  instance name (null-terminated)
+// 40-TBD calibration data
+#define EEPROM_VERSION_ADDR 0x0
+#define EEPROM_INSTANCE_ADDR 0x10
+#define EEPROM_CALIBRATION_ADDR 0x40
+#include "ina219.h"
 
 typedef struct Line {
   Adafruit_DCMotor *motor;
   bool direction;
 } line;
 
+static char instance[0x21] = INSTANCE;
 Adafruit_MotorShield shield0 = Adafruit_MotorShield();
-bool debug = false;
 
 static Line lineA = {
     .motor = shield0.getMotor(1),
@@ -43,7 +54,28 @@ void Line_setPwm(Line *line, int value, bool brake) {
 }
 
 void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+  };
   Serial.println(" Sstart");
+  if (EEPROM.read(EEPROM_INSTANCE_ADDR) == 0) {
+    Serial.println(" SInitialising EEPROM with instance name...");
+    static char *newInstance = instance;
+    for (size_t i = 0; i < 0x20; i++) {
+      EEPROM.update(EEPROM_INSTANCE_ADDR + i,
+                    i < strlen(newInstance) ? newInstance[i] : 0);
+    }
+    Serial.println(" SInitialised EEPROM with instance name.");
+  } else {
+    for (size_t i = 0; i < 0x20; i++) {
+      instance[i] = EEPROM.read(EEPROM_INSTANCE_ADDR + i);
+    }
+  }
+  if (EEPROM.read(EEPROM_CALIBRATION_ADDR) != 0) {
+    Serial.println(" SLoading calibration data from EEPROM...");
+    ina219_load_calibrate();
+    Serial.println(" SLoaded calibration data from EEPROM.");
+  }
   // === Motor Shield
   while (!shield0.begin()) {
     Serial.println(" Smotor shield init failed");
@@ -64,7 +96,7 @@ void loop() {
   static bool prevD = false;
   unsigned long now = micros();
   if (prev + 3000 <= now) {
-    ina219_update((now - prev) / 1000);
+    ina219_update((now - prev) / 1000, true);
 #ifdef DEBUG
     if (debug) {
       Serial.print("elapsed:");
@@ -180,7 +212,8 @@ void handleSLCP() {
     return;
   int kind = Serial.read();
   if (kind == 'I') {
-    Serial.println(" Isoyuu-line/" VARIANT);
+    Serial.print(" Isoyuu-line/" VARIANT "-");
+    Serial.println(instance);
     int eol = Serial.read();
     if (eol != '\n') {
       Serial.println(" Eexpected eol");
@@ -220,6 +253,43 @@ void handleSLCP() {
     Serial.println(". Note: this is only saved to RAM.");
   } else if (kind == 'G') {
     debug = !debug;
+  } else if (kind == 'H') {
+    // calibration
+    Serial.println("Clearing EEPROM...");
+    for (int i = 0; i < EEPROM.length(); i++) {
+      EEPROM.update(i, 0);
+    }
+    Serial.println("Cleared EEPROM.");
+  } else if (kind == 'K') {
+    // set instance (the 1 part of v1/1)
+    static char newInstance[0x21] = {0};
+    Serial.readBytes(buffer, 0x20);
+    for (size_t i = 0; i < 0x20; i++) {
+      EEPROM.update(EEPROM_INSTANCE_ADDR + i, buffer[i]);
+    }
+    Serial.println("Wrote instance name to EEPROM.");
+    Serial.print("Old instance name: ");
+    Serial.println(instance);
+    Serial.print("New instance name: ");
+    Serial.println(newInstance);
+    for (size_t i = 0; i < 0x20; i++) {
+      instance[i] = newInstance[i];
+    }
+  } else if (kind == 'L') {
+    Serial.println("Calibrating...");
+    ina219_calibrate();
+    Serial.println("Calibrated (written to EEPROM).");
+  } else if (kind == 'l') {
+    char line = Serial.read();
+    Serial.readBytes(buffer, 10);
+    int i = line - 'A';
+#define record(j) if (i == j) calib##j.offset_uA = atoi(buffer);\
+  EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calib##j.offset_uA);
+    record(0)
+    record(1)
+    record(2)
+    record(3)
+#undef record
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);

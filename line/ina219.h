@@ -1,4 +1,11 @@
 #include <Adafruit_INA219.h>
+#include <EEPROM.h>
+
+bool debug = false;
+
+struct ina219_calibration {
+  long offset_uA;
+};
 
 struct ina219_line {
   long weighted_uA;
@@ -14,7 +21,11 @@ Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
-int ina219_weight = 92;
+#define vars(i) static struct ina219_calibration calib##i = {};
+vars(0) vars(1) vars(2) vars(3)
+#undef vars
+
+    int ina219_weight = 92;
 float ina219_elapsed_weight = 1.0;
 int ina219_threshold = 1000;
 int ina219_uteThreshold = 50000;
@@ -44,11 +55,34 @@ static long clamp(long a) {
   return a;
 }
 
-static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
+static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed,
+                                 bool handle) {
   long current_uA = ina219->getCurrent_mA() * 1000;
-  int weight = ina219_weight + (int) (ina219_elapsed_weight * (float) elapsed);
+  int weight = ina219_weight + (int)(ina219_elapsed_weight * (float)elapsed);
   // TODO: ina219 moving average is highly affected my timing
   ina219_lines[i].direct_uA = current_uA;
+  if (handle) {
+#define handle2(j)                                                             \
+  do {if (i == j) {                                                                \
+    Serial.print(#j "direct:");\
+    Serial.print(ina219_lines[j].direct_uA);\
+    Serial.print(","#j "result:");\
+    Serial.println(ina219_lines[j].direct_uA-calib##j.offset_uA);\
+  }} while (0)
+    if (debug) {
+      handle2(0);
+      handle2(1);
+      handle2(2);
+      handle2(3);
+    }
+#undef handle2
+#define handle3(j) ina219_lines[i].direct_uA -= calib##j.offset_uA;
+    handle3(0);
+    handle3(1);
+    handle3(2);
+    handle3(3);
+#undef handle3
+  }
   if (abs(current_uA) < ina219_threshold) {
     ina219_lines[i].underThresholdElapsed += elapsed;
   }
@@ -63,16 +97,81 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
   }
   // ignore as this is probably the non-duty-cycle part of PWM
   ina219_lines[i].weighted_uA =
-      (ina219_lines[i].weighted_uA * weight +
-       current_uA * (100 - weight)) /
+      (ina219_lines[i].weighted_uA * weight + current_uA * (100 - weight)) /
       100;
 }
 
-void ina219_update(int elapsed) {
-  ina219_update_single(0, &ina2190, elapsed);
-  ina219_update_single(1, &ina2191, elapsed);
-  ina219_update_single(2, &ina2192, elapsed);
-  ina219_update_single(3, &ina2193, elapsed);
+void ina219_update(int elapsed, bool handle) {
+  ina219_update_single(0, &ina2190, elapsed, handle);
+  ina219_update_single(1, &ina2191, elapsed, handle);
+  ina219_update_single(2, &ina2192, elapsed, handle);
+  ina219_update_single(3, &ina2193, elapsed, handle);
+}
+
+void ina219_load_calibrate() {
+#define write(i)                                                               \
+  EEPROM.get(EEPROM_CALIBRATION_ADDR + i * 4, calib##i.offset_uA);             \
+  Serial.print(#i " offset: ");                                                \
+  Serial.println(calib##i.offset_uA);
+  write(0) write(1) write(2) write(3)
+#undef write
+}
+
+void ina219_calibrate() {
+#define vars(i) long cum##i = 0;
+  vars(0) vars(1) vars(2) vars(3)
+#undef vars
+      const unsigned long timeframe = 40000000;
+  Serial.print("Timeframe: ");
+  Serial.print(timeframe);
+  Serial.println("µs");
+  unsigned long prev = 0;
+  unsigned long now = micros();
+  unsigned long start = now;
+  long count = 0;
+  while (now - start < timeframe) {
+    now = micros();
+    if (prev + 3000 <= now) {
+      ina219_update((now - prev) / 1000, false);
+      count++;
+      if (debug) {
+        Serial.print("elapsed:");
+        Serial.print(now - prev);
+#define show(i, letter)                                                        \
+  Serial.print(",w" #letter ":");                                              \
+  Serial.print(ina219_lines[i].weighted_uA);                                   \
+  Serial.print(",d" #letter ":");                                              \
+  Serial.print(ina219_lines[i].direct_uA);
+        show(0, A) show(1, B) show(2, C) show(3, D)
+#undef show
+            Serial.print(",thresholdPositive:");
+        Serial.print(ina219_threshold);
+        Serial.print(",thresholdNegative:");
+        Serial.print(-ina219_threshold);
+        Serial.println();
+      }
+#define record(i) cum##i += ina219_lines[i].weighted_uA;
+      record(0) record(1) record(2) record(3)
+#undef record
+      prev = now;
+    }
+  }
+#define calc(i) calib##i.offset_uA = cum##i / count;
+  calc(0) calc(1) calc(2) calc(3)
+#undef calc
+#define show(i)                                                                \
+  Serial.print(#i " offset: ");                                                \
+  Serial.print(calib##i.offset_uA);                                            \
+  Serial.print(" cum: ");                                                      \
+  Serial.println(cum##i);
+      show(0) show(1) show(2) show(3)
+#undef show
+          Serial.print("count: ");
+  Serial.println(count);
+#define write(i)                                                               \
+  EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calib##i.offset_uA);
+  write(0) write(1) write(2) write(3)
+#undef write
 }
 
 #undef INA219_LENGTH
