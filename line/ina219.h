@@ -21,11 +21,9 @@ Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
 
-#define vars(i) static struct ina219_calibration calib##i = {};
-vars(0) vars(1) vars(2) vars(3)
-#undef vars
+static struct ina219_calibration calibs[4] = {0};
 
-    int ina219_weight = 92;
+int ina219_weight = 92;
 float ina219_elapsed_weight = 1.0;
 int ina219_threshold = 2000;
 int ina219_uteThreshold = 50000;
@@ -70,18 +68,19 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed,
     Serial.println(ina219_lines[j].direct_uA-calib##j.offset_uA);\
   }} while (0)
     if (debug) {
-      handle2(0);
-      handle2(1);
-      handle2(2);
-      handle2(3);
+      Serial.print(i);
+      Serial.print("original");
+      Serial.print(":");
+      Serial.print(ina219_lines[i].direct_uA);
+      Serial.print(",");
+      Serial.print(i);
+      Serial.print("result");
+      Serial.print(":");
+      Serial.print(ina219_lines[i].direct_uA-calibs[i].offset_uA);
+      Serial.print(",");
     }
 #undef handle2
-#define handle3(j) ina219_lines[i].direct_uA -= calib##j.offset_uA;
-    handle3(0);
-    handle3(1);
-    handle3(2);
-    handle3(3);
-#undef handle3
+    ina219_lines[i].direct_uA -= calibs[i].offset_uA;
   }
   if (abs(current_uA) < ina219_threshold) {
     ina219_lines[i].underThresholdElapsed += elapsed;
@@ -109,19 +108,17 @@ void ina219_update(int elapsed, bool handle) {
 }
 
 void ina219_load_calibrate() {
-#define write(i)                                                               \
-  EEPROM.get(EEPROM_CALIBRATION_ADDR + i * 4, calib##i.offset_uA);             \
-  Serial.print(#i " offset: ");                                                \
-  Serial.println(calib##i.offset_uA);
-  write(0) write(1) write(2) write(3)
-#undef write
+  for (int i = 0; i < 3; i ++) {
+    EEPROM.get(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
+    Serial.print(i);
+    Serial.print(" offset: ");
+    Serial.println(calibs[i].offset_uA);
+  }
 }
 
 void ina219_calibrate() {
-#define vars(i) long cum##i = 0;
-  vars(0) vars(1) vars(2) vars(3)
-#undef vars
-      const unsigned long timeframe = 40000000;
+  long cums[4] = {0};
+  const unsigned long timeframe = 40000000;
   Serial.print("Timeframe: ");
   Serial.print(timeframe);
   Serial.println("µs");
@@ -150,28 +147,27 @@ void ina219_calibrate() {
         Serial.print(-ina219_threshold);
         Serial.println();
       }
-#define record(i) cum##i += ina219_lines[i].weighted_uA;
-      record(0) record(1) record(2) record(3)
-#undef record
+  for (int i = 0; i < 3; i ++) {
+    cums[i] += ina219_lines[i].weighted_uA;
+  }
       prev = now;
     }
   }
-#define calc(i) calib##i.offset_uA = cum##i / count;
-  calc(0) calc(1) calc(2) calc(3)
-#undef calc
-#define show(i)                                                                \
-  Serial.print(#i " offset: ");                                                \
-  Serial.print(calib##i.offset_uA);                                            \
-  Serial.print(" cum: ");                                                      \
-  Serial.println(cum##i);
-      show(0) show(1) show(2) show(3)
-#undef show
+  for (int i = 0; i < 3; i ++) {
+    calibs[i].offset_uA = cums[i] / count;
+  }
+  for (int i = 0; i < 3; i ++) {
+    Serial.print(i);
+    Serial.print(" offset: ");
+    Serial.print(calibs[i].offset_uA);
+    Serial.print(" cum: ");
+    Serial.println(cums[i]);
+  }
           Serial.print("count: ");
   Serial.println(count);
-#define write(i)                                                               \
-  EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calib##i.offset_uA);
-  write(0) write(1) write(2) write(3)
-#undef write
+  for (int i = 0; i < 3; i ++) {
+    EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
+  }
 }
 
 #undef INA219_LENGTH

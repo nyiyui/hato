@@ -261,7 +261,12 @@ void handleSLCP() {
   } else if (kind == 'K') {
     // set instance (the 1 part of v1/1)
     static char newInstance[0x21] = {0};
-    Serial.readBytes(newInstance, 0x20);
+    size_t n = Serial.readBytes(newInstance, 0x20);
+    for (size_t i = 0; i < 0x20; i++) {
+      if (newInstance[i] == '\n') {
+        newInstance[i] = '\0';
+      }
+    }
     for (size_t i = 0; i < 0x20; i++) {
       EEPROM.update(EEPROM_INSTANCE_ADDR + i, newInstance[i]);
     }
@@ -281,13 +286,10 @@ void handleSLCP() {
     char line = Serial.read();
     Serial.readBytes(buffer, 10);
     int i = line - 'A';
-#define record(j) if (i == j) calib##j.offset_uA = atoi(buffer);\
-  EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calib##j.offset_uA);
-    record(0)
-    record(1)
-    record(2)
-    record(3)
-#undef record
+    calibs[i].offset_uA = atoi(buffer);
+    EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
+  } else if (kind == 'M') {
+    ina219_load_calibrate();
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);
