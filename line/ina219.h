@@ -27,7 +27,7 @@ vars(0) vars(1) vars(2) vars(3)
 
     int ina219_weight = 92;
 float ina219_elapsed_weight = 1.0;
-int ina219_threshold = 1000;
+int ina219_threshold = 2000;
 int ina219_uteThreshold = 50000;
 
 void ina219_init() {

@@ -10,6 +10,12 @@ type ActorRef struct {
 	Index int
 }
 
+// Loopback, when set as the Origin in Diffuse1, makes the diffuse send to itself.
+var Loopback = ActorRef{Index: -2}
+
+// Publish, when set as the Origin in Diffuse1, sends the diffuse to all its dependents.
+var Publish = ActorRef{Index: -3}
+
 func (r ActorRef) String() string {
 	return fmt.Sprintf("<a:%x>", r.Index)
 }

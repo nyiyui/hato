@@ -27,10 +27,10 @@ func Main() error {
 		},
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
-		conn.Id{"soyuu-line", "v1", "1"},
-		conn.Id{"soyuu-line", "v2", "1"},
+		conn.Id{"soyuu-line", "v2", "2"},
+		//conn.Id{"soyuu-line", "v2", "1"},
 		//conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
-		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
+		//conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 	})
 	err = connState.Find()
 	if err != nil {
@@ -58,10 +58,10 @@ func Main() error {
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
 		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
-			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "A"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "B"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "C"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v1", "1"}, "D"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "2"}, "A"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "2"}, "B"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "2"}, "C"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "2"}, "D"}: ActorRef{Index: 2},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "A"}: ActorRef{Index: 3},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "B"}: ActorRef{Index: 3},
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "C"}: ActorRef{Index: 3},

@@ -4,7 +4,7 @@
 
 #define VARIANT "v2"
 // Instance is initially set to this, if nothing exists at EEPROM_INSTANCE_ADDR.
-#define INSTANCE "7"
+#define INSTANCE "4"
 
 // === EEPROM Layout
 // 00-10  version string
@@ -55,8 +55,6 @@ void Line_setPwm(Line *line, int value, bool brake) {
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial) {
-  };
   Serial.println(" Sstart");
   if (EEPROM.read(EEPROM_INSTANCE_ADDR) == 0) {
     Serial.println(" SInitialising EEPROM with instance name...");
@@ -83,8 +81,8 @@ void setup() {
   }
   // === INA219
   ina219_init();
-  Serial.println(" Swait 5 seconds...");
-  delay(5000);
+  Serial.println(" Swait 1 second...");
+  delay(1000);
   Serial.println(" Sready");
 }
 
@@ -212,7 +210,7 @@ void handleSLCP() {
     return;
   int kind = Serial.read();
   if (kind == 'I') {
-    Serial.print(" Isoyuu-line/" VARIANT "-");
+    Serial.print(" Isoyuu-line/" VARIANT "/");
     Serial.println(instance);
     int eol = Serial.read();
     if (eol != '\n') {
@@ -263,9 +261,9 @@ void handleSLCP() {
   } else if (kind == 'K') {
     // set instance (the 1 part of v1/1)
     static char newInstance[0x21] = {0};
-    Serial.readBytes(buffer, 0x20);
+    Serial.readBytes(newInstance, 0x20);
     for (size_t i = 0; i < 0x20; i++) {
-      EEPROM.update(EEPROM_INSTANCE_ADDR + i, buffer[i]);
+      EEPROM.update(EEPROM_INSTANCE_ADDR + i, newInstance[i]);
     }
     Serial.println("Wrote instance name to EEPROM.");
     Serial.print("Old instance name: ");

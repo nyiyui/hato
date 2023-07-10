@@ -42,13 +42,8 @@ func (li *LineID) UnmarshalJSON(data []byte) error {
 }
 
 type Layout struct {
-	Lines        []Line
-	SwitchStates []SwitchState
+	Lines []Line
 }
-
-// SwitchState represents which of ports B or C is used.
-// If false, B is selected. If true, C is selected. (This way, if there is no switch, we can just use the zero value.)
-type SwitchState bool
 
 type Direction bool
 
@@ -92,29 +87,6 @@ func (y *Layout) Step(pi LinePort) (next LinePort, exists bool) {
 	return LinePort{
 		LineI: p.ConnI,
 		PortI: p.ConnP,
-	}, true
-}
-
-func (y *Layout) Opposite(pi LinePort) (opposite LinePort, exists bool) {
-	y.checkLinePort(pi)
-	oppP := -1
-	if pi.PortI == 0 {
-		// depend on which way A is switched to
-		if y.SwitchStates[pi.LineI] {
-			oppP = 2
-		} else {
-			oppP = 1
-		}
-	} else { // B/C always goes to A
-		oppP = 0
-	}
-	p := y.Lines[pi.LineI].GetPort(oppP)
-	if !p.notZero() || !p.ConnFilled {
-		return LinePort{}, false
-	}
-	return LinePort{
-		LineI: p.ConnI,
-		PortI: oppP,
 	}, true
 }
 

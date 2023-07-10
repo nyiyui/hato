@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -80,10 +81,13 @@ type guide struct {
 }
 
 type lineState struct {
-	Taken       bool
-	TakenBy     int
-	PowerActor  ActorRef
-	SwitchActor ActorRef
+	Taken          bool
+	TakenBy        int
+	PowerActor     ActorRef
+	SwitchActor    ActorRef
+	SwitchState    SwitchState
+	SwitchLocked   bool
+	SwitchLockedBy int
 }
 
 func (g *guide) render() {
@@ -133,8 +137,8 @@ func Guide(conf GuideConf) Actor {
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
-	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
+	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -146,88 +150,104 @@ func Guide(conf GuideConf) Actor {
 	return a
 }
 
+func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
+	ci, ok := g.conf.actorsReverse[diffuse.Origin]
+	if !ok {
+		log.Printf("unknown conn for actor %s", diffuse.Origin)
+		return
+	}
+	log.Printf("=== diffuse from %s: %s", ci, cur)
+	for ti, t := range g.trains {
+		for _, inner := range cur.Values {
+			if t.noPowerSupplied {
+				continue
+			}
+			cb := g.y.Lines[t.path[t.currentBack].LineI]
+			if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
+				if t.currentBack >= t.currentFront {
+					// this can happen e.g. when the train is at 0-0→1 and then the 0th line becomes 0 (e.g. A0, B0)
+					goto NoCurrentBack
+				}
+				nextI := t.path[t.currentBack].LineI
+				g.unlock(nextI)
+				g.apply(&t, t.currentBack, 0)
+				t.currentBack++
+				log.Printf("=== currentBack succession: %d", t.currentBack)
+			}
+		NoCurrentBack:
+			cf := g.y.Lines[t.path[t.currentFront].LineI]
+			if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
+				if t.currentFront == 0 {
+					log.Printf("=== currentFront regression (ignore): %d", t.currentFront)
+					goto NoCurrentFront
+				}
+				if t.currentFront <= t.currentBack {
+					// this can happen e.g. when the train is at 1-1→2 and then the 1st line becomes 0 (e.g. A0, B0) (currentBack moving to 0 is prevented by an if for currentBack)
+					log.Printf("=== currentFront regression (ignore as currentFront <= currentBack): %d", t.currentFront)
+					goto NoCurrentFront
+				}
+				nextI := t.path[t.currentFront].LineI
+				g.unlock(nextI)
+				g.apply(&t, t.currentFront, 0)
+				t.currentFront--
+				log.Printf("=== currentFront regression: %d", t.currentFront)
+			}
+		NoCurrentFront:
+			if t.state == trainStateNextAvail {
+				// if t.state ≠ trainStateNextAvail, t.next could be out of range
+				cf := g.y.Lines[t.path[t.next()].LineI]
+				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
+					log.Printf("=== next succession: %d", t.next())
+					log.Printf("inner: %#v", inner)
+					t.currentFront++
+				}
+			}
+			g.tryLockingNext(ti, &t)
+		}
+		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
+		// TODO: check for regressions
+		// TODO: check for overruns (is this possible?)
+		g.trains[ti] = t
+		log.Printf("postshow: %s", &t)
+	}
+	g.render()
+	for ti, t := range g.trains {
+		log.Printf("postshow2: %s", &t)
+		g.wakeup(ti)
+	}
+	g.render()
+}
+
+func (g *guide) wakeup(ti int) {
+	t := g.trains[ti]
+	g.tryLockingNext(ti, &t)
+	g.reify(&t)
+	g.trains[ti] = t
+}
+
 func (g *guide) loop() {
+	time.Sleep(1 * time.Second)
 	for ti, t := range g.trains {
 		g.ensureLock(ti)
 		g.reify(&t)
 	}
 	g.render()
 	for diffuse := range g.actor.InputCh {
-		ci, ok := g.conf.actorsReverse[diffuse.Origin]
-		if !ok {
-			log.Printf("unknown conn for actor %s", diffuse.Origin)
-			return
-		}
-
-		cur := diffuse.Value.(conn.ValCurrent)
-		log.Printf("=== diffuse from %s: %s", ci, cur)
-		for ti, t := range g.trains {
-			for _, inner := range cur.Values {
-				if t.noPowerSupplied {
-					continue
-				}
-				cb := g.y.Lines[t.path[t.currentBack].LineI]
-				if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
-					if t.currentBack >= t.currentFront {
-						// this can happen e.g. when the train is at 0-0→1 and then the 0th line becomes 0 (e.g. A0, B0)
-						goto NoCurrentBack
-					}
-					nextI := t.path[t.currentBack].LineI
-					g.unlock(nextI)
-					g.apply(&t, t.currentBack, 0)
-					t.currentBack++
-					log.Printf("=== currentBack succession: %d", t.currentBack)
-				}
-			NoCurrentBack:
-				cf := g.y.Lines[t.path[t.currentFront].LineI]
-				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
-					if t.currentFront == 0 {
-						log.Printf("=== currentFront regression (ignore): %d", t.currentFront)
-						goto NoCurrentFront
-					}
-					if t.currentFront <= t.currentBack {
-						// this can happen e.g. when the train is at 1-1→2 and then the 1st line becomes 0 (e.g. A0, B0) (currentBack moving to 0 is prevented by an if for currentBack)
-						log.Printf("=== currentFront regression (ignore as currentFront <= currentBack): %d", t.currentFront)
-						goto NoCurrentFront
-					}
-					nextI := t.path[t.currentFront].LineI
-					g.unlock(nextI)
-					g.apply(&t, t.currentFront, 0)
-					t.currentFront--
-					log.Printf("=== currentFront regression: %d", t.currentFront)
-				}
-			NoCurrentFront:
-				if t.state == trainStateNextAvail {
-					// if t.state ≠ trainStateNextAvail, t.next could be out of range
-					cf := g.y.Lines[t.path[t.next()].LineI]
-					if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
-						log.Printf("=== next succession: %d", t.next())
-						log.Printf("inner: %#v", inner)
-						t.currentFront++
-					}
-				}
-				g.tryLockingNext(ti, &t)
+		switch val := diffuse.Value.(type) {
+		case conn.ValCurrent:
+			g.handleValCurrent(diffuse, val)
+		case switchClear:
+			ls := g.lineStates[val.LineI]
+			if ls.SwitchLocked {
+				g.lineStates[val.LineI].SwitchState = val.State
+				g.wakeup(ls.SwitchLockedBy)
 			}
-			// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
-			// TODO: check for regressions
-			// TODO: check for overruns (is this possible?)
-			g.trains[ti] = t
-			log.Printf("postshow: %s", &t)
 		}
-		g.render()
-		for ti, t := range g.trains {
-			log.Printf("postshow2: %s", &t)
-			g.tryLockingNext(ti, &t)
-			g.reify(&t)
-			g.trains[ti] = t
-		}
-		g.render()
 	}
 }
 
 func (g *guide) tryLockingNext(ti int, t *train) {
 	if t.currentFront == len(t.path)-1 {
-		log.Printf("train %d: currentFront is last", ti)
 		t.state = trainStateNextLocked
 		return
 	}
@@ -292,11 +312,28 @@ func (g *guide) applySwitch(t *train, pathI int) {
 		Value: conn.ReqLine{
 			Line:      g.y.Lines[li].SwitchConn.Line,
 			Direction: pi == 1,
-			Power:     255,
+			Power:     180,
 		},
 	}
 	//log.Printf("diffuse %#v", d)
 	g.actor.OutputCh <- d
+	go func() {
+		time.Sleep(2 * time.Second)
+		g.actor.OutputCh <- Diffuse1{
+			Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
+			Value: conn.ReqLine{
+				Line:  g.y.Lines[li].SwitchConn.Line,
+				Power: 0,
+			},
+		}
+		// TODO: some way to ensure that ReqLines are being executed (instead of e.g. the Arduino gettin gunplugged)
+		g.actor.OutputCh <- Diffuse1{
+			Origin: Loopback,
+			Value: switchClear{
+				LineI: li,
+			},
+		}
+	}()
 }
 
 func (g *guide) apply(t *train, pathI int, power int) {
