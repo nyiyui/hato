@@ -11,6 +11,7 @@
     devShells.default = pkgs.mkShell {
       buildInputs = with pkgs; [
         arduino-cli
+        arduino
         picocom
         clang
       ];

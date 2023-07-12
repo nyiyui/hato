@@ -15,6 +15,8 @@
 #define EEPROM_CALIBRATION_ADDR 0x40
 #include "ina219.h"
 
+static bool calibrating = false;
+
 typedef struct Line {
   Adafruit_DCMotor *motor;
   bool direction;
@@ -94,11 +96,17 @@ void loop() {
   static bool prevD = false;
   unsigned long now = micros();
   if (prev + 3000 <= now) {
-    ina219_update((now - prev) / 1000, true);
+    ina219_update((now - prev) / 1000);
+    if (calibrating) {
+      calibrating = !ina219_calibrate_step_stop();
+      if (!calibrating) {
+        Serial.print("Done calibration.");
+      }
+    }
 #ifdef DEBUG
     if (debug) {
-      Serial.print("elapsed:");
-      Serial.print(now - prev);
+      //Serial.print("elapsed:");
+      //Serial.print(now - prev);
 #define show(i, letter)                                                        \
   Serial.print(",w" #letter ":");                                              \
   Serial.print(ina219_lines[i].weighted_uA);                                   \
@@ -279,9 +287,9 @@ void handleSLCP() {
       instance[i] = newInstance[i];
     }
   } else if (kind == 'L') {
-    Serial.println("Calibrating...");
-    ina219_calibrate();
-    Serial.println("Calibrated (written to EEPROM).");
+    Serial.println("Starting calibration for 40s...");
+    calibrating = true;
+    ina219_calibrate_start(40000);
   } else if (kind == 'l') {
     char line = Serial.read();
     Serial.readBytes(buffer, 10);
