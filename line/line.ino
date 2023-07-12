@@ -18,28 +18,39 @@
 static bool calibrating = false;
 
 typedef struct Line {
+  char id;
   Adafruit_DCMotor *motor;
   bool direction;
+  unsigned long stop_ms;
+  bool stop_brake;
 } line;
 
 static char instance[0x21] = INSTANCE;
 Adafruit_MotorShield shield0 = Adafruit_MotorShield();
 
 static Line lineA = {
+    .id = 'A',
     .motor = shield0.getMotor(1),
     .direction = true,
+    .stop_ms = 0,
 };
 static Line lineB = {
+    .id = 'B',
     .motor = shield0.getMotor(2),
     .direction = true,
+    .stop_ms = 0,
 };
 static Line lineC = {
+    .id = 'C',
     .motor = shield0.getMotor(3),
     .direction = true,
+    .stop_ms = 0,
 };
 static Line lineD = {
+    .id = 'D',
     .motor = shield0.getMotor(4),
     .direction = true,
+    .stop_ms = 0,
 };
 
 void Line_setDirection(Line *line, bool direction) {
@@ -53,6 +64,19 @@ void Line_setPwm(Line *line, int value, bool brake) {
     return;
   }
   line->motor->run(brake ? BRAKE : (line->direction ? FORWARD : BACKWARD));
+}
+
+void Line_update(Line *line) {
+  unsigned long now = millis();
+  if (0 != line->stop_ms && now > line->stop_ms) {
+    Line_setPwm(line, 0, line->stop_brake);
+    // TODO: send confirmation
+    Serial.print(" DCL");
+    Serial.print(line->id);
+    Serial.print("T");
+    Serial.println(now);
+    line->stop_ms = 0;
+  }
 }
 
 void setup() {
@@ -154,6 +178,10 @@ void loop() {
     prevC = nowC;
     prevD = nowD;
   }
+  Line_update(&lineA);
+  Line_update(&lineB);
+  Line_update(&lineC);
+  Line_update(&lineD);
   handleSLCP();
 }
 
@@ -179,9 +207,9 @@ void handleShort(bool isShort) {
   }
   int direction = Serial.read();
   int brake = Serial.read();
-  int read = Serial.readBytes(digitBuffer, 3);
+  size_t read = Serial.readBytes(digitBuffer, 3);
   if (read != 3) {
-    Serial.println(" Enot enough");
+    Serial.println(" Eread power: not enough chars");
     return;
   }
   int speed = atoi(digitBuffer);
@@ -189,11 +217,6 @@ void handleShort(bool isShort) {
     Serial.println(" Eout of range");
     return;
   };
-  int eol = Serial.read();
-  if (eol != '\n') {
-    Serial.println(" Eexpected eol");
-    return;
-  }
   Serial.print(" D");
   Serial.print(direction);
   Serial.print(" B");
@@ -201,18 +224,35 @@ void handleShort(bool isShort) {
   Serial.print(" S");
   Serial.print(speed);
   Serial.println(".");
+  if (isShort) {
+    char t_ = Serial.read();
+    if (t_ != 'T') {
+      Serial.print(" Eread short: literal 'T' expected, got ");
+      Serial.println(t_, HEX);
+      return;
+    }
+    char buffer[6];
+    size_t read = Serial.readBytes(buffer, 5);
+    if (read != 5) {
+      Serial.println(" Eread duration: not enough chars");
+      return;
+    }
+    buffer[5] = '\0';
+    int duration = atoi(buffer);
+    t->stop_ms = millis() + duration;
+    t->stop_brake = Serial.read() == 'Y';
+  }
+  int eol = Serial.read();
+  if (eol != '\n') {
+    Serial.println(" Eexpected eol");
+    return;
+  }
 
   if (direction == 'A')
     Line_setDirection(t, true);
   else if (direction == 'B')
     Line_setDirection(t, false);
   Line_setPwm(t, speed, brake == 'Y');
-  if (isShort) {
-    Serial.println(" Pwaiting");
-    delay(100);
-    Serial.println(" Pstopping");
-    Line_setPwm(t, 0, true);
-  }
   Serial.println(" Ook");
   return;
 }
