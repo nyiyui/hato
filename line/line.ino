@@ -113,8 +113,7 @@ void loop() {
   Serial.print(",d" #letter ":");                                              \
   Serial.print(ina219_lines[i].direct_uA);
       show(0, A) show(1, B) show(2, C) show(3, D)
-#undef show
-          Serial.print(",thresholdPositive:");
+      Serial.print(",thresholdPositive:");
       Serial.print(ina219_threshold);
       Serial.print(",thresholdNegative:");
       Serial.print(-ina219_threshold);
@@ -128,6 +127,15 @@ void loop() {
 #define same(letter) now##letter == prev##letter
     if (!(same(A) && same(B) && same(C) && same(D))) {
 #undef same
+      if (debugPoint) {
+        show(0, A) show(1, B) show(2, C) show(3, D)
+        Serial.print(",thresholdPositive:");
+        Serial.print(ina219_threshold);
+        Serial.print(",thresholdNegative:");
+        Serial.print(-ina219_threshold);
+        Serial.println();
+      }
+#undef show
       Serial.print(" D");
       Serial.print("A");
       Serial.print(nowA);
@@ -151,7 +159,6 @@ void loop() {
 
 void handleShort(bool isShort) {
   static char digitBuffer[4];
-  Serial.println(" Psc");
   // TODO: error checking
   int line = Serial.read();
   Serial.print(" PL");
@@ -195,7 +202,6 @@ void handleShort(bool isShort) {
   Serial.print(speed);
   Serial.println(".");
 
-  Serial.println(" Pstarting");
   if (direction == 'A')
     Line_setDirection(t, true);
   else if (direction == 'B')
@@ -259,6 +265,8 @@ void handleSLCP() {
     Serial.println(". Note: this is only saved to RAM.");
   } else if (kind == 'G') {
     debug = !debug;
+  } else if (kind == 'g') {
+    debugPoint = !debugPoint;
   } else if (kind == 'H') {
     // calibration
     Serial.println("Clearing EEPROM...");

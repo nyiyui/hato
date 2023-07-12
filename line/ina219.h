@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 
 bool debug = false;
+bool debugPoint = false;
 
 struct ina219_calibration {
   long offset_uA;
