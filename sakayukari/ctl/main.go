@@ -68,6 +68,7 @@ func Main() error {
 			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "D"}: ActorRef{Index: 3},
 		},
 	}))
+	g.Actors = append(g.Actors, tal.GuideRender(ActorRef{Index: len(g.Actors) - 1}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()
