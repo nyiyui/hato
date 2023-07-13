@@ -65,6 +65,50 @@ func AbsClampPower(power int) uint8 {
 	return uint8(power)
 }
 
+type ReqSwitch struct {
+	Line       LineName
+	Brake      bool
+	Direction  bool
+	Power      uint8
+	Duration   uint64
+	BrakeAfter bool
+}
+
+func (r ReqSwitch) String() string {
+	var send [14]byte
+	// SAAN000T00000N
+	// S - switch
+	//  A - line
+	//   A - direction
+	//    N - brake
+	//     000 - power
+	//        00000 - duration (ms)
+	//             N - brake after
+	send[0] = 'S'
+	send[1] = r.Line[0]
+	if r.Direction {
+		send[2] = 'A'
+	} else {
+		send[2] = 'B'
+	}
+	if r.Brake {
+		send[3] = 'Y'
+	} else {
+		send[3] = 'N'
+	}
+	power := fmt.Sprintf("%03d", r.Power)
+	copy(send[4:], power)
+	send[7] = 'T'
+	duration := fmt.Sprintf("%05d", r.Duration)
+	copy(send[8:], duration)
+	if r.BrakeAfter {
+		send[13] = 'Y'
+	} else {
+		send[13] = 'N'
+	}
+	return string(send[:])
+}
+
 type ReqLine struct {
 	Line      LineName
 	Brake     bool

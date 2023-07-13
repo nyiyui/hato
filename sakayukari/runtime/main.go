@@ -111,9 +111,9 @@ func (i *Instance) Diffuse() error {
 			if !origin.Type.Input {
 				panic(fmt.Sprintf("input to non-input actor %s %s", d.Origin, origin.Comment))
 			}
-			// log.Printf("send to %s: %s", d.Origin, d)
+			//log.Printf("send to %s: %s", d.Origin, d)
 			origin.InputCh <- d
-			// log.Printf("sent to %s: %s", d.Origin, d)
+			//log.Printf("sent to %s: %s", d.Origin, d)
 		}
 		//log.Print("done this loop")
 		// TODO: handle hanging actors

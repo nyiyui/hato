@@ -97,3 +97,12 @@ type ValCurrentInner struct {
 	Line LineName
 	Flow bool
 }
+
+type ValShortNotify struct {
+	Line      LineName
+	Monotonic int64
+}
+
+func (s ValShortNotify) String() string {
+	return fmt.Sprintf("SL%sT%d", s.Line, s.Monotonic)
+}

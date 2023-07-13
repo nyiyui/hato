@@ -16,7 +16,7 @@ import (
 type LineID = layout.LineID
 type LinePort = layout.LinePort
 
-const idlePower = 10
+const idlePower = 15
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -36,7 +36,7 @@ const (
 	trainStateNextLocked trainState = 2
 )
 
-type train struct {
+type Train struct {
 	// power supplied directly to soyuu-line (when moving)
 	power           int
 	noPowerSupplied bool
@@ -52,11 +52,22 @@ type train struct {
 	state trainState
 }
 
-func (t *train) next() int {
+// nextUnsafe returns the path index of the next LinePort.
+// Note: this does check if this train has a next available, and panics if next is not available.
+func (t *Train) next() int {
+	if t.state != trainStateNextAvail {
+		panic("next() called when not trainStateNextAvail")
+	}
+	return t.nextUnsafe()
+}
+
+// nextUnsafe returns the path index of the next LinePort.
+// Note: this does not check if this train has a next available.
+func (t *Train) nextUnsafe() int {
 	return t.currentFront + 1
 }
 
-func (t *train) String() string {
+func (t *Train) String() string {
 	b := new(strings.Builder)
 	fmt.Fprintf(b, "power%d %d-%d", t.power, t.currentBack, t.currentFront)
 	switch t.state {
@@ -71,23 +82,26 @@ func (t *train) String() string {
 	return b.String()
 }
 
+type GuideSnapshot struct {
+	Trains []Train
+}
+
 type guide struct {
 	actor      Actor
 	conf       GuideConf
-	trains     []train
+	trains     []Train
 	lineStates []lineState
 	y          *layout.Layout
 	state      *widgets.Paragraph
 }
 
 type lineState struct {
-	Taken          bool
-	TakenBy        int
-	PowerActor     ActorRef
-	SwitchActor    ActorRef
-	SwitchState    SwitchState
-	SwitchLocked   bool
-	SwitchLockedBy int
+	Taken           bool
+	TakenBy         int
+	PowerActor      ActorRef
+	SwitchActor     ActorRef
+	SwitchState     SwitchState
+	nextSwitchState SwitchState
 }
 
 func (g *guide) render() {
@@ -125,20 +139,20 @@ func Guide(conf GuideConf) Actor {
 	g := guide{
 		conf:       conf,
 		actor:      a,
-		trains:     make([]train, 0),
+		trains:     make([]Train, 0),
 		lineStates: make([]lineState, len(conf.Layout.Lines)),
 		y:          conf.Layout,
 		state:      widgets.NewParagraph(),
 	}
 	g.state.SetRect(0, 6, 70, 20)
-	t1 := train{
-		power:        40,
+	t1 := Train{
+		power:        70,
 		currentBack:  0,
 		currentFront: 0,
 		state:        trainStateNextAvail,
 	}
-	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
-	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
+	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
+	t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
 	{
 		last := t1.path[len(t1.path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -162,6 +176,10 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 			if t.noPowerSupplied {
 				continue
 			}
+			// sync t.state etc
+			g.syncLocks(ti)
+			t = g.trains[ti]
+
 			cb := g.y.Lines[t.path[t.currentBack].LineI]
 			if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
 				if t.currentBack >= t.currentFront {
@@ -197,12 +215,12 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				// if t.state ≠ trainStateNextAvail, t.next could be out of range
 				cf := g.y.Lines[t.path[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
-					log.Printf("=== next succession: %d", t.next())
-					log.Printf("inner: %#v", inner)
 					t.currentFront++
+					log.Printf("=== next succession: %d", t.currentFront)
+					log.Printf("inner: %#v", inner)
+					log.Printf("what: %s", &t)
 				}
 			}
-			g.tryLockingNext(ti, &t)
 		}
 		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
 		// TODO: check for regressions
@@ -211,57 +229,53 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 		log.Printf("postshow: %s", &t)
 	}
 	g.render()
-	for ti, t := range g.trains {
-		log.Printf("postshow2: %s", &t)
+	for ti := range g.trains {
 		g.wakeup(ti)
+		log.Printf("postwakeup: %s", &g.trains[ti])
 	}
 	g.render()
 }
 
 func (g *guide) wakeup(ti int) {
+	g.syncLocks(ti)
 	t := g.trains[ti]
-	g.tryLockingNext(ti, &t)
-	g.reify(&t)
+	g.reify(ti, &t)
 	g.trains[ti] = t
 }
 
 func (g *guide) loop() {
 	time.Sleep(1 * time.Second)
-	for ti, t := range g.trains {
-		g.ensureLock(ti)
-		g.reify(&t)
+	for ti := range g.trains {
+		g.wakeup(ti)
 	}
 	g.render()
 	for diffuse := range g.actor.InputCh {
 		switch val := diffuse.Value.(type) {
 		case conn.ValCurrent:
 			g.handleValCurrent(diffuse, val)
-		case switchClear:
-			ls := g.lineStates[val.LineI]
-			if ls.SwitchLocked {
-				g.lineStates[val.LineI].SwitchState = val.State
-				g.wakeup(ls.SwitchLockedBy)
+		case conn.ValShortNotify:
+			log.Printf("diffuse ValShortNotify")
+			c := g.conf.actorsReverse[diffuse.Origin]
+			li := -1
+			for li_, l := range g.y.Lines {
+				if l.SwitchConn == (LineID{Conn: c, Line: val.Line}) {
+					li = li_
+				}
 			}
+			if li == -1 {
+				panic(fmt.Sprintf("no line found for ValShortNotify %#v", diffuse))
+			}
+			ls := g.lineStates[li]
+			log.Printf("lineState %#v", ls)
+			if !ls.Taken {
+				panic(fmt.Sprintf("ValShortNotify for non-taken line %d %#v", li, ls))
+			}
+			g.lineStates[li].SwitchState = ls.nextSwitchState
+			g.lineStates[li].nextSwitchState = 0
+			log.Printf("wakeup %d %s", ls.TakenBy, &g.trains[ls.TakenBy])
+			g.wakeup(ls.TakenBy)
 		}
 	}
-}
-
-func (g *guide) tryLockingNext(ti int, t *train) {
-	if t.currentFront == len(t.path)-1 {
-		t.state = trainStateNextLocked
-		return
-	}
-	nextI := t.path[t.next()].LineI
-	ok := g.lock(nextI, ti)
-	if ok {
-		g.applySwitch(t, t.next())
-		// TODO: make sure while switch is moving, no trains move inside this (maybe make a "lockedUntil" field or sth)
-		t.state = trainStateNextAvail
-	} else {
-		t.state = trainStateNextLocked
-		log.Printf("train %d: failed to lock %d", ti, nextI)
-	}
-	g.ensureLock(ti)
 }
 
 func reverse[S ~[]E, E any](s S) {
@@ -270,25 +284,37 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
-func (g *guide) reify(t *train) {
+func (g *guide) reify(ti int, t *Train) {
 	log.Printf("REIFY: %s", t)
-	power := 0
-	switch t.state {
-	case trainStateNextAvail:
-		power = t.power
-		g.apply(t, t.next(), power)
-	case trainStateNextLocked:
+	power := t.power
+	stop := false
+	max := t.currentFront
+	if t.state == trainStateNextAvail {
+		max += 1
+	}
+	for i := t.currentBack; i <= max; i++ {
+		if g.lineStates[t.path[i].LineI].SwitchState == SwitchStateUnsafe {
+			log.Printf("=== STOP UNSAFE")
+			stop = true
+			power = idlePower
+			break
+		}
+	}
+	stop = stop || (t.state == trainStateNextLocked)
+	if stop {
 		power = idlePower
 	}
 	t.noPowerSupplied = power == 0
 	for i := t.currentBack; i <= t.currentFront; i++ {
-		g.applySwitch(t, i)
-		// TODO: race condition: applySwitch has to finish before apply (applySwitch takes 1s, so applySwitch usually loses, which is bad: car going into a *moving* switch) (see "make sure while switch is moving" TODO)
+		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
+	}
+	if t.state == trainStateNextAvail {
+		g.apply(t, t.next(), power)
 	}
 }
 
-func (g *guide) applySwitch(t *train, pathI int) {
+func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.path[pathI].LineI
 	pi := t.path[pathI].PortI
 	if pi == 0 {
@@ -306,37 +332,41 @@ func (g *guide) applySwitch(t *train, pathI int) {
 		// no switch here
 		return
 	}
+	if pi == 1 && g.lineStates[li].SwitchState == SwitchStateB {
+		return
+	} else if pi == 2 && g.lineStates[li].SwitchState == SwitchStateC {
+		return
+	}
+	if g.lineStates[li].SwitchState == SwitchStateUnsafe {
+		// already switching
+		log.Printf("applySwitch already switching")
+		return
+	}
+
+	log.Printf("applySwitch")
+	g.lineStates[li].SwitchState = SwitchStateUnsafe
+	if pi == 1 {
+		g.lineStates[li].nextSwitchState = SwitchStateB
+	} else if pi == 2 {
+		g.lineStates[li].nextSwitchState = SwitchStateC
+	} else {
+		panic(fmt.Sprintf("invalid pi %d", pi))
+	}
 	// TODO: rmbr to turn off the line afterwards!
 	d := Diffuse1{
 		Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
-		Value: conn.ReqLine{
+		Value: conn.ReqSwitch{
 			Line:      g.y.Lines[li].SwitchConn.Line,
 			Direction: pi == 1,
 			Power:     180,
+			Duration:  1000,
 		},
 	}
 	//log.Printf("diffuse %#v", d)
 	g.actor.OutputCh <- d
-	go func() {
-		time.Sleep(2 * time.Second)
-		g.actor.OutputCh <- Diffuse1{
-			Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
-			Value: conn.ReqLine{
-				Line:  g.y.Lines[li].SwitchConn.Line,
-				Power: 0,
-			},
-		}
-		// TODO: some way to ensure that ReqLines are being executed (instead of e.g. the Arduino gettin gunplugged)
-		g.actor.OutputCh <- Diffuse1{
-			Origin: Loopback,
-			Value: switchClear{
-				LineI: li,
-			},
-		}
-	}()
 }
 
-func (g *guide) apply(t *train, pathI int, power int) {
+func (g *guide) apply(t *Train, pathI int, power int) {
 	li := t.path[pathI].LineI
 	line := g.y.Lines[li]
 	rl := conn.ReqLine{
@@ -348,7 +378,7 @@ func (g *guide) apply(t *train, pathI int, power int) {
 		Power: conn.AbsClampPower(power),
 	}
 	// TODO: fix direction to follow layout.Layout rules
-	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[line.PowerConn])
+	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[line.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.conf.Actors[line.PowerConn],
 		Value:  rl,
@@ -356,30 +386,37 @@ func (g *guide) apply(t *train, pathI int, power int) {
 	//log.Printf("apply2 %s", rl)
 }
 
-// ensureLock verifies locking of all currents and next (if next is available) of a train.
-func (g *guide) ensureLock(ti int) {
+// syncLocks verifies locking of all currents and next (if next is available) of a train.
+func (g *guide) syncLocks(ti int) {
 	t := g.trains[ti]
+	defer func() { g.trains[ti] = t }()
 	for i := t.currentBack; i <= t.currentFront; i++ {
 		ok := g.lock(t.path[i].LineI, ti)
 		if !ok {
 			panic(fmt.Sprintf("train %s currents %d: locking failed", &t, i))
 		}
 	}
-	if t.state == trainStateNextAvail {
-		ok := g.lock(t.path[t.next()].LineI, ti)
-		if !ok {
-			panic(fmt.Sprintf("train %s netx: locking failed", &t))
+	if t.currentFront == len(t.path)-1 {
+		// end of path
+		t.state = trainStateNextLocked
+	} else {
+		ok := g.lock(t.path[t.nextUnsafe()].LineI, ti)
+		if ok {
+			t.state = trainStateNextAvail
+		} else {
+			t.state = trainStateNextLocked
+			log.Printf("train %d: failed to lock %d", ti, t.nextUnsafe())
 		}
 	}
-	g.trains[ti] = t
 }
 
 func (g *guide) lock(li, ti int) (ok bool) {
-	if g.lineStates[li].Taken && g.lineStates[li].TakenBy != ti {
-		return false
-	}
-	if g.lineStates[li].TakenBy == ti {
-		return true
+	if g.lineStates[li].Taken {
+		if g.lineStates[li].TakenBy != ti {
+			return false
+		} else {
+			return true
+		}
 	}
 	log.Printf("LOCK %d(%s) by %d", li, g.y.Lines[li].Comment, ti)
 	g.lineStates[li].Taken = true
@@ -391,5 +428,5 @@ func (g *guide) unlock(li int) {
 	log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
 	g.lineStates[li].Taken = false
 	g.lineStates[li].TakenBy = -1
-	// TODO: maybe do tryLockingNext for all trains that match (instead of the dumb for loop in guide.single())
+	// TODO: maybe do wakeup for all trains that match (instead of the dumb for loop in guide.single())
 }

@@ -52,7 +52,7 @@ func InitTestbench1() (*Layout, error) {
 func InitTestbench2() (*Layout, error) {
 	breadboard := func(line string) LineID {
 		return LineID{
-			Conn: conn.Id{"soyuu-line", "v2", "2"},
+			Conn: conn.Id{"soyuu-line", "v2", "4"},
 			Line: line,
 		}
 	}
