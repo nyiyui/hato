@@ -28,11 +28,11 @@ static unsigned long count = 0;
 
 int ina219_weight = 92;
 float ina219_elapsed_weight = 1.0;
-int ina219_threshold = 8000;
+int ina219_threshold = 6000;
 // Set this to a "high enough" threshold such that drift (due to high common-mode voltage) won't affect this - this drift is usually around 3 to 4 mA.
 // https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/790103/ina219-ina219---bidirectional-current-measurement-to-measure-motor-current?ReplyFilter=Answers&ReplySortBy=Answers&ReplySortOrder=Descending
 // See issue #14 for details.
-int ina219_uteThreshold = 50000;
+int ina219_uteThreshold = 500; // 1/1526*1000
 
 void ina219_init() {
   while (!ina2190.begin())
@@ -87,22 +87,19 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
   if (use_calibs) {
     ina219_lines[i].direct_uA -= calibs[i].offset_uA;
   }
-  if (abs(current_uA) < ina219_threshold) {
-    ina219_lines[i].underThresholdElapsed += elapsed;
-  }
   if (ina219_lines[i].underThresholdElapsed > ina219_uteThreshold) {
-    ina219_lines[i].ignoreUnder = false;
+    ina219_lines[i].weighted_uA = current_uA;
+    ina219_lines[i].underThresholdElapsed = 0;
   }
-  if (abs(current_uA) >= ina219_threshold) {
-    ina219_lines[i].ignoreUnder = true;
+  if (abs(current_uA) > abs(ina219_lines[i].weighted_uA)) {
+    ina219_lines[i].weighted_uA = current_uA;
+    ina219_lines[i].underThresholdElapsed = 0;
   }
-  if (ina219_lines[i].ignoreUnder && abs(current_uA) < ina219_threshold) {
-    return;
-  }
+  ina219_lines[i].underThresholdElapsed += elapsed;
   // ignore as this is probably the non-duty-cycle part of PWM
-  ina219_lines[i].weighted_uA =
-      (ina219_lines[i].weighted_uA * weight + current_uA * (100 - weight)) /
-      100;
+  //ina219_lines[i].weighted_uA =
+  //    (ina219_lines[i].weighted_uA * weight + current_uA * (100 - weight)) /
+  //    100;
 }
 
 void ina219_update(int elapsed) {

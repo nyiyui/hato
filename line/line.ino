@@ -71,7 +71,7 @@ void Line_update(Line *line) {
   if (0 != line->stop_ms && now > line->stop_ms) {
     Line_setPwm(line, 0, line->stop_brake);
     // TODO: send confirmation
-    Serial.print(" DCL");
+    Serial.print(" DSL");
     Serial.print(line->id);
     Serial.print("T");
     Serial.println(now);
@@ -127,40 +127,45 @@ void loop() {
         Serial.print("Done calibration.");
       }
     }
+#define outOfRange(v, threshold) (v > threshold || v < -threshold)
+    bool nowA = outOfRange(ina219_lines[0].weighted_uA, ina219_threshold);
+    bool nowB = outOfRange(ina219_lines[1].weighted_uA, ina219_threshold);
+    bool nowC = outOfRange(ina219_lines[2].weighted_uA, ina219_threshold);
+    bool nowD = outOfRange(ina219_lines[3].weighted_uA, ina219_threshold);
 #ifdef DEBUG
     if (debug) {
-      //Serial.print("elapsed:");
-      //Serial.print(now - prev);
+      // Serial.print("elapsed:");
+      // Serial.print(now - prev);
 #define show(i, letter)                                                        \
   Serial.print(",w" #letter ":");                                              \
   Serial.print(ina219_lines[i].weighted_uA);                                   \
   Serial.print(",d" #letter ":");                                              \
-  Serial.print(ina219_lines[i].direct_uA);
+  Serial.print(ina219_lines[i].direct_uA);                                     \
+  Serial.print(",p" #letter ":");                                              \
+  Serial.print(prev##letter);                                                  \
+  Serial.print(",n" #letter ":");                                              \
+  Serial.print(now##letter);
       show(0, A) show(1, B) show(2, C) show(3, D)
-      Serial.print(",thresholdPositive:");
+          Serial.print(",thresholdPositive:");
       Serial.print(ina219_threshold);
       Serial.print(",thresholdNegative:");
       Serial.print(-ina219_threshold);
       Serial.println();
     }
 #endif
-    bool nowA = abs(ina219_lines[0].weighted_uA) > ina219_threshold;
-    bool nowB = abs(ina219_lines[1].weighted_uA) > ina219_threshold;
-    bool nowC = abs(ina219_lines[2].weighted_uA) > ina219_threshold;
-    bool nowD = abs(ina219_lines[3].weighted_uA) > ina219_threshold;
 #define same(letter) now##letter == prev##letter
     if (!(same(A) && same(B) && same(C) && same(D))) {
 #undef same
       if (debugPoint) {
         show(0, A) show(1, B) show(2, C) show(3, D)
-        Serial.print(",thresholdPositive:");
+            Serial.print(",thresholdPositive:");
         Serial.print(ina219_threshold);
         Serial.print(",thresholdNegative:");
         Serial.print(-ina219_threshold);
         Serial.println();
       }
 #undef show
-      Serial.print(" D");
+      Serial.print(" DC");
       Serial.print("A");
       Serial.print(nowA);
       Serial.print("B");
