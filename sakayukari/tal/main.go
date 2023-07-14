@@ -234,10 +234,29 @@ func (g *guide) loop() {
 	g.publishSnapshot()
 	for diffuse := range g.actor.InputCh {
 		switch val := diffuse.Value.(type) {
+		case GuideTrainUpdate:
+			log.Printf("diffuse GuideTrainUpdate")
+			orig := g.trains[val.TrainI]
+			if val.Train.Power == -1 {
+				val.Train.Power = orig.Power
+			}
+			if val.Train.CurrentBack == -1 {
+				val.Train.CurrentBack = orig.CurrentBack
+			}
+			if val.Train.CurrentFront == -1 {
+				val.Train.CurrentFront = orig.CurrentFront
+			}
+			if val.Train.Path == nil {
+				val.Train.Path = orig.Path
+			}
+			if val.Train.State == 0 {
+				val.Train.State = orig.State
+			}
+			g.trains[val.TrainI] = val.Train
+			g.wakeup(val.TrainI)
 		case conn.ValCurrent:
 			g.handleValCurrent(diffuse, val)
 		case conn.ValShortNotify:
-			log.Printf("diffuse ValShortNotify")
 			c := g.conf.actorsReverse[diffuse.Origin]
 			li := -1
 			for li_, l := range g.y.Lines {
@@ -323,7 +342,6 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	}
 	if g.lineStates[li].SwitchState == SwitchStateUnsafe {
 		// already switching
-		log.Printf("applySwitch already switching")
 		return
 	}
 
@@ -415,8 +433,20 @@ func (g *guide) unlock(li int) {
 	// TODO: maybe do wakeup for all trains that match (instead of the dumb for loop in guide.single())
 }
 
+type GuideTrainUpdate struct {
+	TrainI int
+	// Train has the updated values. Currently, only Train.Power is updated.
+	// TODO: allow updating Train.Path
+	Train Train
+}
+
+func (gtu GuideTrainUpdate) String() string {
+	return fmt.Sprintf("GuideTrainUpdate %d %#v", gtu.TrainI, gtu.Train)
+}
+
 type GuideSnapshot struct {
 	Trains []Train
+	Layout *layout.Layout
 }
 
 func (gs GuideSnapshot) String() string {
@@ -429,7 +459,7 @@ func (gs GuideSnapshot) String() string {
 }
 
 func (g *guide) snapshot() GuideSnapshot {
-	gs := GuideSnapshot{Trains: g.trains}
+	gs := GuideSnapshot{Trains: g.trains, Layout: g.conf.Layout}
 	buf := new(bytes.Buffer)
 	err := gob.NewEncoder(buf).Encode(gs)
 	if err != nil {

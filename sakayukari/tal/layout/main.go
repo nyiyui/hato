@@ -263,6 +263,9 @@ type Port struct {
 	// ConnInline is the line for the connection.
 	ConnInline []Line
 	// TODO: how to represent curves?
+	// TODO: implement Port.Direction
+	//// Direction is the direction power must be set at to make a train move towards this port.
+	//Direction bool
 }
 
 func (p Port) String() string {
