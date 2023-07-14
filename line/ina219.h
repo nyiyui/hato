@@ -1,5 +1,6 @@
 #include <Adafruit_INA219.h>
 #include <EEPROM.h>
+#include <Wire.h>
 
 bool debug = false;
 bool debugPoint = false;
@@ -24,16 +25,17 @@ struct ina219_line ina219_lines[4] = {0};
 
 static struct ina219_calibration calibs[4] = {0};
 static bool use_calibs = true;
-static unsigned long count = 0;
+unsigned long ina219_count = 0;
 
 int ina219_weight = 90;
 float ina219_elapsed_weight = 1.0;
-int ina219_threshold = 6000;
+int ina219_threshold = 10000;
 // Set this to a "high enough" threshold such that drift (due to high common-mode voltage) won't affect this - this drift is usually around 3 to 4 mA.
 // https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/790103/ina219-ina219---bidirectional-current-measurement-to-measure-motor-current?ReplyFilter=Answers&ReplySortBy=Answers&ReplySortOrder=Descending
 // See issue #14 for details.
 
 void ina219_init() {
+  Wire.setWireTimeout();
   while (!ina2190.begin())
     Serial.println(" Sina2190 init failed"), delay(1000);
   while (!ina2191.begin())
@@ -100,7 +102,7 @@ void ina219_update(int elapsed) {
   ina219_update_single(1, &ina2191, elapsed);
   ina219_update_single(2, &ina2192, elapsed);
   ina219_update_single(3, &ina2193, elapsed);
-  count ++;
+  ina219_count ++;
 }
 
 void ina219_load_calibrate() {
@@ -119,7 +121,7 @@ void ina219_calibrate_start(unsigned long duration) {
   for (int i = 0; i < 3; i ++) {
     cums[i] = 0;
   }
-  count = 0;
+  ina219_count = 0;
   calibrate_end = millis() + duration;
 }
 
@@ -131,7 +133,7 @@ bool ina219_calibrate_step_stop() {
     return false;
   }
   for (int i = 0; i < 3; i ++) {
-    calibs[i].offset_uA = cums[i] / count;
+    calibs[i].offset_uA = cums[i] / ina219_count;
   }
   for (int i = 0; i < 3; i ++) {
     Serial.print(i);
@@ -140,8 +142,8 @@ bool ina219_calibrate_step_stop() {
     Serial.print(" cum: ");
     Serial.println(cums[i]);
   }
-  Serial.print("count: ");
-  Serial.println(count);
+  Serial.print("ina219_count: ");
+  Serial.println(ina219_count);
   for (int i = 0; i < 3; i ++) {
     EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
   }

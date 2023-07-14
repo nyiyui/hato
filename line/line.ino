@@ -23,7 +23,7 @@ typedef struct Line {
   bool direction;
   unsigned long stop_ms;
   bool stop_brake;
-} line;
+} Line;
 
 static char instance[0x21] = INSTANCE;
 Adafruit_MotorShield shield0 = Adafruit_MotorShield();
@@ -78,6 +78,8 @@ void Line_update(Line *line) {
     line->stop_ms = 0;
   }
 }
+
+#include "shortcheck.h"
 
 void setup() {
   Serial.begin(9600);
@@ -187,6 +189,9 @@ void loop() {
   Line_update(&lineB);
   Line_update(&lineC);
   Line_update(&lineD);
+  if (linecalib_step_stop()) {
+    Serial.println("Z: done calibration");
+  }
   handleSLCP();
 }
 
@@ -194,8 +199,6 @@ void handleShort(bool isShort) {
   static char digitBuffer[4];
   // TODO: error checking
   int line = Serial.read();
-  Serial.print(" PL");
-  Serial.print(line);
   Line *t;
   if (line == 'A')
     t = &lineA;
@@ -222,13 +225,6 @@ void handleShort(bool isShort) {
     Serial.println(" Eout of range");
     return;
   };
-  Serial.print(" D");
-  Serial.print(direction);
-  Serial.print(" B");
-  Serial.print(brake);
-  Serial.print(" S");
-  Serial.print(speed);
-  Serial.println(".");
   if (isShort) {
     char t_ = Serial.read();
     if (t_ != 'T') {
@@ -351,6 +347,13 @@ void handleSLCP() {
     EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
   } else if (kind == 'M') {
     ina219_load_calibrate();
+  } else if (kind == '\n') {
+    // ignore
+  } else if (kind == 'Z') {
+    Serial.println("Z: starting calibration");
+    linecalib_start();
+  } else if (kind == 'z') {
+    linecalib_show();
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);
