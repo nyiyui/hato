@@ -220,10 +220,18 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 }
 
 func (g *guide) wakeup(ti int) {
+	g.check(ti)
 	g.syncLocks(ti)
 	t := g.trains[ti]
 	g.reify(ti, &t)
 	g.trains[ti] = t
+}
+
+func (g *guide) check(ti int) {
+	t := g.trains[ti]
+	if t.Power < 0 {
+		panic(fmt.Sprintf("TrainI %d: negative power: %#v", ti, t))
+	}
 }
 
 func (g *guide) loop() {
@@ -369,20 +377,20 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 }
 
 func (g *guide) apply(t *Train, pathI int, power int) {
+	pi := t.Path[pathI].PortI
 	li := t.Path[pathI].LineI
-	line := g.y.Lines[li]
+	l := g.y.Lines[li]
 	rl := conn.ReqLine{
-		Line: line.PowerConn.Line,
-		//Direction: t.path[pathI].PortI != 0,
-		Direction: t.Path[pathI].PortI == 0,
+		Line:      l.PowerConn.Line,
+		Direction: l.GetPort(pi).Direction,
 		// NOTE: reversed for now as the layout is reversed (bodge)
 		// false if port A, true if port B or C
 		Power: conn.AbsClampPower(power),
 	}
 	// TODO: fix direction to follow layout.Layout rules
-	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[line.PowerConn])
+	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
-		Origin: g.conf.Actors[line.PowerConn],
+		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,
 	}
 	//log.Printf("apply2 %s", rl)

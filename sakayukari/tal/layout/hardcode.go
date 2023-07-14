@@ -72,11 +72,11 @@ func InitTestbench2() (*Layout, error) {
 		//},
 		Line{
 			Comment: "Y",
-			PortB:   Port{Length: 746000},
-			PortC: Port{Length: uint32(length), ConnInline: []Line{
+			PortB:   Port{Length: 746000, Direction: true},
+			PortC: Port{Length: uint32(length), Direction: true, ConnInline: []Line{
 				Line{
 					Comment:   "W",
-					PortB:     Port{Length: 560000},
+					PortB:     Port{Length: 560000, Direction: true},
 					PowerConn: breadboard("B"),
 				},
 			}},
@@ -85,7 +85,7 @@ func InitTestbench2() (*Layout, error) {
 		},
 		Line{
 			Comment:   "X",
-			PortB:     Port{Length: 560000},
+			PortB:     Port{Length: 560000, Direction: true},
 			PowerConn: breadboard("D"),
 		},
 	})
