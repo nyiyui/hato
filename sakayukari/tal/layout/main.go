@@ -362,6 +362,5 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 	for i, j := goal, 0; i != from; i, j = using[i].LineI, j+1 {
 		lps[len(lps)-1-j] = using[i]
 	}
-	// NOTE: technically you could do like lps[len(lps)-j] and make j increment...
 	return lps
 }

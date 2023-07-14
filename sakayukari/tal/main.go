@@ -381,11 +381,18 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 	li := t.Path[pathI].LineI
 	l := g.y.Lines[li]
 	rl := conn.ReqLine{
-		Line:      l.PowerConn.Line,
-		Direction: l.GetPort(pi).Direction,
+		Line: l.PowerConn.Line,
 		// NOTE: reversed for now as the layout is reversed (bodge)
 		// false if port A, true if port B or C
 		Power: conn.AbsClampPower(power),
+	}
+	if pi == -1 {
+		// -1 means that this LinePort is the end. Select the opposite of entryP, the port the train enters the end Line.
+		prevLP := t.Path[pathI-1]
+		entryP := g.y.Lines[prevLP.LineI].GetPort(prevLP.PortI).ConnP
+		rl.Direction = l.GetPort(entryP).Direction
+	} else {
+		rl.Direction = l.GetPort(pi).Direction
 	}
 	// TODO: fix direction to follow layout.Layout rules
 	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
