@@ -134,8 +134,7 @@ func Guide(conf GuideConf) Actor {
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
 	}
-	//t1.path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("W")) // reverse
-	t1.Path = g.y.PathTo(g.y.MustLookupIndex("Y"), g.y.MustLookupIndex("X")) // normal
+	t1.Path = g.y.PathTo(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
 	{
 		last := t1.Path[len(t1.Path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -154,8 +153,9 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 		return
 	}
 	log.Printf("=== diffuse from %s: %s", ci, cur)
-	for ti, t := range g.trains {
+	for ti := range g.trains {
 		for _, inner := range cur.Values {
+			t := g.trains[ti]
 			if t.noPowerSupplied {
 				continue
 			}
@@ -204,12 +204,13 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 					log.Printf("what: %s", &t)
 				}
 			}
+			g.trains[ti] = t
+			log.Printf("endofloop: %s", &g.trains[ti])
 		}
 		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
 		// TODO: check for regressions
 		// TODO: check for overruns (is this possible?)
-		g.trains[ti] = t
-		log.Printf("postshow: %s", &t)
+		log.Printf("postshow: %s", &g.trains[ti])
 	}
 	g.publishSnapshot()
 	for ti := range g.trains {

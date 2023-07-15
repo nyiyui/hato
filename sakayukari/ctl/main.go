@@ -27,7 +27,8 @@ func Main() error {
 		},
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
-		conn.Id{"soyuu-line", "v2", "4"},
+		conn.Id{"soyuu-line", "v2", "yellow"},
+		conn.Id{"soyuu-line", "v2", "white"},
 		//conn.Id{"soyuu-line", "v2", "1"},
 		//conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
 		//conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
@@ -49,7 +50,7 @@ func Main() error {
 	// g.Actors = append(g.Actors, Control(ActorRef{Index: 0}, ActorRef{Index: 2}, "A", "C", "D"))
 	// g.Actors = append(g.Actors, bodge.Timing(ActorRef{Index: 2}, ActorRef{Index: 4}))
 	// g.Actors = append(g.Actors, ui.ModelView(ActorRef{Index: 6}))
-	y, err := layout.InitTestbench2()
+	y, err := layout.InitTestbench3()
 	if err != nil {
 		panic(err)
 	}
@@ -58,32 +59,31 @@ func Main() error {
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
 		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
-			layout.LineID{conn.Id{"soyuu-line", "v2", "4"}, "A"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "4"}, "B"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "4"}, "C"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "4"}, "D"}: ActorRef{Index: 2},
-			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "A"}: ActorRef{Index: 3},
-			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "B"}: ActorRef{Index: 3},
-			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "C"}: ActorRef{Index: 3},
-			//layout.LineID{conn.Id{"soyuu-line", "v2", "1"}, "D"}: ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "A"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "B"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "C"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "D"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "A"}:  ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "B"}:  ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "C"}:  ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "D"}:  ActorRef{Index: 3},
 		},
 	}))
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, tal.GuideRender(guide))
-	/*
-		g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
-			Guide: guide,
-			Schedule: tal.Schedule{
-				TSs: []tal.TrainSchedule{
-					{TrainI: 0, Segments: []tal.Segment{
-						{tal.Position{y.MustLookupIndex("X"), 0}, 0},
-						{tal.Position{y.MustLookupIndex("X"), 0}, 70},
-						{tal.Position{y.MustLookupIndex("Y"), 0}, -70},
-					}},
-				},
-			},
-		}))
-	*/
+	//g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
+	//	Guide: guide,
+	//	Schedule: tal.Schedule{
+	//		TSs: []tal.TrainSchedule{
+	//			{TrainI: 0, Segments: []tal.Segment{
+	//				{tal.Position{y.MustLookupIndex("X"), 0}, 0},
+	//				{tal.Position{y.MustLookupIndex("X"), 0}, 70},
+	//				{tal.Position{y.MustLookupIndex("Y"), 0}, 70},
+	//				{tal.Position{y.MustLookupIndex("W"), 0}, 70},
+	//			}},
+	//		},
+	//	},
+	//}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

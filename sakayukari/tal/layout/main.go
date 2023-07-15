@@ -154,6 +154,18 @@ func (l *Line) GetPort(p int) Port {
 	panic(fmt.Sprintf("unknown port %d", p))
 }
 
+func (l *Line) SetPort(pi int, p Port) {
+	if pi == 0 {
+		l.PortA = p
+	} else if pi == 1 {
+		l.PortB = p
+	} else if pi == 2 {
+		l.PortC = p
+	} else {
+		panic(fmt.Sprintf("unknown port %d", pi))
+	}
+}
+
 func Connect(lines []Line) (Layout, error) {
 	y := Layout{Lines: make([]Line, 0, len(lines))}
 	err := y.connect(lines)
@@ -175,6 +187,7 @@ func (y *Layout) connect(lines []Line) error {
 				return fmt.Errorf("line %d PortC inline: %w", li, err)
 			}
 			y.Lines[li].PortB.ConnI = li + 1 + inlineLen
+			y.Lines[li].PortB.nerfOutOfRangeConn = true
 			y.Lines[li].PortB.ConnP = 0
 			y.Lines[li].PortB.ConnFilled = true
 			y.Lines[li].PortC.ConnI = i + 1
@@ -188,6 +201,8 @@ func (y *Layout) connect(lines []Line) error {
 				y.Lines[li-1].PortB.ConnFilled = true
 			}
 			i += inlineLen
+		} else if len(l.PortB.ConnInline) != 0 {
+			return fmt.Errorf("line %d PortB cannot have ConnInline", li2)
 		} else if l.PortB.notZero() {
 			y.Lines = append(y.Lines, l)
 			if i != 0 && y.Lines[i-1].PortB.ConnI != -1 {
@@ -204,45 +219,33 @@ func (y *Layout) connect(lines []Line) error {
 	y.Lines[li].PortB.ConnI = -1
 	y.Lines[li].PortB.ConnP = -1
 	y.Lines[li].PortB.ConnFilled = false
-	return y.connectFix()
+	return y.connectTransposed()
 }
 
-func (y *Layout) connectFix() error {
+func (y *Layout) connectTransposed() error {
+	//data, _ := json.MarshalIndent(y, "", "  ")
+	//log.Printf("connectTransposed json: %s", data)
 	for li, _ := range y.Lines {
-		for p := 0; p <= 2; p++ {
-			var j, q int
-			if p == 0 {
-				j = y.Lines[li].PortA.ConnI
-				q = y.Lines[li].PortA.ConnP
-				if !y.Lines[li].PortA.ConnFilled {
-					continue
-				}
-			} else if p == 1 {
-				j = y.Lines[li].PortB.ConnI
-				q = y.Lines[li].PortB.ConnP
-				if !y.Lines[li].PortB.ConnFilled {
-					continue
-				}
-			} else if p == 2 {
-				j = y.Lines[li].PortC.ConnI
-				q = y.Lines[li].PortC.ConnP
-				if !y.Lines[li].PortC.ConnFilled {
-					continue
-				}
+		for pi := 0; pi <= 2; pi++ {
+			p := y.Lines[li].GetPort(pi)
+			if p.nerfOutOfRangeConn && p.ConnI >= len(y.Lines) {
+				p.ConnI = -1
+				p.ConnP = -1
+				p.ConnFilled = false
+				l := y.Lines[li]
+				l.SetPort(pi, p)
+				y.Lines[li] = l
 			}
-			if q == 0 {
-				y.Lines[j].PortA.ConnI = li
-				y.Lines[j].PortA.ConnP = 1
-				y.Lines[j].PortA.ConnFilled = true
-			} else if q == 1 {
-				y.Lines[j].PortB.ConnI = li
-				y.Lines[j].PortB.ConnP = 1
-				y.Lines[j].PortB.ConnFilled = true
-			} else if q == 2 {
-				y.Lines[j].PortC.ConnI = li
-				y.Lines[j].PortC.ConnP = 1
-				y.Lines[j].PortC.ConnFilled = true
+			if !p.ConnFilled {
+				continue
 			}
+			p2 := y.Lines[p.ConnI].GetPort(p.ConnP)
+			p2.ConnI = li
+			p2.ConnP = pi
+			p2.ConnFilled = true
+			l2 := y.Lines[p.ConnI]
+			l2.SetPort(p.ConnP, p2)
+			y.Lines[p.ConnI] = l2
 		}
 	}
 	return nil
@@ -264,7 +267,8 @@ type Port struct {
 	ConnInline []Line
 	// TODO: how to represent curves?
 	// Direction is the direction power must be set at to make a train move towards this port.
-	Direction bool
+	Direction          bool
+	nerfOutOfRangeConn bool
 }
 
 func (p Port) String() string {
@@ -277,25 +281,6 @@ func (p Port) String() string {
 
 func (p *Port) notZero() bool {
 	return p.Length != 0 || p.ConnFilled || p.ConnI != 0 || p.ConnP != 0 || p.ConnInline != nil
-}
-
-// countLength sums the length of the total layout. The layout must not contain switches.
-func (y *Layout) countLength() uint32 {
-	i := 0
-	p := 1
-	var sum uint32 = 0
-	for {
-		l := y.Lines[i]
-		port := l.GetPort(p)
-		sum += port.Length
-		if port.ConnFilled {
-			i = port.ConnI
-			p = port.ConnP
-		} else {
-			return sum
-		}
-	}
-	return sum
 }
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.
