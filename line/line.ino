@@ -79,7 +79,7 @@ void Line_update(Line *line) {
   }
 }
 
-#include "shortcheck.h"
+//#include "shortcheck.h"
 
 void setup() {
   Serial.begin(9600);
@@ -189,9 +189,9 @@ void loop() {
   Line_update(&lineB);
   Line_update(&lineC);
   Line_update(&lineD);
-  if (linecalib_step_stop()) {
-    Serial.println("Z: done calibration");
-  }
+  //if (linecalib_step_stop()) {
+  //  Serial.println("Z: done calibration");
+  //}
   handleSLCP();
 }
 
@@ -349,11 +349,11 @@ void handleSLCP() {
     ina219_load_calibrate();
   } else if (kind == '\n') {
     // ignore
-  } else if (kind == 'Z') {
-    Serial.println("Z: starting calibration");
-    linecalib_start();
-  } else if (kind == 'z') {
-    linecalib_show();
+  //} else if (kind == 'Z') {
+  //  Serial.println("Z: starting calibration");
+  //  linecalib_start();
+  //} else if (kind == 'z') {
+  //  linecalib_show();
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);

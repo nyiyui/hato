@@ -37,7 +37,7 @@ void linecalib_start() {
 }
 
 bool linecalib_step_stop() {
-  if (!linecalib_calibrating) return;
+  if (!linecalib_calibrating) return false;
   unsigned long now = millis();
   if (now < next) {
     unsigned long elapsed = now - lastMeasurement;
@@ -78,4 +78,5 @@ bool linecalib_step_stop() {
 
   next = millis() + 100;
   cum = 0;
+  return false;
 }
