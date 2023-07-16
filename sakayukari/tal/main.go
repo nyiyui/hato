@@ -16,7 +16,7 @@ import (
 type LineID = layout.LineID
 type LinePort = layout.LinePort
 
-const idlePower = 15
+const idlePower = 20
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -135,6 +135,7 @@ func Guide(conf GuideConf) Actor {
 		State:        TrainStateNextAvail,
 	}
 	t1.Path = g.y.PathTo(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
+	//t1.Path = g.y.PathTo(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
 	{
 		last := t1.Path[len(t1.Path)-1]
 		p := g.y.Lines[last.LineI].GetPort(last.PortI)
@@ -205,7 +206,6 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				}
 			}
 			g.trains[ti] = t
-			log.Printf("endofloop: %s", &g.trains[ti])
 		}
 		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
 		// TODO: check for regressions
@@ -392,11 +392,13 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 		prevLP := t.Path[pathI-1]
 		entryP := g.y.Lines[prevLP.LineI].GetPort(prevLP.PortI).ConnP
 		rl.Direction = l.GetPort(entryP).Direction
+		//log.Printf("### -1 entryP: %d %t", entryP, rl.Direction)
 	} else {
 		rl.Direction = l.GetPort(pi).Direction
+		//log.Printf("### -1 pi: line %d port %d %t", li, pi, rl.Direction)
 	}
 	// TODO: fix direction to follow layout.Layout rules
-	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,

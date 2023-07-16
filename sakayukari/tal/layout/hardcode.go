@@ -114,6 +114,38 @@ func InitTestbench3() (*Layout, error) {
 	station := 2*64 + 2*718000*math.Pi*2*15/360 + 248000
 	_, _, _ = normal, reverse, station
 	y, err := Connect([]Line{
+		//Line{
+		//	Comment:   "Z",
+		//	PortA:     Port{Direction: true},
+		//	PortB:     Port{Length: 128000, Direction: false},
+		//	PowerConn: yellow("A"),
+		//},
+		//Line{
+		//	Comment:   "Y",
+		//	PortB:     Port{Length: 3*248000 + 128000, Direction: true},
+		//	PowerConn: yellow("B"),
+		//},
+		//Line{
+		//	Comment: "X",
+		//	PortA:   Port{Direction: true},
+		//	PortB:   Port{Length: uint32(normal), Direction: false},
+		//	PortC: Port{Length: uint32(reverse), Direction: false, ConnInline: []Line{
+		//		Line{
+		//			Comment:   "V",
+		//			PortA:     Port{Direction: false},
+		//			PortB:     Port{Length: uint32(station), Direction: true},
+		//			PowerConn: white("A"),
+		//		},
+		//	}},
+		//	PowerConn:  yellow("C"),
+		//	SwitchConn: white("B"),
+		//},
+		//Line{
+		//	Comment:   "W",
+		//	PortA:     Port{Direction: true},
+		//	PortB:     Port{Length: 248000 * 3, Direction: false},
+		//	PowerConn: white("C"),
+		//},
 		Line{
 			Comment:   "Z",
 			PortA:     Port{Direction: true},
@@ -132,20 +164,20 @@ func InitTestbench3() (*Layout, error) {
 			PortC: Port{Length: uint32(reverse), Direction: false, ConnInline: []Line{
 				Line{
 					Comment:   "V",
-					PortA:     Port{Direction: false},
-					PortB:     Port{Length: uint32(station), Direction: true},
+					PortA:     Port{Direction: true},
+					PortB:     Port{Length: uint32(station), Direction: false},
 					PowerConn: white("A"),
 				},
 			}},
 			PowerConn:  yellow("C"),
 			SwitchConn: white("B"),
 		},
-		//Line{
-		//	Comment:   "W",
-		//	PortA:     Port{Direction: false},
-		//	PortB:     Port{Length: 248000 * 3, Direction: true},
-		//	PowerConn: white("C"),
-		//},
+		Line{
+			Comment:   "W",
+			PortA:     Port{Direction: false},
+			PortB:     Port{Length: 248000 * 3, Direction: true},
+			PowerConn: white("C"),
+		},
 		// TODO: support merging switches
 	})
 	return &y, err
