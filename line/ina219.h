@@ -29,7 +29,7 @@ unsigned long ina219_count = 0;
 
 int ina219_weight = 90;
 float ina219_elapsed_weight = 1.0;
-int ina219_threshold = 10000;
+int ina219_threshold = 12000;
 // Set this to a "high enough" threshold such that drift (due to high common-mode voltage) won't affect this - this drift is usually around 3 to 4 mA.
 // https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/790103/ina219-ina219---bidirectional-current-measurement-to-measure-motor-current?ReplyFilter=Answers&ReplySortBy=Answers&ReplySortOrder=Descending
 // See issue #14 for details.
