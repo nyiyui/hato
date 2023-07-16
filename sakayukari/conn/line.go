@@ -32,7 +32,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
-				log.Printf("ReqLine %s", req)
+				log.Printf("ReqLine %s %s", c.Id, req)
 				var err error
 				func() {
 					state.fileLock.Lock()
@@ -47,7 +47,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 					log.Printf("commit %s: %s", req, err)
 				}
 			case ReqSwitch:
-				log.Printf("ReqSwitch %s", req)
+				log.Printf("ReqSwitch %s %s", c.Id, req)
 				var err error
 				func() {
 					state.fileLock.Lock()
