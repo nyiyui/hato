@@ -31,15 +31,6 @@ func (s *State) find() error {
 func (s *State) connect(path string) {
 	log.Printf("connecting to %s", path)
 	cmd := exec.Command("./serial-proxy", path)
-	{
-		//r, w, err := os.Pipe()
-		//if err != nil {
-		//	log.Printf("connect %s: StdinPipe: %s", path, err)
-		//	return
-		//}
-		//cmd.Stdin = r
-		//stdin := w
-	}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Printf("connect %s: StdinPipe: %s", path, err)

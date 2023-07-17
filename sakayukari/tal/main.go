@@ -129,7 +129,7 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        70,
+		Power:        100,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
@@ -391,11 +391,11 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 		// -1 means that this LinePort is the end. Select the opposite of entryP, the port the train enters the end Line.
 		prevLP := t.Path[pathI-1]
 		entryP := g.y.Lines[prevLP.LineI].GetPort(prevLP.PortI).ConnP
-		rl.Direction = l.GetPort(entryP).Direction
-		//log.Printf("### -1 entryP: %d %t", entryP, rl.Direction)
+		rl.Direction = !l.GetPort(entryP).Direction
+		log.Printf("### -1 entryP: %d %t", entryP, rl.Direction)
 	} else {
 		rl.Direction = l.GetPort(pi).Direction
-		//log.Printf("### -1 pi: line %d port %d %t", li, pi, rl.Direction)
+		log.Printf("### -1 pi: line %d port %d %t", li, pi, rl.Direction)
 	}
 	// TODO: fix direction to follow layout.Layout rules
 	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
