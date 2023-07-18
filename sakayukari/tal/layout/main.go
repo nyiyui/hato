@@ -9,6 +9,8 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
+type LineI int
+
 func reverse[S ~[]E, E any](s S) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
@@ -49,7 +51,7 @@ type Direction bool
 
 // checkLinePort panics if pi doesn't exist in this Layout.
 func (y *Layout) checkLinePort(pi LinePort) {
-	if pi.LineI < 0 || pi.LineI >= len(y.Lines) {
+	if pi.LineI < 0 || int(pi.LineI) >= len(y.Lines) {
 		panic(fmt.Sprintf("invalid LinePort: LineI %d doesn't exist", pi.LineI))
 	}
 	if pi.PortI < 0 || pi.PortI > 2 {
@@ -69,10 +71,10 @@ func (y *Layout) MustLookup(comment string) Line {
 }
 
 // MustLookupIndex is MustLookup but returns an index.
-func (y *Layout) MustLookupIndex(comment string) int {
+func (y *Layout) MustLookupIndex(comment string) LineI {
 	for li, l := range y.Lines {
 		if l.Comment == comment {
-			return li
+			return LineI(li)
 		}
 	}
 	panic(fmt.Sprintf("found nothing when looking up for %s", comment))
@@ -93,7 +95,7 @@ func (y *Layout) Step(pi LinePort) (next LinePort, exists bool) {
 // LinePort contains an identitifer for a line and its port.
 // This specifies both position and direction (a port is unidirectional, away from its own line).
 type LinePort struct {
-	LineI int
+	LineI LineI
 	PortI int
 }
 
@@ -177,11 +179,11 @@ func (y *Layout) connect(lines []Line) error {
 	// TODO: test ConnInline (layouts with switches)
 	// only do prev→next line connections here; next→prev conns are added later
 	for li2, l := range lines {
-		i := len(y.Lines) - originalLen
+		i := LineI(len(y.Lines) - originalLen)
 		if len(l.PortC.ConnInline) != 0 {
-			li := len(y.Lines)
+			li := LineI(len(y.Lines))
 			y.Lines = append(y.Lines, l)
-			inlineLen := len(l.PortC.ConnInline)
+			inlineLen := LineI(len(l.PortC.ConnInline))
 			err := y.connect(l.PortC.ConnInline)
 			if err != nil {
 				return fmt.Errorf("line %d PortC inline: %w", li, err)
@@ -228,7 +230,7 @@ func (y *Layout) connectTransposed() error {
 	for li, _ := range y.Lines {
 		for pi := 0; pi <= 2; pi++ {
 			p := y.Lines[li].GetPort(pi)
-			if p.nerfOutOfRangeConn && p.ConnI >= len(y.Lines) {
+			if p.nerfOutOfRangeConn && int(p.ConnI) >= len(y.Lines) {
 				p.ConnI = -1
 				p.ConnP = -1
 				p.ConnFilled = false
@@ -240,7 +242,7 @@ func (y *Layout) connectTransposed() error {
 				continue
 			}
 			p2 := y.Lines[p.ConnI].GetPort(p.ConnP)
-			p2.ConnI = li
+			p2.ConnI = LineI(li)
 			p2.ConnP = pi
 			p2.ConnFilled = true
 			l2 := y.Lines[p.ConnI]
@@ -260,7 +262,7 @@ type Port struct {
 	// ConnFilled must be true to use ConnI and ConnP.
 	ConnFilled bool
 	// ConnI is the index of the line this connects to in the layout. Set to -1 if there is no connection.
-	ConnI int
+	ConnI LineI
 	// ConnI is the port of the line this connects to in the layout. Set to -1 if there is no connection.
 	ConnP int
 	// ConnInline is the line for the connection.
@@ -285,7 +287,7 @@ func (p *Port) notZero() bool {
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.
 // This assumes all switches can be operated in both normal and reverse directions.
-func (y *Layout) PathTo(from, goal int) []LinePort {
+func (y *Layout) PathTo(from, goal LineI) []LinePort {
 	// simple Dijkstra's, using the "using" slice to track the shortest path
 	const infinity = -1
 	const debug = false
@@ -296,7 +298,7 @@ func (y *Layout) PathTo(from, goal int) []LinePort {
 	distance := make([]int, len(y.Lines))
 	using := make([]LinePort, len(y.Lines))
 	for i := range distance {
-		if i == from {
+		if LineI(i) == from {
 			continue
 		}
 		distance[i] = infinity

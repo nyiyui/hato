@@ -244,7 +244,7 @@ func (g *guide) loop() {
 	for diffuse := range g.actor.InputCh {
 		switch val := diffuse.Value.(type) {
 		case GuideTrainUpdate:
-			log.Printf("diffuse GuideTrainUpdate")
+			log.Printf("diffuse GuideTrainUpdate %d %#v", val.TrainI, val.Train)
 			orig := g.trains[val.TrainI]
 			if val.Train.Power == -1 {
 				val.Train.Power = orig.Power
@@ -430,7 +430,7 @@ func (g *guide) syncLocks(ti int) {
 	}
 }
 
-func (g *guide) lock(li, ti int) (ok bool) {
+func (g *guide) lock(li layout.LineI, ti int) (ok bool) {
 	if g.lineStates[li].Taken {
 		if g.lineStates[li].TakenBy != ti {
 			return false
@@ -444,7 +444,7 @@ func (g *guide) lock(li, ti int) (ok bool) {
 	return true
 }
 
-func (g *guide) unlock(li int) {
+func (g *guide) unlock(li layout.LineI) {
 	log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
 	g.lineStates[li].Taken = false
 	g.lineStates[li].TakenBy = -1

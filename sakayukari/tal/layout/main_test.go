@@ -17,7 +17,7 @@ func TestConnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
-	countLength := func(y Layout, connI, portI, destI int) uint32 {
+	countLength := func(y Layout, connI LineI, portI int, destI LineI) uint32 {
 		i := connI
 		p := portI
 		var sum uint32 = 0
@@ -62,8 +62,8 @@ func TestPathTo(t *testing.T) {
 	type setup struct {
 		Comment string
 		Layout  *Layout
-		From    int
-		Goal    int
+		From    LineI
+		Goal    LineI
 	}
 	y := MustConnect(t, []Line{
 		StraightLine(312000),
@@ -94,7 +94,7 @@ func TestPathTo(t *testing.T) {
 			data, _ := json.MarshalIndent(y, "", "  ")
 			t.Logf("layout-json: %s", data)
 			path := y.PathTo(s.From, s.Goal)
-			current := -1
+			var current LineI = -1
 			for i, lp := range path {
 				next := y.Lines[lp.LineI].GetPort(lp.PortI)
 				t.Logf("%d: %d → %s", i, current, next)

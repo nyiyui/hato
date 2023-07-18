@@ -71,19 +71,18 @@ func Main() error {
 	}))
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, tal.GuideRender(guide))
-	//g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
-	//	Guide: guide,
-	//	Schedule: tal.Schedule{
-	//		TSs: []tal.TrainSchedule{
-	//			{TrainI: 0, Segments: []tal.Segment{
-	//				{tal.Position{y.MustLookupIndex("X"), 0}, 0},
-	//				{tal.Position{y.MustLookupIndex("X"), 0}, 70},
-	//				{tal.Position{y.MustLookupIndex("Y"), 0}, 70},
-	//				{tal.Position{y.MustLookupIndex("W"), 0}, 70},
-	//			}},
-	//		},
-	//	},
-	//}))
+	g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
+		Guide: guide,
+		Schedule: tal.Schedule{
+			TSs: []tal.TrainSchedule{
+				{TrainI: 0, Segments: []tal.Segment{
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 0},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 70},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 100},
+				}},
+			},
+		},
+	}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

@@ -111,7 +111,7 @@ func InitTestbench3() (*Layout, error) {
 	_, _ = yellow, white
 	normal := 282000*math.Pi*2*90/360 + 186000
 	reverse := 282000*math.Pi*2*90/360 + 718000*math.Pi*2*15/360
-	station := 2*64 + 2*718000*math.Pi*2*15/360 + 248000
+	station := 2*64000 + 2*718000*math.Pi*2*15/360 + 248000
 	_, _, _ = normal, reverse, station
 	y, err := Connect([]Line{
 		//Line{

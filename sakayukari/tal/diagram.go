@@ -4,10 +4,9 @@ package tal
 import (
 	"fmt"
 	"log"
-	"reflect"
 
-	"github.com/google/go-cmp/cmp"
 	. "nyiyui.ca/hato/sakayukari"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 type DiagramConf struct {
@@ -39,7 +38,7 @@ type trainScheduleState struct {
 }
 
 type Position struct {
-	LineI int
+	LineI layout.LineI
 	// Precise is the position from port A in µm.
 	Precise uint32
 }
@@ -128,26 +127,27 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 		State: 0, // automatically copied from original by guide
 	}
 	{
-		lpsBack := y.PathTo(t.CurrentBack, s.Target.LineI)
-		lpsFront := y.PathTo(t.CurrentFront, s.Target.LineI)
+		log.Printf("### apply tsi %d target %#v", tsi, s.Target)
+		lpsBack := y.PathTo(t.Path[t.CurrentBack].LineI, s.Target.LineI)
+		lpsFront := y.PathTo(t.Path[t.CurrentFront].LineI, s.Target.LineI)
+		log.Printf("### lpsBack %#v", lpsBack)
+		log.Printf("### lpsFront %#v", lpsFront)
 		// We have to include all currents in the new path.
 		// The longer one will include both CurrentBack and CurrentFront regardless of direction.
 		if len(lpsBack) > len(lpsFront) {
 			nt.Path = lpsBack
-			t.CurrentBack = 0
-			t.CurrentFront = len(lpsBack) - len(lpsFront)
+			nt.CurrentBack = 0
+			nt.CurrentFront = len(lpsBack) - len(lpsFront)
 		} else if len(lpsFront) > len(lpsBack) {
 			nt.Path = lpsFront
-			t.CurrentBack = len(lpsBack) - len(lpsFront)
-			t.CurrentFront = 0
+			nt.CurrentBack = len(lpsBack) - len(lpsFront)
+			nt.CurrentFront = 0
 		} else {
 			nt.Path = lpsFront // shouldn't matter
-			t.CurrentBack = 0
-			t.CurrentFront = 0
+			nt.CurrentBack = 0
+			nt.CurrentFront = 0
 			if t.CurrentBack != t.CurrentFront {
 				panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.CurrentBack, t.CurrentFront))
-			} else if reflect.DeepEqual(lpsBack, lpsFront) {
-				panic(fmt.Sprintf("same-length but different paths from same LineIs (%d): diff back→front: %s", t.CurrentBack, cmp.Diff(lpsBack, lpsFront)))
 			}
 		}
 	}
