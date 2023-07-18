@@ -76,9 +76,13 @@ func Main() error {
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 0},
-					{tal.Position{y.MustLookupIndex("W"), 0}, 70},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 100},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 101},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 120},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 103},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 120},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 105},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 120},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 106},
 				}},
 			},
 		},

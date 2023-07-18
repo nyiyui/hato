@@ -134,13 +134,8 @@ func Guide(conf GuideConf) Actor {
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
 	}
-	t1.Path = g.y.PathTo(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
-	//t1.Path = g.y.PathTo(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
-	{
-		last := t1.Path[len(t1.Path)-1]
-		p := g.y.Lines[last.LineI].GetPort(last.PortI)
-		t1.Path = append(t1.Path, LinePort{LineI: p.ConnI, PortI: -1})
-	}
+	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
+	t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
 	g.trains = append(g.trains, t1)
 
 	go g.loop()
@@ -201,8 +196,6 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
 					log.Printf("=== next succession: %d", t.CurrentFront)
-					log.Printf("inner: %#v", inner)
-					log.Printf("what: %s", &t)
 				}
 			}
 			g.trains[ti] = t
@@ -210,12 +203,12 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
 		// TODO: check for regressions
 		// TODO: check for overruns (is this possible?)
-		log.Printf("postshow: %s", &g.trains[ti])
+		//log.Printf("postshow: %s", &g.trains[ti])
 	}
 	g.publishSnapshot()
 	for ti := range g.trains {
 		g.wakeup(ti)
-		log.Printf("postwakeup: %s", &g.trains[ti])
+		//log.Printf("postwakeup: %s", &g.trains[ti])
 	}
 	g.publishSnapshot()
 }
@@ -249,10 +242,10 @@ func (g *guide) loop() {
 			if val.Train.Power == -1 {
 				val.Train.Power = orig.Power
 			}
-			if val.Train.CurrentBack == -1 {
+			if val.Train.CurrentBack == layout.BlankLineI {
 				val.Train.CurrentBack = orig.CurrentBack
 			}
-			if val.Train.CurrentFront == -1 {
+			if val.Train.CurrentFront == layout.BlankLineI {
 				val.Train.CurrentFront = orig.CurrentFront
 			}
 			if val.Train.Path == nil {
@@ -331,7 +324,6 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	pi := t.Path[pathI].PortI
 	if pi == 0 {
 		// merging, so no applySwitch needed
-		log.Printf("merging")
 		return
 	}
 	// for debugging
@@ -392,13 +384,13 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 		prevLP := t.Path[pathI-1]
 		entryP := g.y.Lines[prevLP.LineI].GetPort(prevLP.PortI).ConnP
 		rl.Direction = !l.GetPort(entryP).Direction
-		log.Printf("### -1 entryP: %d %t", entryP, rl.Direction)
+		//log.Printf("### -1 entryP: %d %t", entryP, rl.Direction)
 	} else {
 		rl.Direction = l.GetPort(pi).Direction
-		log.Printf("### -1 pi: line %d port %d %t", li, pi, rl.Direction)
+		//log.Printf("### -1 pi: line %d port %d %t", li, pi, rl.Direction)
 	}
 	// TODO: fix direction to follow layout.Layout rules
-	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,
@@ -438,14 +430,14 @@ func (g *guide) lock(li layout.LineI, ti int) (ok bool) {
 			return true
 		}
 	}
-	log.Printf("LOCK %d(%s) by %d", li, g.y.Lines[li].Comment, ti)
+	//log.Printf("LOCK %d(%s) by %d", li, g.y.Lines[li].Comment, ti)
 	g.lineStates[li].Taken = true
 	g.lineStates[li].TakenBy = ti
 	return true
 }
 
 func (g *guide) unlock(li layout.LineI) {
-	log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
+	//log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
 	g.lineStates[li].Taken = false
 	g.lineStates[li].TakenBy = -1
 	// TODO: maybe do wakeup for all trains that match (instead of the dumb for loop in guide.single())

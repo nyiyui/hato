@@ -12,6 +12,9 @@ import (
 // LineI is a line index, an index of a slice with Lines.
 type LineI int
 
+// BlankLineI is used as a null value for LineI (0 has a meaning).
+const BlankLineI = -123
+
 // PortI is a port index, representing ports A, B, and C.
 type PortI int
 
@@ -294,6 +297,13 @@ func (p Port) String() string {
 
 func (p *Port) notZero() bool {
 	return p.Length != 0 || p.ConnFilled || p.ConnI != 0 || p.ConnP != 0 || p.ConnInline != nil
+}
+
+// PathToInclusive returns the same as PathTo, but adds an additional LinePort which has a port index of -1, and contains the last line index.
+func (y *Layout) PathToInclusive(from, goal LineI) []LinePort {
+	lps := y.PathTo(from, goal)
+	lps = append(lps, LinePort{LineI: goal, PortI: -1})
+	return lps
 }
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.
