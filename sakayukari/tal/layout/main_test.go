@@ -17,7 +17,7 @@ func TestConnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
-	countLength := func(y Layout, connI LineI, portI int, destI LineI) uint32 {
+	countLength := func(y Layout, connI LineI, portI PortI, destI LineI) uint32 {
 		i := connI
 		p := portI
 		var sum uint32 = 0

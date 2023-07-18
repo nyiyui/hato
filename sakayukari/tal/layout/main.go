@@ -9,7 +9,18 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
+// LineI is a line index, an index of a slice with Lines.
 type LineI int
+
+// PortI is a port index, representing ports A, B, and C.
+type PortI int
+
+const (
+	// use non 0-3 numbers to error out on legacy code
+	PortA PortI = 0
+	PortB PortI = 1
+	PortC PortI = 2
+)
 
 func reverse[S ~[]E, E any](s S) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
@@ -96,7 +107,7 @@ func (y *Layout) Step(pi LinePort) (next LinePort, exists bool) {
 // This specifies both position and direction (a port is unidirectional, away from its own line).
 type LinePort struct {
 	LineI LineI
-	PortI int
+	PortI PortI
 }
 
 func (lp LinePort) String() string {
@@ -143,25 +154,25 @@ func Turnout(lengthA, lengthB uint32, reverse []Line) Line {
 	}
 }
 
-func (l *Line) GetPort(p int) Port {
-	if p == 0 {
+func (l *Line) GetPort(p PortI) Port {
+	if p == PortA {
 		return l.PortA
 	}
-	if p == 1 {
+	if p == PortB {
 		return l.PortB
 	}
-	if p == 2 {
+	if p == PortC {
 		return l.PortC
 	}
 	panic(fmt.Sprintf("unknown port %d", p))
 }
 
-func (l *Line) SetPort(pi int, p Port) {
-	if pi == 0 {
+func (l *Line) SetPort(pi PortI, p Port) {
+	if pi == PortA {
 		l.PortA = p
-	} else if pi == 1 {
+	} else if pi == PortB {
 		l.PortB = p
-	} else if pi == 2 {
+	} else if pi == PortC {
 		l.PortC = p
 	} else {
 		panic(fmt.Sprintf("unknown port %d", pi))
@@ -228,7 +239,7 @@ func (y *Layout) connectTransposed() error {
 	//data, _ := json.MarshalIndent(y, "", "  ")
 	//log.Printf("connectTransposed json: %s", data)
 	for li, _ := range y.Lines {
-		for pi := 0; pi <= 2; pi++ {
+		for pi := PortI(0); pi <= 2; pi++ {
 			p := y.Lines[li].GetPort(pi)
 			if p.nerfOutOfRangeConn && int(p.ConnI) >= len(y.Lines) {
 				p.ConnI = -1
@@ -264,7 +275,7 @@ type Port struct {
 	// ConnI is the index of the line this connects to in the layout. Set to -1 if there is no connection.
 	ConnI LineI
 	// ConnI is the port of the line this connects to in the layout. Set to -1 if there is no connection.
-	ConnP int
+	ConnP PortI
 	// ConnInline is the line for the connection.
 	ConnInline []Line
 	// TODO: how to represent curves?
@@ -312,18 +323,18 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 			log.Printf("queue %#v", queue)
 		}
 		l := y.Lines[current.LineI]
-		for i := 0; i <= 2; i++ {
+		for pi := PortI(0); pi <= 2; pi++ {
 			if debug {
-				log.Printf("port %d", i)
+				log.Printf("port %d", pi)
 			}
-			p := l.GetPort(i)
+			p := l.GetPort(pi)
 			if !p.ConnFilled {
 				if debug {
 					log.Printf("unfilled")
 				}
 				continue
 			}
-			if i+current.PortI == 5 {
+			if pi+current.PortI == 5 {
 				// cannot go between ports B and C
 				if debug {
 					log.Printf("between")
@@ -332,8 +343,8 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 			}
 			if distance[p.ConnI] == infinity || distance[current.LineI] < distance[p.ConnI] {
 				distance[p.ConnI] = distance[current.LineI] + 1
-				using[p.ConnI] = LinePort{current.LineI, i}
-				queue = append(queue, LinePort{p.ConnI, i})
+				using[p.ConnI] = LinePort{current.LineI, pi}
+				queue = append(queue, LinePort{p.ConnI, pi})
 				if debug {
 					log.Printf("add %#v", queue[len(queue)-1])
 				}
