@@ -299,6 +299,18 @@ func (p *Port) notZero() bool {
 	return p.Length != 0 || p.ConnFilled || p.ConnI != 0 || p.ConnP != 0 || p.ConnInline != nil
 }
 
+//// Measure returns the distance from the first LinePort to the last LinePort.
+//func (y *Layout) Measure(path []LinePort) int64 {
+//	panic("not implemented yet")
+//}
+
+// Traverse returns the Position when traversing from the port A of the first Line.
+// Note that this means the entire length of the first Line is traversed.
+// This panics when traversing exceeds the path (both under and overruns).
+func (y *Layout) Traverse(path []LinePort, displacement int64) Position {
+	panic("not implemented yet")
+}
+
 // PathToInclusive returns the same as PathTo, but adds an additional LinePort which has a port index of -1, and contains the last line index.
 func (y *Layout) PathToInclusive(from, goal LineI) []LinePort {
 	lps := y.PathTo(from, goal)
@@ -371,4 +383,10 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 		lps[len(lps)-1-j] = using[i]
 	}
 	return lps
+}
+
+type Position struct {
+	LineI LineI
+	// Precise is the position from port A in µm.
+	Precise uint32
 }

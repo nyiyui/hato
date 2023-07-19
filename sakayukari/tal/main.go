@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
+	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
@@ -25,6 +27,7 @@ type GuideConf struct {
 	Layout        *layout.Layout
 	Actors        map[LineID]ActorRef
 	actorsReverse map[ActorRef]conn.Id
+	Cars          cars.Data
 }
 
 type TrainState int
@@ -34,6 +37,13 @@ const (
 	TrainStateNextAvail TrainState = 1
 	// TrainStateNextLocked means the next line is locked by another train. The train should stop and wait at its current position, unless a precise attitude is available. If a precise attitude is available, it should stop without entering the next line.
 	TrainStateNextLocked TrainState = 2
+)
+
+type FormOrient int
+
+const (
+	FormOrientA FormOrient = iota + 1
+	FormOrientB
 )
 
 type Train struct {
@@ -50,6 +60,10 @@ type Train struct {
 	// Path is the Path of outgoing LinePorts until the goal.
 	Path  []LinePort
 	State TrainState
+
+	FormI uuid.UUID
+	// Orient shows which side (side A or B) the front of the train (c.f. CurrentFront etc).
+	Orient FormOrient
 }
 
 // nextUnsafe returns the path index of the next LinePort.
@@ -170,6 +184,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.apply(&t, t.CurrentBack, 0)
 				t.CurrentBack++
 				log.Printf("=== currentBack succession: %d", t.CurrentBack)
+				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
 			cf := g.y.Lines[t.Path[t.CurrentFront].LineI]
@@ -187,6 +202,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.unlock(nextI)
 				g.apply(&t, t.CurrentFront, 0)
 				t.CurrentFront--
+				g.publishChange(ti, ChangeTypeCurrentFront)
 				log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
 		NoCurrentFront:
@@ -195,6 +211,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				cf := g.y.Lines[t.Path[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
+					g.publishChange(ti, ChangeTypeCurrentFront)
 					log.Printf("=== next succession: %d", t.CurrentFront)
 				}
 			}
@@ -315,6 +332,7 @@ func (g *guide) reify(ti int, t *Train) {
 		g.apply(t, i, power)
 	}
 	if t.State == TrainStateNextAvail {
+		g.applySwitch(ti, t, t.next())
 		g.apply(t, t.next(), power)
 	}
 }
@@ -322,47 +340,67 @@ func (g *guide) reify(ti int, t *Train) {
 func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path[pathI].LineI
 	pi := t.Path[pathI].PortI
-	if pi == 0 {
-		// merging, so no applySwitch needed
-		return
-	}
-	// for debugging
-	//if g.y.Lines[li].Comment == "W" {
-	//	return
-	//}
-	//log.Printf("line %s", g.y.Lines[li])
-	// for debugging ends here
+	log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
 	if g.y.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
+		log.Printf("no switch here")
 		return
 	}
-	if pi == 1 && g.lineStates[li].SwitchState == SwitchStateB {
-		return
-	} else if pi == 2 && g.lineStates[li].SwitchState == SwitchStateC {
+	var targetState SwitchState
+	if pi == 0 {
+		// merging, so check switch is in the right direction
+		lp := t.Path[pathI-1]
+		p := g.y.Lines[lp.LineI].GetPort(lp.PortI)
+		switch p.ConnP {
+		case 0:
+			panic("merging from port A to port A! Cannot change direction suddenly")
+		case 1:
+			// The train goes from port B to A
+			targetState = SwitchStateB
+		case 2:
+			// The train goes from port C to A
+			targetState = SwitchStateC
+		default:
+			panic("invalid ConnP")
+		}
+	} else {
+		if pi == 1 && g.lineStates[li].SwitchState == SwitchStateB {
+			return
+		} else if pi == 2 && g.lineStates[li].SwitchState == SwitchStateC {
+			return
+		}
+		switch pi {
+		case 1:
+			targetState = SwitchStateB
+		case 2:
+			targetState = SwitchStateC
+		default:
+			panic("invalid pi")
+		}
+	}
+	log.Printf("targetState: %s", targetState)
+	if g.lineStates[li].SwitchState == targetState {
+		log.Printf("already switched")
 		return
 	}
 	if g.lineStates[li].SwitchState == SwitchStateUnsafe {
 		// already switching
+		log.Printf("already switching")
 		return
 	}
+	g.lineStates[li].SwitchState = SwitchStateUnsafe
+	g.lineStates[li].nextSwitchState = targetState
 
 	log.Printf("applySwitch")
-	g.lineStates[li].SwitchState = SwitchStateUnsafe
-	if pi == 1 {
-		g.lineStates[li].nextSwitchState = SwitchStateB
-	} else if pi == 2 {
-		g.lineStates[li].nextSwitchState = SwitchStateC
-	} else {
-		panic(fmt.Sprintf("invalid pi %d", pi))
-	}
-	// TODO: rmbr to turn off the line afterwards!
 	d := Diffuse1{
 		Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
 		Value: conn.ReqSwitch{
 			Line:      g.y.Lines[li].SwitchConn.Line,
-			Direction: pi == 1,
-			Power:     180,
-			Duration:  1000,
+			Direction: targetState == SwitchStateB,
+			// true  when targetState is B
+			// false when targetState is C
+			Power:    180,
+			Duration: 1000,
 		},
 	}
 	//log.Printf("diffuse %#v", d)
@@ -485,4 +523,29 @@ func (g *guide) snapshot() GuideSnapshot {
 
 func (g *guide) publishSnapshot() {
 	g.actor.OutputCh <- Diffuse1{Value: g.snapshot()}
+}
+
+type GuideChange struct {
+	TrainI   int
+	Type     ChangeType
+	Snapshot GuideSnapshot
+}
+
+func (gc GuideChange) String() string {
+	return fmt.Sprintf("%#v", gc)
+}
+
+type ChangeType int
+
+const (
+	ChangeTypeCurrentBack ChangeType = iota + 1
+	ChangeTypeCurrentFront
+)
+
+func (g *guide) publishChange(ti int, ct ChangeType) {
+	g.actor.OutputCh <- Diffuse1{Value: GuideChange{
+		TrainI:   ti,
+		Type:     ct,
+		Snapshot: g.snapshot(),
+	}}
 }

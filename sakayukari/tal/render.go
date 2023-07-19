@@ -23,14 +23,16 @@ func GuideRender(guide ActorRef) Actor {
 			if diffuse.Origin != guide {
 				continue
 			}
-			gs := diffuse.Value.(GuideSnapshot)
-			b := new(strings.Builder)
-			for ti, t := range gs.Trains {
-				fmt.Fprintf(b, "%d %s\n", ti, &t)
-				fmt.Fprintf(b, "%d %#v\n", ti, t)
+			switch val := diffuse.Value.(type) {
+			case GuideSnapshot:
+				b := new(strings.Builder)
+				for ti, t := range val.Trains {
+					fmt.Fprintf(b, "%d %s\n", ti, &t)
+					fmt.Fprintf(b, "%d %#v\n", ti, t)
+				}
+				state.Text = b.String()
+				termui.Render(state)
 			}
-			state.Text = b.String()
-			termui.Render(state)
 		}
 	}()
 	return a

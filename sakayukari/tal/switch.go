@@ -11,6 +11,19 @@ const (
 	SwitchStateUnsafe SwitchState = 3
 )
 
+func (s SwitchState) String() string {
+	switch s {
+	case SwitchStateB:
+		return "ssB"
+	case SwitchStateC:
+		return "ssC"
+	case SwitchStateUnsafe:
+		return "ssUnsafe"
+	default:
+		return fmt.Sprintf("%d", s)
+	}
+}
+
 type switchClear struct {
 	// LineI is the index of the line.
 	LineI int

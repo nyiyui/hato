@@ -37,11 +37,7 @@ type trainScheduleState struct {
 	CurrentSegmentI int
 }
 
-type Position struct {
-	LineI layout.LineI
-	// Precise is the position from port A in µm.
-	Precise uint32
-}
+type Position = layout.Position
 
 type Segment struct {
 	// TODO: some way to establish a causal relationship with other Segments
@@ -78,41 +74,47 @@ func (d *diagram) loop() {
 	for diffuse := range d.actor.InputCh {
 		switch {
 		case diffuse.Origin == d.conf.Guide:
-			gs := diffuse.Value.(GuideSnapshot)
-			//log.Printf("new snapshot %#v", gs)
-			for tsi, ts := range d.conf.Schedule.TSs {
-				tss := &d.state.TSs[tsi]
-				apply := false
-				//log.Printf("tss %#v", tss)
-				if tss.CurrentSegmentI == len(ts.Segments)-1 {
-					continue
-				} else {
-					t := gs.Trains[ts.TrainI]
-					csi := tss.CurrentSegmentI
-					if csi == len(ts.Segments) {
-						log.Printf("siOverflow %d", csi)
-						continue
-					}
-					//log.Printf("si %d", si)
-					s := ts.Segments[csi]
-					for i := t.CurrentBack; i <= t.CurrentFront; i++ {
-						//log.Printf("for %d =? %d", s.Target.LineI, t.Path[i].LineI)
-						if s.Target.LineI == t.Path[i].LineI {
-							// TODO: precise position (maybe using traps (e.g. if train's position goes from 0 to 100, then trigger position of 50))
-							log.Printf("___ reached CurrentSegmentI: %d", tss.CurrentSegmentI)
-							log.Printf("___ reached Segment: %#v", ts.Segments[tss.CurrentSegmentI])
-							tss.CurrentSegmentI = csi + 1
-							apply = true
-						}
-					}
+			if _, ok := diffuse.Value.(GuideSnapshot); ok {
+				d.handdleGS(diffuse)
+			}
+		}
+	}
+}
+
+func (d *diagram) handdleGS(diffuse Diffuse1) {
+	gs := diffuse.Value.(GuideSnapshot)
+	//log.Printf("new snapshot %#v", gs)
+	for tsi, ts := range d.conf.Schedule.TSs {
+		tss := &d.state.TSs[tsi]
+		apply := false
+		//log.Printf("tss %#v", tss)
+		if tss.CurrentSegmentI == len(ts.Segments)-1 {
+			continue
+		} else {
+			t := gs.Trains[ts.TrainI]
+			csi := tss.CurrentSegmentI
+			if csi == len(ts.Segments) {
+				log.Printf("siOverflow %d", csi)
+				continue
+			}
+			//log.Printf("si %d", si)
+			s := ts.Segments[csi]
+			for i := t.CurrentBack; i <= t.CurrentFront; i++ {
+				//log.Printf("for %d =? %d", s.Target.LineI, t.Path[i].LineI)
+				if s.Target.LineI == t.Path[i].LineI {
+					// TODO: precise position (maybe using traps (e.g. if train's position goes from 0 to 100, then trigger position of 50))
+					log.Printf("___ reached CurrentSegmentI: %d", tss.CurrentSegmentI)
+					log.Printf("___ reached Segment: %#v", ts.Segments[tss.CurrentSegmentI])
+					tss.CurrentSegmentI = csi + 1
+					apply = true
 				}
-				if apply {
-					if tss.CurrentSegmentI == len(ts.Segments)-1 {
-						log.Printf("*** DONE")
-					} else {
-						d.apply(gs, tsi)
-					}
-				}
+			}
+		}
+		if apply {
+			if tss.CurrentSegmentI == len(ts.Segments)-1 {
+				log.Printf("*** DONE")
+			} else {
+				d.apply(gs, tsi)
 			}
 		}
 	}

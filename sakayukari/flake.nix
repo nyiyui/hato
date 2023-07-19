@@ -25,6 +25,8 @@
       devShells = let pkgs = nixpkgsFor.${system}; in { default = pkgs.mkShell {
           buildInputs = with pkgs; [
             (python3.withPackages (p: with p; [ pyserial ]))
+            yq
+            gnumake
           ];
       }; };
   });

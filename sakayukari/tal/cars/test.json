@@ -1,0 +1,28 @@
+{
+  "sets": {
+    "2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91": {
+      "comment": "E233-double",
+      "length": 450000,
+      "cars": [
+        {
+          "comment": "クハ E233-3516 (15)",
+          "length": 131000,
+          "mifare-id": "003b3712000003",
+          "mifare-position": 73000
+        },
+        {
+          "comment": "モハ E233-3616 (13)",
+          "length": 131000,
+          "mifare-id": "002d7912000003",
+          "mifare-position": 59000
+        },
+        {
+          "comment": "クハ E232-3516 (11)",
+          "length": 131000,
+          "mifare-id": "005e7412000003",
+          "mifare-position": 41000
+        }
+      ]
+    }
+  }
+}
