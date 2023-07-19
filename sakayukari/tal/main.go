@@ -343,7 +343,6 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
 	if g.y.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
-		log.Printf("no switch here")
 		return
 	}
 	var targetState SwitchState
@@ -378,20 +377,17 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 			panic("invalid pi")
 		}
 	}
-	log.Printf("targetState: %s", targetState)
 	if g.lineStates[li].SwitchState == targetState {
-		log.Printf("already switched")
 		return
 	}
 	if g.lineStates[li].SwitchState == SwitchStateUnsafe {
 		// already switching
-		log.Printf("already switching")
 		return
 	}
 	g.lineStates[li].SwitchState = SwitchStateUnsafe
 	g.lineStates[li].nextSwitchState = targetState
 
-	log.Printf("applySwitch")
+	//log.Printf("applySwitch")
 	d := Diffuse1{
 		Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
 		Value: conn.ReqSwitch{
