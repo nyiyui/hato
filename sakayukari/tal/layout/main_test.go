@@ -4,7 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"nyiyui.ca/hato/sakayukari/conn"
 )
+
+func TestLineID(t *testing.T) {
+	li := LineID{
+		Conn: conn.Id{
+			Type:     "t",
+			Variant:  "v",
+			Instance: "i",
+		},
+		Line: "l",
+	}
+	var li2 LineID
+	data, err := json.Marshal(li)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%s", data)
+	err = json.Unmarshal(data, &li2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(li2, li) {
+		t.Fatal(cmp.Diff(li2, li))
+	}
+}
 
 func TestConnect(t *testing.T) {
 	y, err := Connect([]Line{
@@ -125,5 +152,39 @@ func TestTestbench3(t *testing.T) {
 	_, err := InitTestbench3()
 	if err != nil {
 		t.Fatalf("error: %s", err)
+	}
+}
+
+func TestTraverse(t *testing.T) {
+	y, err := InitTestbench3()
+	if err != nil {
+		t.Fatalf("InitTestbench3: %s", err)
+	}
+	path := y.PathTo(y.MustLookupIndex("Z"), y.MustLookupIndex("W"))
+	type setup struct {
+		displacement int64
+		final        Position
+	}
+	var base uint32
+	base += y.Lines[y.MustLookupIndex("Z")].PortB.Length
+	base += y.Lines[y.MustLookupIndex("Y")].PortB.Length
+	setups := []setup{
+		{0, Position{y.MustLookupIndex("Z"), 0}},
+		{123456, Position{y.MustLookupIndex("Z"), 123456}},
+		{256000, Position{y.MustLookupIndex("Y"), 128000}},
+		{int64(base), Position{y.MustLookupIndex("X"), 0}},
+		{int64(base) + 1, Position{y.MustLookupIndex("X"), 1}},
+	}
+	// TODO: negative traversal testing
+	for i, setup := range setups {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			pos, ok := y.Traverse(path, setup.displacement)
+			if !ok {
+				t.Fatalf("!ok")
+			}
+			if !cmp.Equal(pos, setup.final) {
+				t.Fatalf("Position mismatch:\n%s", cmp.Diff(pos, setup.final))
+			}
+		})
 	}
 }

@@ -38,20 +38,20 @@ type LineID struct {
 }
 
 func (li LineID) String() string {
-	return fmt.Sprintf("%s::%s", li.Conn, li.Line)
+	return fmt.Sprintf("%s/%s/%s::%s", li.Conn.Type, li.Conn.Variant, li.Conn.Instance, li.Line)
 }
 
-func (li *LineID) MarshalJSON() ([]byte, error) {
+func (li LineID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(li.String())
 }
 
 func (li *LineID) UnmarshalJSON(data []byte) error {
-	inner := make([]byte, 0)
+	var inner string
 	err := json.Unmarshal(data, &inner)
 	if err != nil {
 		return err
 	}
-	parts := strings.SplitN(string(inner), "::", 2)
+	parts := strings.SplitN(inner, "::", 2)
 	li.Line = parts[1]
 	li.Conn = conn.ParseId(parts[0])
 	return nil
@@ -305,19 +305,22 @@ func (p *Port) notZero() bool {
 //}
 
 // Traverse returns the Position when traversing from the port A of the first Line.
-// If the displacement is larger than the length of the path itself, ok = false.
+// If displacement is larger than the length of the path itself, ok = false.
+// If displacement is negative, traverse the path backwards from the last element.
 // Note that this means the entire length of the first Line is traversed.
 // This panics when traversing exceeds the path (both under and overruns).
 func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok bool) {
+	if displacement < 0 {
+		panic("not implemented yet")
+	}
 	var current int64 = 0
-	for pathI := 0; current < displacement; pathI++ {
-		if pathI >= len(path) {
-			// total length of the path was less than displacement
+	for pathI := 0; pathI < len(path); pathI++ {
+		lp := path[pathI]
+		if lp.PortI == -1 {
 			return Position{}, false
 		}
-		lp := path[pathI]
 		p := y.Lines[lp.LineI].GetPort(lp.PortI)
-		if current+int64(p.Length) >= displacement {
+		if current+int64(p.Length) > displacement {
 			return Position{
 				LineI:   lp.LineI,
 				Precise: uint32(displacement - current),
@@ -325,7 +328,8 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 		}
 		current += int64(p.Length)
 	}
-	panic("unreacheable")
+	// total length of the path was less than displacement
+	return Position{}, false
 }
 
 // PathToInclusive returns the same as PathTo, but adds an additional LinePort which has a port index of -1, and contains the last line index.
