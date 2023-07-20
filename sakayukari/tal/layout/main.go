@@ -305,10 +305,27 @@ func (p *Port) notZero() bool {
 //}
 
 // Traverse returns the Position when traversing from the port A of the first Line.
+// If the displacement is larger than the length of the path itself, ok = false.
 // Note that this means the entire length of the first Line is traversed.
 // This panics when traversing exceeds the path (both under and overruns).
-func (y *Layout) Traverse(path []LinePort, displacement int64) Position {
-	panic("not implemented yet")
+func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok bool) {
+	var current int64 = 0
+	for pathI := 0; current < displacement; pathI++ {
+		if pathI >= len(path) {
+			// total length of the path was less than displacement
+			return Position{}, false
+		}
+		lp := path[pathI]
+		p := y.Lines[lp.LineI].GetPort(lp.PortI)
+		if current+int64(p.Length) >= displacement {
+			return Position{
+				LineI:   lp.LineI,
+				Precise: uint32(displacement - current),
+			}, true
+		}
+		current += int64(p.Length)
+	}
+	panic("unreacheable")
 }
 
 // PathToInclusive returns the same as PathTo, but adds an additional LinePort which has a port index of -1, and contains the last line index.

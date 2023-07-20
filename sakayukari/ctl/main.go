@@ -81,7 +81,7 @@ func Main() error {
 					{tal.Position{y.MustLookupIndex("Z"), 0}, 123},
 					{tal.Position{y.MustLookupIndex("V"), 0}, 70},
 					{tal.Position{y.MustLookupIndex("Z"), 0}, 125},
-					{tal.Position{y.MustLookupIndex("W"), 0}, 100},
+					{tal.Position{y.MustLookupIndex("V"), 0}, 100},
 					{tal.Position{y.MustLookupIndex("Z"), 0}, 126},
 				}},
 			},

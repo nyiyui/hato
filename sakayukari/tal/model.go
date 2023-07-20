@@ -79,54 +79,51 @@ func (m *model) loop() {
 				m.latestGS = gs
 			} else if gc, ok := diffuse.Value.(GuideChange); ok {
 				_ = gc
-				/*
-					t := gc.Snapshot.Trains[gc.TrainI]
-					y := m.latestGS.Layout
-					switch gc.Type {
-					case ChangeTypeCurrentBack:
-						lp := t.Path[t.CurrentBack]
-						_ = lp
-						panic("not implemented yet")
-					case ChangeTypeCurrentFront:
-						lp := t.Path[t.CurrentFront]
-						var precise int64
-						switch lp.PortI {
-						case layout.PortA:
-							// just entered through port B or C
-							// TODO
-							if t.CurrentFront == 0 {
-								// TODO: harder to assert where the train is - was it just placed by a human? switched paths and CurrentBack/CurrentFront by Diagram? ignore this case, and rely on previous info if avail
-								panic("ignore")
-							} else {
-								prevExitLP := t.Path[t.CurrentFront-1]
-								precise = -int64(y.Lines[prevExitLP.LineI].GetPort(prevExitLP.PortI).Length)
-							}
-						case layout.PortB, layout.PortC:
-							// just entered through port A
-							precise = 0
-						}
-							// TODO: we have position of front rn, now get position of side A.
-							switch t.Orient {
-							case FormOrientA:
-								// side A changed
-							case FormOrientB:
-								// side B changed
-							}
-							m.actor.OutputCh <- Diffuse1{Value: Attitude{
-								TrainI: gc.TrainI,
-								Time:   time.Now(),
-								Position: layout.Position{
-									LineI:   lp.LineI,
-									Precise: precise,
-								},
-								PositionKnown: true,
-							}}
-					default:
-						panic("invalid ChangeType")
-					}
-					// should get an Attitude struct as the Value (not enough to get GuideSnapshot as they don't specify which trains are exactly (i.e. on the edge of a line boundary) where)
+				t := gc.Snapshot.Trains[gc.TrainI]
+				y := m.latestGS.Layout
+				switch gc.Type {
+				case ChangeTypeCurrentBack:
+					lp := t.Path[t.CurrentBack]
+					_ = lp
 					panic("not implemented yet")
-				*/
+				case ChangeTypeCurrentFront:
+					lp := t.Path[t.CurrentFront]
+					var precise int64
+					switch lp.PortI {
+					case layout.PortA:
+						// just entered through port B or C
+						// TODO
+						if t.CurrentFront == 0 {
+							// TODO: harder to assert where the train is - was it just placed by a human? switched paths and CurrentBack/CurrentFront by Diagram? ignore this case, and rely on previous info if avail
+							panic("ignore")
+						} else {
+							prevExitLP := t.Path[t.CurrentFront-1]
+							precise = -int64(y.Lines[prevExitLP.LineI].GetPort(prevExitLP.PortI).Length)
+						}
+					case layout.PortB, layout.PortC:
+						// just entered through port A
+						precise = 0
+					}
+					// TODO: we have position of front rn, now get position of side A.
+					switch t.Orient {
+					case FormOrientA:
+						// side A changed
+					case FormOrientB:
+						// side B changed
+					}
+					m.actor.OutputCh <- Diffuse1{Value: Attitude{
+						TrainI: gc.TrainI,
+						Time:   time.Now(),
+						Position: layout.Position{
+							LineI:   lp.LineI,
+							Precise: precise,
+						},
+						PositionKnown: true,
+					}}
+				default:
+					panic("invalid ChangeType")
+				}
+				panic("not implemented yet")
 			}
 		} else if _, ok := m.rfid[diffuse.Origin]; ok {
 			//m.handleRFID(diffuse)
