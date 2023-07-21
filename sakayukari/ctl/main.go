@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -11,6 +12,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/runtime"
 	"nyiyui.ca/hato/sakayukari/tal"
+	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
@@ -86,6 +88,19 @@ func Main() error {
 				}},
 			},
 		},
+	}))
+	data, err = os.ReadFile("cars.json")
+	if err != nil {
+		return fmt.Errorf("read cars.json: %w", err)
+	}
+	var carsData cars.Data
+	err = json.Unmarshal(data, &carsData)
+	if err != nil {
+		return fmt.Errorf("parse cars.json: %w", err)
+	}
+	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
+		Guide: guide,
+		Cars:  carsData,
 	}))
 
 	i := runtime.NewInstance(&g)

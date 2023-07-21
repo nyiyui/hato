@@ -147,6 +147,8 @@ func Guide(conf GuideConf) Actor {
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
+		FormI:        uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+		Orient:       FormOrientA,
 	}
 	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
 	t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
@@ -254,6 +256,7 @@ func (g *guide) loop() {
 	for diffuse := range g.actor.InputCh {
 		switch val := diffuse.Value.(type) {
 		case GuideTrainUpdate:
+			panic("GuideTrainUpdate need to fix Orient")
 			log.Printf("diffuse GuideTrainUpdate %d %#v", val.TrainI, val.Train)
 			orig := g.trains[val.TrainI]
 			if val.Train.Power == -1 {
@@ -539,6 +542,7 @@ const (
 )
 
 func (g *guide) publishChange(ti int, ct ChangeType) {
+	log.Printf("=== publishChange %d %#v", ti, ct)
 	g.actor.OutputCh <- Diffuse1{Value: GuideChange{
 		TrainI:   ti,
 		Type:     ct,

@@ -8,19 +8,22 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
 )
 
-type serializedValue struct {
+type SerializedValue struct {
 	Preview      string
 	Value        []byte
 	Destinations []int
+	Time         time.Time
 }
 
 // serialize tries to serialize as much as it can of v.
-func serialize(v interface{}) (sv *serializedValue) {
-	sv = new(serializedValue)
+func serialize(v interface{}) (sv *SerializedValue) {
+	sv = new(SerializedValue)
+	sv.Time = time.Now()
 	sv.Preview = fmt.Sprintf("%#v", v)
 	var err error
 	buf := new(bytes.Buffer)

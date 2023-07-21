@@ -149,10 +149,15 @@ func TestTestbench2(t *testing.T) {
 }
 
 func TestTestbench3(t *testing.T) {
-	_, err := InitTestbench3()
+	y, err := InitTestbench3()
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
+	data, err := json.MarshalIndent(y, "", "  ")
+	if err != nil {
+		t.Fatalf("json: %s", err)
+	}
+	t.Logf("%s", data)
 }
 
 func TestTraverse(t *testing.T) {
@@ -161,24 +166,34 @@ func TestTraverse(t *testing.T) {
 		t.Fatalf("InitTestbench3: %s", err)
 	}
 	path := y.PathTo(y.MustLookupIndex("Z"), y.MustLookupIndex("W"))
+	path2 := y.PathTo(y.MustLookupIndex("W"), y.MustLookupIndex("Z"))
 	type setup struct {
+		path         []LinePort
 		displacement int64
 		final        Position
 	}
 	var base uint32
 	base += y.Lines[y.MustLookupIndex("Z")].PortB.Length
 	base += y.Lines[y.MustLookupIndex("Y")].PortB.Length
+	t.Logf("path: %#v", path)
+	t.Logf("path2: %#v", path2)
 	setups := []setup{
-		{0, Position{y.MustLookupIndex("Z"), 0}},
-		{123456, Position{y.MustLookupIndex("Z"), 123456}},
-		{256000, Position{y.MustLookupIndex("Y"), 128000}},
-		{int64(base), Position{y.MustLookupIndex("X"), 0}},
-		{int64(base) + 1, Position{y.MustLookupIndex("X"), 1}},
+		{path, 0, Position{y.MustLookupIndex("Z"), 0}},
+		{path, 123456, Position{y.MustLookupIndex("Z"), 123456}},
+		{path, 256000, Position{y.MustLookupIndex("Y"), 128000}},
+		{path, int64(base), Position{y.MustLookupIndex("X"), 0}},
+		{path, int64(base) + 1, Position{y.MustLookupIndex("X"), 1}},
+		{path, 128000 + 872000, Position{y.MustLookupIndex("X"), 0}},
+		{path2, 0, Position{y.MustLookupIndex("W"), 0}},
+		{path2, 123, Position{y.MustLookupIndex("W"), 123}},
+		{path2, 628964 + 1000, Position{y.MustLookupIndex("X"), 1000}},
+		{path2, 628964 + 872000, Position{y.MustLookupIndex("Y"), 0}},
+		//{path2, 628964 + 872000 - 1000, Position{y.MustLookupIndex("Y"), 1000}},
 	}
 	// TODO: negative traversal testing
 	for i, setup := range setups {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			pos, ok := y.Traverse(path, setup.displacement)
+			pos, ok := y.Traverse(setup.path, setup.displacement)
 			if !ok {
 				t.Fatalf("!ok")
 			}

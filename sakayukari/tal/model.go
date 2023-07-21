@@ -72,58 +72,101 @@ func Model(conf ModelConf) *Actor {
 func (m *model) loop() {
 	for diffuse := range m.actor.InputCh {
 		if _, ok := diffuse.Value.(Attitude); ok {
+			log.Printf("@@@ ATTITUDE %#v", diffuse.Value)
 			m.handleAttitude(diffuse)
 		}
 		if diffuse.Origin == m.conf.Guide {
 			if gs, ok := diffuse.Value.(GuideSnapshot); ok {
 				m.latestGS = gs
 			} else if gc, ok := diffuse.Value.(GuideChange); ok {
+				log.Printf("@@@ MODEL diffuse %#v", diffuse)
 				_ = gc
 				t := gc.Snapshot.Trains[gc.TrainI]
-				y := m.latestGS.Layout
+				f, ok := m.conf.Cars.Forms[t.FormI]
+				if !ok {
+					panic(fmt.Sprintf("formation %s not found", t.FormI))
+				}
+				y := gc.Snapshot.Layout
 				switch gc.Type {
 				case ChangeTypeCurrentBack:
 					lp := t.Path[t.CurrentBack]
-					_ = lp
-					panic("not implemented yet")
+					// Find the precise position in CurrentBack
+					var precise int64 // how many µm away from port A?
+					switch lp.PortI {
+					case layout.PortA:
+						precise = 0
+					case layout.PortB, layout.PortC:
+						precise = int64(y.Lines[lp.LineI].GetPort(lp.PortI).Length)
+					}
+					// Convert the position of back to position of side A.
+					var pos layout.Position
+					switch t.Orient {
+					case FormOrientB:
+						// Side A is the back, so we don't have to do anything.
+						pos = layout.Position{LineI: lp.LineI, Precise: uint32(precise)}
+					case FormOrientA:
+						// Side B is the back, so move the position forwards by the length of the formation.
+						var ok bool
+						pos, ok = y.Traverse(t.Path[t.CurrentBack:], precise+int64(f.Length))
+						if !ok {
+							panic("Traverse failed")
+						}
+					}
+					m.actor.OutputCh <- Diffuse1{Origin: Loopback, Value: Attitude{
+						TrainI:        gc.TrainI,
+						Time:          time.Now(),
+						Position:      pos,
+						PositionKnown: true,
+					}}
 				case ChangeTypeCurrentFront:
 					lp := t.Path[t.CurrentFront]
-					var precise int64
+					// Find the precise position in CurrentFront
+					var precise int64 // how many µm away from port A?
 					switch lp.PortI {
 					case layout.PortA:
 						// just entered through port B or C
-						// TODO
 						if t.CurrentFront == 0 {
-							// TODO: harder to assert where the train is - was it just placed by a human? switched paths and CurrentBack/CurrentFront by Diagram? ignore this case, and rely on previous info if avail
-							panic("ignore")
+							// NOTE: hard to assert where the train is - was it just placed by a human? switched paths and CurrentBack/CurrentFront by Diagram? ignore this case, and rely on previous info if avail
+							log.Printf("ignore")
 						} else {
 							prevExitLP := t.Path[t.CurrentFront-1]
-							precise = -int64(y.Lines[prevExitLP.LineI].GetPort(prevExitLP.PortI).Length)
+							exitPort := y.Lines[prevExitLP.LineI].GetPort(prevExitLP.PortI)
+							if exitPort.ConnI != lp.LineI {
+								panic("exitPort doesn't point to next LP in path")
+							}
+							if exitPort.ConnP != layout.PortB && exitPort.ConnP != layout.PortC {
+								panic("exitPort says we enter CurrentFront from port A but we exit the CurrentFront line through port A according to path")
+							}
+							// the train front is basically at exitPort.ConnP
+							precise = int64(y.Lines[exitPort.ConnI].GetPort(exitPort.ConnP).Length)
 						}
 					case layout.PortB, layout.PortC:
 						// just entered through port A
 						precise = 0
 					}
-					// TODO: we have position of front rn, now get position of side A.
+					// Convert position of front to position of side A.
+					var pos layout.Position
 					switch t.Orient {
 					case FormOrientA:
-						// side A changed
+						// Side A is the front, so we don't have to do anything.
+						pos = layout.Position{LineI: lp.LineI, Precise: uint32(precise)}
 					case FormOrientB:
-						// side B changed
+						// Side B is the front, so move the position backwards by the length of the formation.
+						var ok bool
+						pos, ok = y.Traverse(t.Path[:t.CurrentFront+1], -(precise + int64(f.Length)))
+						if !ok {
+							panic("Traverse failed")
+						}
 					}
-					m.actor.OutputCh <- Diffuse1{Value: Attitude{
-						TrainI: gc.TrainI,
-						Time:   time.Now(),
-						Position: layout.Position{
-							LineI:   lp.LineI,
-							Precise: precise,
-						},
+					m.actor.OutputCh <- Diffuse1{Origin: Loopback, Value: Attitude{
+						TrainI:        gc.TrainI,
+						Time:          time.Now(),
+						Position:      pos,
 						PositionKnown: true,
 					}}
 				default:
 					panic("invalid ChangeType")
 				}
-				panic("not implemented yet")
 			}
 		} else if _, ok := m.rfid[diffuse.Origin]; ok {
 			//m.handleRFID(diffuse)
@@ -135,6 +178,7 @@ func (m *model) loop() {
 }
 
 func (m *model) handleAttitude(diffuse Diffuse1) {
+	log.Printf("handleAttitude %s", diffuse)
 	panic("not implemented yet")
 }
 
