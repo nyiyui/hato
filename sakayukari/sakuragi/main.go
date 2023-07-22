@@ -19,11 +19,12 @@ type Conf struct {
 }
 
 type sakuragi struct {
-	conf     Conf
-	actor    *Actor
-	sm       *http.ServeMux
-	t        *template.Template
-	latestGS tal.GuideSnapshot
+	conf           Conf
+	actor          *Actor
+	sm             *http.ServeMux
+	t              *template.Template
+	latestGS       tal.GuideSnapshot
+	latestAttitude tal.Attitude
 }
 
 func Sakuragi(conf Conf) *Actor {
@@ -51,9 +52,13 @@ func Sakuragi(conf Conf) *Actor {
 
 func (s *sakuragi) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
-	s.t.ExecuteTemplate(w, "index", map[string]interface{}{
-		"gs": s.latestGS,
+	err := s.t.ExecuteTemplate(w, "index", map[string]interface{}{
+		"gs":  s.latestGS,
+		"att": s.latestAttitude,
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *sakuragi) setup() {
@@ -71,6 +76,11 @@ func (s *sakuragi) loop() {
 			switch val := diffuse.Value.(type) {
 			case tal.GuideSnapshot:
 				s.latestGS = val
+			}
+		case s.conf.Model:
+			switch val := diffuse.Value.(type) {
+			case tal.Attitude:
+				s.latestAttitude = val
 			}
 		}
 	}

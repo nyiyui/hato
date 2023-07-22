@@ -11,6 +11,7 @@ import (
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/runtime"
+	"nyiyui.ca/hato/sakayukari/sakuragi"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
@@ -78,14 +79,23 @@ func Main() error {
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 121},
-					{tal.Position{y.MustLookupIndex("W"), 0}, 100},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 123},
-					{tal.Position{y.MustLookupIndex("V"), 0}, 70},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 125},
-					{tal.Position{y.MustLookupIndex("V"), 0}, 100},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 126},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 121, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 123, nil},
+					{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
 				}},
+				//{TrainI: 1, Segments: []tal.Segment{
+				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
+				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
+				//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
+				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
+				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
+				//}},
 			},
 		},
 	}))
@@ -101,6 +111,11 @@ func Main() error {
 	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
 		Guide: guide,
 		Cars:  carsData,
+	}))
+	model := ActorRef{Index: len(g.Actors) - 1}
+	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{
+		Guide: guide,
+		Model: model,
 	}))
 
 	i := runtime.NewInstance(&g)

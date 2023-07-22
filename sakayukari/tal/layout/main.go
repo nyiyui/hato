@@ -304,6 +304,30 @@ func (p *Port) notZero() bool {
 //	panic("not implemented yet")
 //}
 
+/*
+// reversePath "reverses" the path given.
+// The starting location is not preserved.
+func (y *Layout) reversePath(path []LinePort) []LinePort {
+	reversed := make([]LinePort, len(path))
+	j := len(reversed) - 1
+	for pathI := range path {
+		cur := path[pathI]
+		if pathI == 0 {
+			continue
+		} else {
+			prev := path[pathI-1]
+			p := y.Lines[prev.LineI].GetPort(prev.PortI)
+			if p.ConnI != cur.LineI {
+				panic("path not connected")
+			}
+			reversed[j] = LinePort{p.ConnI, p.ConnP}
+			j--
+		}
+	}
+	return reversed
+}
+*/
+
 // Traverse returns the Position when traversing from the port A of the first Line.
 // If displacement is larger than the length of the path itself, ok = false.
 // If displacement is negative, traverse the path backwards from the last element.
@@ -315,7 +339,11 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 		log.Printf("Traverse(%#v, %d) -> (%#v, %t)", path, displacement, pos, ok)
 	}()
 	if displacement < 0 {
-		panic("not implemented yet")
+		lp := path[len(path)-1]
+		goal := y.Lines[lp.LineI].GetPort(lp.PortI)
+		path = y.PathTo(goal.ConnI, path[0].LineI)
+		//log.Printf("PathTo %s <- %s", y.Lines[path[0].LineI].Comment, y.Lines[goal.ConnI].Comment)
+		displacement = -displacement
 	}
 	prev := LinePort{
 		LineI: path[0].LineI,
@@ -342,7 +370,10 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 		l := y.Lines[cur.LineI]
 		// find length between prev and cur
 		var length uint32
-		if cur.PortI == PortA {
+		if cur.PortI == -1 {
+			// reached end of path
+			return Position{}, false
+		} else if cur.PortI == PortA {
 			length = l.GetPort(prev.PortI).Length
 		} else if prev.PortI == PortA {
 			length = l.GetPort(cur.PortI).Length
@@ -504,7 +535,6 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 			break
 		}
 	}
-	log.Printf("distance[%d]: %#v", goal, distance)
 	lps := make([]LinePort, distance[goal])
 	for i, j := goal, 0; i != from; i, j = using[i].LineI, j+1 {
 		lps[len(lps)-1-j] = using[i]

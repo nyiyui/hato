@@ -5,13 +5,35 @@
     <title>HATO Sakayukari Sakuragi</title>
   </head>
   <body>
+    {{ printf "%#v" .att }}
+    {{ $Z := index .gs.Layout.Lines 0 }}
+    {{ $Zs := index .gs.LineStates 0 }}
+    {{ $Y := index .gs.Layout.Lines 1 }}
+    {{ $Ys := index .gs.LineStates 1 }}
+    {{ $X := index .gs.Layout.Lines 2 }}
+    {{ $Xs := index .gs.LineStates 2 }}
+    {{ $V := index .gs.Layout.Lines 3 }}
+    {{ $Vs := index .gs.LineStates 3 }}
+    {{ $W := index .gs.Layout.Lines 4 }}
+    {{ $Ws := index .gs.LineStates 4 }}
     <svg width="2000" height="2000">
-      <line x1="0" y1="0" x2="0" y2="128" stroke="black" />
-      <line x1="0" y1="128" x2="0" y2="1000" stroke="black" />
-      <path d="M0 1000 a282 282 0 0 0 282 282 l186 0" fill="none" stroke="black" />
-      <path d="M0 1000 a282 282 0 0 0 282 282 a718 718 0 0 0 186 -24" fill="none" stroke="black" />
-      <path d="M468 1282 l744 0" stroke="black" />
-      <path d="M468 1258 l62 -16 a718 718 0 0 1 186 -24 l248 0 a718 718 0 0 1 186 24 l62 16u" fill="none" stroke="black" />
+      <text x="0" y="0">{{ $Zs.Power }}</text>
+      <line x1="0" y1="0" x2="0" y2="128" stroke="{{ if $Zs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      <text x="0" y="128">{{ $Ys.Power }}</text>
+      <line x1="0" y1="128" x2="0" y2="1000" stroke="{{ if $Ys.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      <text x="0" y="1000">{{ $Xs.Power }}</text>
+      {{ if eq $Xs.SwitchState 1 }}
+        <path d="M0 1000 a282 282 0 0 0 282 282 l186 0" fill="none" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      {{ else if eq $Xs.SwitchState 2 }}
+        <path d="M0 1000 a282 282 0 0 0 282 282 a718 718 0 0 0 186 -24" fill="none" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      {{ else }}
+        <path d="M0 1000 a282 282 0 0 0 282 282 a718 718 0 0 0 186 -24" fill="none" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-dasharray="2,1" stroke-width="10" />
+        <path d="M0 1000 a282 282 0 0 0 282 282 l186 0" fill="none" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-dasharray="2,1" stroke-width="10" />
+      {{ end }}
+      <text x="468" y="1258">{{ $Vs.Power }}</text>
+      <path d="M468 1258 l62 -16 a718 718 0 0 1 186 -24 l248 0 a718 718 0 0 1 186 24 l62 16u" fill="none" stroke="{{ if $Vs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      <text x="468" y="1282">{{ $Ws.Power }}</text>
+      <path d="M468 1282 l744 0" stroke="{{ if $Ws.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
     </svg>
   </body>
 </html>

@@ -46,6 +46,30 @@ const (
 	FormOrientB
 )
 
+// Flip returns the opposite orientation (A → B, B → A).
+// If f is not A or B, this function panics.
+func (f FormOrient) Flip() FormOrient {
+	switch f {
+	case FormOrientA:
+		return FormOrientB
+	case FormOrientB:
+		return FormOrientA
+	default:
+		panic(fmt.Sprintf("invalid FormOrient %d", f))
+	}
+}
+
+func (f FormOrient) String() string {
+	switch f {
+	case FormOrientA:
+		return "fA"
+	case FormOrientB:
+		return "fB"
+	default:
+		return fmt.Sprintf("FormOrient_invalid_%d", f)
+	}
+}
+
 type Train struct {
 	// Power supplied directly to soyuu-line (when moving)
 	Power           int
@@ -100,14 +124,15 @@ type guide struct {
 	actor      Actor
 	conf       GuideConf
 	trains     []Train
-	lineStates []lineState
+	lineStates []LineStates
 	y          *layout.Layout
 }
 
-type lineState struct {
+type LineStates struct {
 	Taken           bool
 	TakenBy         int
 	PowerActor      ActorRef
+	Power           uint8
 	SwitchActor     ActorRef
 	SwitchState     SwitchState
 	nextSwitchState SwitchState
@@ -139,16 +164,16 @@ func Guide(conf GuideConf) Actor {
 		conf:       conf,
 		actor:      a,
 		trains:     make([]Train, 0),
-		lineStates: make([]lineState, len(conf.Layout.Lines)),
+		lineStates: make([]LineStates, len(conf.Layout.Lines)),
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        100,
+		Power:        80,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
 		FormI:        uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
-		Orient:       FormOrientA,
+		Orient:       FormOrientB,
 	}
 	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
 	t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
@@ -256,7 +281,6 @@ func (g *guide) loop() {
 	for diffuse := range g.actor.InputCh {
 		switch val := diffuse.Value.(type) {
 		case GuideTrainUpdate:
-			panic("GuideTrainUpdate need to fix Orient")
 			log.Printf("diffuse GuideTrainUpdate %d %#v", val.TrainI, val.Train)
 			orig := g.trains[val.TrainI]
 			if val.Train.Power == -1 {
@@ -273,6 +297,23 @@ func (g *guide) loop() {
 			}
 			if val.Train.State == 0 {
 				val.Train.State = orig.State
+			}
+			if val.Train.FormI == (uuid.UUID{}) {
+				val.Train.FormI = orig.FormI
+			}
+			backSame := val.Train.Path[val.Train.CurrentBack] == orig.Path[orig.CurrentBack]
+			frontSame := val.Train.Path[val.Train.CurrentFront] == orig.Path[orig.CurrentFront]
+			if backSame != frontSame {
+				panic("The two lines pointed to by CurrentFront and CurrentBack must be the same two, in any order (they can be swapped).")
+			}
+			if val.Train.Orient == 0 {
+				if backSame && frontSame {
+					val.Train.Orient = orig.Orient
+				} else if !backSame && !frontSame {
+					val.Train.Orient = orig.Orient.Flip()
+				} else {
+					panic("unreacheable")
+				}
 			}
 			g.trains[val.TrainI] = val.Train
 			g.wakeup(val.TrainI)
@@ -416,6 +457,7 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 		// false if port A, true if port B or C
 		Power: conn.AbsClampPower(power),
 	}
+	g.lineStates[li].Power = rl.Power
 	if pi == -1 {
 		// -1 means that this LinePort is the end. Select the opposite of entryP, the port the train enters the end Line.
 		prevLP := t.Path[pathI-1]
@@ -492,8 +534,9 @@ func (gtu GuideTrainUpdate) String() string {
 }
 
 type GuideSnapshot struct {
-	Trains []Train
-	Layout *layout.Layout
+	Trains     []Train
+	Layout     *layout.Layout
+	LineStates []LineStates
 }
 
 func (gs GuideSnapshot) String() string {
@@ -506,7 +549,7 @@ func (gs GuideSnapshot) String() string {
 }
 
 func (g *guide) snapshot() GuideSnapshot {
-	gs := GuideSnapshot{Trains: g.trains, Layout: g.conf.Layout}
+	gs := GuideSnapshot{Trains: g.trains, Layout: g.conf.Layout, LineStates: g.lineStates}
 	buf := new(bytes.Buffer)
 	err := gob.NewEncoder(buf).Encode(gs)
 	if err != nil {

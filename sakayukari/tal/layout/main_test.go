@@ -160,6 +160,35 @@ func TestTestbench3(t *testing.T) {
 	t.Logf("%s", data)
 }
 
+/*
+func TestReversePath(t *testing.T) {
+	y, err := InitTestbench3()
+	if err != nil {
+		t.Fatalf("InitTestbench3: %s", err)
+	}
+	type setup struct {
+		y        *Layout
+		path     []LinePort
+		reversed []LinePort
+	}
+	setups := []setup{
+		{y, y.PathTo(y.MustLookupIndex("Z"), y.MustLookupIndex("W")), y.PathTo(y.MustLookupIndex("W"), y.MustLookupIndex("Z"))},
+	}
+	for i, s := range setups {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			got := y.reversePath(s.path)
+			want := s.reversed
+			t.Logf("path: %#v", s.path)
+			t.Logf("got:  %#v", got)
+			t.Logf("want: %#v", want)
+			if !cmp.Equal(got, want) {
+				t.Fatalf("mismatch: %s", cmp.Diff(got, want))
+			}
+		})
+	}
+}
+*/
+
 func TestTraverse(t *testing.T) {
 	y, err := InitTestbench3()
 	if err != nil {
@@ -188,6 +217,7 @@ func TestTraverse(t *testing.T) {
 		{path2, 123, Position{y.MustLookupIndex("W"), 123}},
 		{path2, 628964 + 1000, Position{y.MustLookupIndex("X"), 1000}},
 		{path2, 628964 + 872000, Position{y.MustLookupIndex("Y"), 0}},
+		{path, -123, Position{y.MustLookupIndex("W"), 123}},
 		//{path2, 628964 + 872000 - 1000, Position{y.MustLookupIndex("Y"), 1000}},
 	}
 	// TODO: negative traversal testing

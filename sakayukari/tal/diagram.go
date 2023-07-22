@@ -39,12 +39,18 @@ type trainScheduleState struct {
 
 type Position = layout.Position
 
+type SegmentI struct {
+	TS int
+	S  int
+}
+
 type Segment struct {
 	// TODO: some way to establish a causal relationship with other Segments
 	// Target is the target position for the train to go to by the time (above).
 	// Note: the first Segment lists the starting position of the train (it is unspecified what Diagram will do if the train is not near (on the same Lines) that position).
 	Target Position
 	Power  int
+	After  *SegmentI
 }
 
 func Diagram(conf DiagramConf) *Actor {
@@ -101,8 +107,21 @@ func (d *diagram) handdleGS(diffuse Diffuse1) {
 			s := ts.Segments[csi]
 			for i := t.CurrentBack; i <= t.CurrentFront; i++ {
 				//log.Printf("for %d =? %d", s.Target.LineI, t.Path[i].LineI)
-				if s.Target.LineI == t.Path[i].LineI {
+				next := func() bool {
+					if s.Target.LineI != t.Path[i].LineI {
+						return false
+					}
+					current := ts.Segments[tss.CurrentSegmentI]
+					if current.After != nil {
+						if d.state.TSs[current.After.TS].CurrentSegmentI < current.After.S {
+							return false
+						}
+					}
+					return true
+				}()
+				if next {
 					// TODO: precise position (maybe using traps (e.g. if train's position goes from 0 to 100, then trigger position of 50))
+					// TODO: implement After
 					log.Printf("___ reached CurrentSegmentI: %d", tss.CurrentSegmentI)
 					log.Printf("___ reached Segment: %#v", ts.Segments[tss.CurrentSegmentI])
 					tss.CurrentSegmentI = csi + 1
