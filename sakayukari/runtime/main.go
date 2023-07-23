@@ -122,7 +122,7 @@ func (i *Instance) Diffuse() error {
 				}
 			} else if d.Origin == Loopback {
 				// send to self
-				d.Origin = ActorRef{Index: caseI}
+				//d.Origin = ActorRef{Index: caseI}
 				i.record(&d, []int{caseI})
 				// TODO: do we want to record if this was a loopback or not too?
 				i.send(caseI, &d)

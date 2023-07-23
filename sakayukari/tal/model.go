@@ -3,7 +3,10 @@ package tal
 import (
 	"fmt"
 	"log"
+	"math/big"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
@@ -11,8 +14,9 @@ import (
 )
 
 type Attitude struct {
-	Time   time.Time
-	TrainI int
+	Time            time.Time
+	TrainI          int
+	TrainGeneration int
 	// Position of side A of the train.
 	Position      layout.Position
 	PositionKnown bool
@@ -37,10 +41,14 @@ type RFID struct {
 }
 
 type model struct {
-	conf     ModelConf
-	actor    *Actor
-	rfid     map[ActorRef]int
-	latestGS GuideSnapshot
+	conf            ModelConf
+	actor           *Actor
+	rfid            map[ActorRef]int
+	latestGS        GuideSnapshot
+	latestAttitudes []Attitude
+	// currentAttitudes is the delta-updated attitudes derived from latestAttitudes.
+	// This is to make sure the error is not going to increase every iteration of the handleDelta method.
+	currentAttitudes []Attitude
 }
 
 func Model(conf ModelConf) *Actor {
@@ -70,16 +78,31 @@ func Model(conf ModelConf) *Actor {
 }
 
 func (m *model) loop() {
+	prev := time.Now()
 	for {
 		select {
 		case diffuse := <-m.actor.InputCh:
 			if _, ok := diffuse.Value.(Attitude); ok {
 				log.Printf("@@@ ATTITUDE %#v", diffuse.Value)
 				m.handleAttitude(diffuse)
+				continue
 			}
 			if diffuse.Origin == m.conf.Guide {
 				if gs, ok := diffuse.Value.(GuideSnapshot); ok {
 					m.latestGS = gs
+					// TODO: generate latestAttitudes
+					if m.latestAttitudes != nil && len(m.latestAttitudes) != len(gs.Trains) {
+						panic("adding/removing trains is not implemented yet")
+						// general idea:
+						//   adding trains - always appended
+						//   removing trains - unsupported :)
+					}
+					if m.latestAttitudes == nil {
+						m.latestAttitudes = make([]Attitude, len(gs.Trains))
+					}
+					if m.currentAttitudes == nil {
+						m.currentAttitudes = make([]Attitude, len(gs.Trains))
+					}
 				} else if gc, ok := diffuse.Value.(GuideChange); ok {
 					log.Printf("@@@ MODEL diffuse %#v", diffuse)
 					_ = gc
@@ -115,10 +138,11 @@ func (m *model) loop() {
 							}
 						}
 						m.actor.OutputCh <- Diffuse1{Origin: Loopback, Value: Attitude{
-							TrainI:        gc.TrainI,
-							Time:          time.Now(),
-							Position:      pos,
-							PositionKnown: true,
+							TrainI:          gc.TrainI,
+							TrainGeneration: t.Generation,
+							Time:            time.Now(),
+							Position:        pos,
+							PositionKnown:   true,
 						}}
 					case ChangeTypeCurrentFront:
 						lp := t.Path[t.CurrentFront]
@@ -161,10 +185,11 @@ func (m *model) loop() {
 							}
 						}
 						m.actor.OutputCh <- Diffuse1{Origin: Loopback, Value: Attitude{
-							TrainI:        gc.TrainI,
-							Time:          time.Now(),
-							Position:      pos,
-							PositionKnown: true,
+							TrainI:          gc.TrainI,
+							TrainGeneration: t.Generation,
+							Time:            time.Now(),
+							Position:        pos,
+							PositionKnown:   true,
 						}}
 					default:
 						panic("invalid ChangeType")
@@ -176,14 +201,109 @@ func (m *model) loop() {
 			} else {
 				log.Printf("tal-model: unhandled diffuse %s", diffuse)
 			}
+		default:
+			now := time.Now()
+			m.handleDelta(now, prev.Sub(now))
+			prev = now
 		}
 	}
 }
 
+func (m *model) handleDelta(now time.Time, delta time.Duration) {
+	dt := new(big.Rat)
+	dt.SetFrac64(delta.Nanoseconds(), 1e9)
+	for ti, la := range m.latestAttitudes {
+		if la.VelocityKnown && la.PositionKnown {
+			x := big.NewRat(la.Velocity, 1)
+			x.Mul(x, dt)
+			x.Add(x, big.NewRat(int64(la.Position.Precise), 1))
+			y := new(big.Float)
+			y.SetRat(x)
+			// Handle x overflowing the Position.Precise.
+			t := m.latestGS.Trains[ti]
+			var path []LinePort
+			found := false
+			for i, lp := range t.Path {
+				if lp.LineI == la.Position.LineI {
+					path = t.Path[i:]
+					found = true
+				}
+			}
+			if !found {
+				log.Printf("la: %#v", la)
+				log.Printf("train: %#v", la)
+				panic("la.Position.LineI nonexistent in Train.Path")
+			}
+			yi, _ := y.Int64()
+			pos, ok := m.latestGS.Layout.Traverse(path, yi)
+			if !ok {
+				log.Print("position estimation overflow")
+				continue
+				//panic("position estimation overflow")
+			}
+			ca := m.currentAttitudes[ti]
+			ca.TrainI = ti
+			ca.TrainGeneration = t.Generation
+			ca.Position = pos
+			ca.PositionKnown = true
+			ca.Velocity = la.Velocity
+			ca.VelocityKnown = true
+			m.currentAttitudes[ti] = ca
+			log.Printf("currentAttitude %s", ca)
+			m.actor.OutputCh <- Diffuse1{Value: ca}
+		}
+	}
+}
+
+func (m *model) attitudeOld(att Attitude) bool {
+	return att.TrainGeneration < m.latestGS.Trains[att.TrainI].Generation
+}
+
 func (m *model) handleAttitude(diffuse Diffuse1) {
 	log.Printf("handleAttitude %s", diffuse)
-	m.actor.OutputCh <- Diffuse1{Value: diffuse.Value}
-	//panic("not implemented yet")
+	att := diffuse.Value.(Attitude)
+	prevAtt := m.latestAttitudes[att.TrainI]
+	log.Printf("att %#v", att)
+	log.Printf("prevAtt %#v", prevAtt)
+	if !m.attitudeOld(prevAtt) {
+		log.Printf("not old")
+		if !att.VelocityKnown && att.PositionKnown && prevAtt.PositionKnown {
+			dt := att.Time.Sub(prevAtt.Time)
+			// TODO: handle path being reset by Diagram
+			path := m.latestGS.Trains[att.TrainI].Path
+			path = path[:len(path)-1] // remove last dummy LinePort
+			startI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == prevAtt.Position.LineI })
+			endI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == att.Position.LineI })
+			log.Printf("path: %#v", path)
+			log.Printf("startI: %#v", startI)
+			log.Printf("endI: %#v", endI)
+			log.Printf("prevAtt: %#v", prevAtt)
+			log.Printf("att: %#v", att)
+			if startI == -1 || endI == -1 {
+				panic("Position not found, maybe Path was reset by Diagram?")
+			}
+			var dd int64
+			if startI > endI {
+				startI, endI = endI, startI
+				//panic("startI > endI")
+				log.Print("&&& startI > endI")
+				dd = m.latestGS.Layout.Count(path[startI:endI+1], att.Position, prevAtt.Position)
+			} else {
+				dd = m.latestGS.Layout.Count(path[startI:endI+1], prevAtt.Position, att.Position)
+			}
+			x := new(big.Float)
+			r := big.NewRat(dd, dt.Nanoseconds())
+			r.Mul(r, big.NewRat(1e9, 1))
+			x.SetRat(r)
+			att.Velocity, _ = x.Int64()
+			att.VelocityKnown = true
+			for i := 0; i < 10; i++ {
+				log.Printf("###")
+			}
+		}
+		log.Printf("latestAttitude %s", att)
+	}
+	m.latestAttitudes[att.TrainI] = att
 }
 
 /*
@@ -284,6 +404,7 @@ OuterLoop:
 	newPos := y.Traverse(t.Path[rfidPathI:], tagToSideA+distRFIDPathIBackToTag)
 	a := Attitude{
 		TrainI:        ti,
+							TrainGeneration:t.Generation,
 		Time:          time.Now(),
 		Position:      newPos,
 		PositionKnown: true,

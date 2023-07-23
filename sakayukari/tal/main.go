@@ -71,6 +71,9 @@ func (f FormOrient) String() string {
 }
 
 type Train struct {
+	// Generation is incremented whenever any other field than Power, noPowerSupplied, CurrentBack, CurrentFront, and Path changes.
+	Generation int
+
 	// Power supplied directly to soyuu-line (when moving)
 	Power           int
 	noPowerSupplied bool
@@ -172,7 +175,7 @@ func Guide(conf GuideConf) Actor {
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
-		FormI:        uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
 		Orient:       FormOrientB,
 	}
 	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
@@ -315,6 +318,7 @@ func (g *guide) loop() {
 					panic("unreacheable")
 				}
 			}
+			val.Train.Generation = orig.Generation + 1
 			g.trains[val.TrainI] = val.Train
 			g.wakeup(val.TrainI)
 		case conn.ValCurrent:

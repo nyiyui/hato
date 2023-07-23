@@ -6,6 +6,7 @@ require (
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 )
 
 require (

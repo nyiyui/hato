@@ -3,6 +3,12 @@
 <html>
   <head>
     <title>HATO Sakayukari Sakuragi</title>
+    <meta http-equiv="refresh" content="1">
+    <script>
+      setTimeout(() => {
+        window.location.reload(1);
+      }, 100);
+    </script>
   </head>
   <body>
     {{ printf "%#v" .att }}
@@ -31,7 +37,7 @@
         <path d="M0 1000 a282 282 0 0 0 282 282 l186 0" fill="none" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-dasharray="2,1" stroke-width="10" />
       {{ end }}
       <text x="468" y="1258">{{ $Vs.Power }}</text>
-      <path d="M468 1258 l62 -16 a718 718 0 0 1 186 -24 l248 0 a718 718 0 0 1 186 24 l62 16u" fill="none" stroke="{{ if $Vs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      <path d="M468 1258 l62 -16 a718 718 0 0 1 186 -24 l248 0 a718 718 0 0 1 186 24 l62 16" fill="none" stroke="{{ if $Vs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
       <text x="468" y="1282">{{ $Ws.Power }}</text>
       <path d="M468 1282 l744 0" stroke="{{ if $Ws.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
     </svg>

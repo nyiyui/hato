@@ -233,3 +233,46 @@ func TestTraverse(t *testing.T) {
 		})
 	}
 }
+
+func TestCount(t *testing.T) {
+	y, err := InitTestbench3()
+	if err != nil {
+		t.Fatalf("InitTestbench3: %s", err)
+	}
+	Z := y.MustLookupIndex("Z")
+	Y := y.MustLookupIndex("Y")
+	X := y.MustLookupIndex("X")
+	W := y.MustLookupIndex("W")
+	V := y.MustLookupIndex("V")
+	_, _, _, _, _ = Z, Y, X, W, V
+	path := y.PathTo(y.MustLookupIndex("Z"), y.MustLookupIndex("W"))
+	path2 := y.PathTo(y.MustLookupIndex("W"), y.MustLookupIndex("Z"))
+	type setup struct {
+		y     *Layout
+		path  []LinePort
+		start Position
+		end   Position
+		want  int64
+	}
+	var base uint32
+	base += y.Lines[y.MustLookupIndex("Z")].PortB.Length
+	base += y.Lines[y.MustLookupIndex("Y")].PortB.Length
+	t.Logf("path: %#v", path)
+	t.Logf("path2: %#v", path2)
+	setups := []setup{
+		{y, y.PathTo(Z, X), Position{Z, 10}, Position{Y, 0}, int64(y.Lines[Z].PortB.Length - 10)},
+		// TODO: more tests
+	}
+	// TODO: negative traversal testing
+	for i, setup := range setups {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			t.Logf("path: %#v", setup.path)
+			t.Logf("start: %#v", setup.start)
+			t.Logf("end: %#v", setup.end)
+			dist := y.Count(setup.path, setup.start, setup.end)
+			if !cmp.Equal(dist, setup.want) {
+				t.Fatalf("want %d, got %d", setup.want, dist)
+			}
+		})
+	}
+}
