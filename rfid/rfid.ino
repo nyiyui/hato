@@ -97,6 +97,10 @@ void setup() {
   Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC);
   Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
 
+  if (!nfc.setPassiveActivationRetries(1)) {
+    Serial.println(" Efail: setPassiveActivationRetries(1)");
+  }
+
   Serial.println(" Sready");
   strip.setPixelColor(0, 32, 32, 32);
   strip.show();
