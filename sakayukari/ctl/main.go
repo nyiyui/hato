@@ -32,14 +32,15 @@ func Main() error {
 	connState, connActors := conn.ConnActors([]conn.Id{
 		conn.Id{"soyuu-line", "v2", "yellow"},
 		conn.Id{"soyuu-line", "v2", "white"},
+		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 		//conn.Id{"soyuu-line", "v2", "1"},
 		//conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
-		//conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 	})
 	err = connState.Find()
 	if err != nil {
 		return fmt.Errorf("conn find: %w", err)
 	}
+	rfid0 := ActorRef{Index: len(g.Actors) + 2}
 	g.Actors = append(g.Actors, connActors...)
 	//g.Actors = append(g.Actors, conn.Velocity2(
 	//	ActorRef{Index: 3},
@@ -79,13 +80,15 @@ func Main() error {
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 121, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 123, nil},
-					{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0, 0}, 60, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0, 0}, 60, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
+					//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
+					//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
+					//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
+					//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
 				}},
 				//{TrainI: 1, Segments: []tal.Segment{
 				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
@@ -111,6 +114,13 @@ func Main() error {
 	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
 		Guide: guide,
 		Cars:  carsData,
+		RFIDs: []tal.RFID{
+			{rfid0, layout.Position{
+				LineI:   y.MustLookupIndex("W"),
+				Precise: 0,
+				Port:    layout.PortB,
+			}},
+		},
 	}))
 	model := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{

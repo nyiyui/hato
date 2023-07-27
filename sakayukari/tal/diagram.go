@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"log"
 
+	"golang.org/x/exp/slices"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 type DiagramConf struct {
 	Guide    ActorRef
+	Model    ActorRef
 	Schedule Schedule
 }
 
 type diagram struct {
-	conf  DiagramConf
-	state scheduleState
-	actor *Actor
+	conf     DiagramConf
+	state    scheduleState
+	actor    *Actor
+	latestGS GuideSnapshot
 }
 
 type Schedule struct {
@@ -58,7 +61,7 @@ func Diagram(conf DiagramConf) *Actor {
 		Comment:  "tal-diagram",
 		InputCh:  make(chan Diffuse1),
 		OutputCh: make(chan Diffuse1),
-		Inputs:   []ActorRef{conf.Guide},
+		Inputs:   []ActorRef{conf.Guide, conf.Model},
 		Type: ActorType{
 			Input:       true,
 			LinearInput: true,
@@ -79,15 +82,75 @@ func Diagram(conf DiagramConf) *Actor {
 func (d *diagram) loop() {
 	for diffuse := range d.actor.InputCh {
 		switch {
+		case diffuse.Origin == d.conf.Model:
+			if _, ok := diffuse.Value.(Attitude); ok {
+				d.handleAttitude(diffuse)
+			}
 		case diffuse.Origin == d.conf.Guide:
-			if _, ok := diffuse.Value.(GuideSnapshot); ok {
-				d.handdleGS(diffuse)
+			if gs, ok := diffuse.Value.(GuideSnapshot); ok {
+				d.latestGS = gs
+				d.handleGS(diffuse)
 			}
 		}
 	}
 }
 
-func (d *diagram) handdleGS(diffuse Diffuse1) {
+func (d *diagram) handleAttitude(diffuse Diffuse1) {
+	att := diffuse.Value.(Attitude)
+	log.Printf("new Attitude %#v", att)
+	tsi := slices.IndexFunc(d.conf.Schedule.TSs, func(ts TrainSchedule) bool { return ts.TrainI == att.TrainI })
+	if tsi == -1 {
+		panic("handleAttitude unknown TrainSchedule")
+	}
+	ts := d.conf.Schedule.TSs[tsi]
+	tss := &d.state.TSs[tsi]
+	apply := false
+	//log.Printf("tss %#v", tss)
+	if tss.CurrentSegmentI == len(ts.Segments)-1 {
+		return
+	} else {
+		csi := tss.CurrentSegmentI
+		if csi == len(ts.Segments) {
+			log.Printf("siOverflow %d", csi)
+			return
+		}
+		//log.Printf("si %d", si)
+		s := ts.Segments[csi]
+		//log.Printf("for %d =? %d", s.Target.LineI, t.Path[i].LineI)
+		next := func() bool {
+			if !att.PositionKnown {
+				return false
+			}
+			if s.Target.LineI != att.Position.LineI {
+				return false
+			}
+			current := ts.Segments[tss.CurrentSegmentI]
+			if current.After != nil {
+				if d.state.TSs[current.After.TS].CurrentSegmentI < current.After.S {
+					return false
+				}
+			}
+			return true
+		}()
+		if next {
+			// TODO: precise position (maybe using traps (e.g. if train's position goes from 0 to 100, then trigger position of 50))
+			// TODO: implement After
+			log.Printf("___ reached CurrentSegmentI: %d", tss.CurrentSegmentI)
+			log.Printf("___ reached Segment: %#v", ts.Segments[tss.CurrentSegmentI])
+			tss.CurrentSegmentI = csi + 1
+			apply = true
+		}
+	}
+	if apply {
+		if tss.CurrentSegmentI == len(ts.Segments)-1 {
+			log.Printf("*** DONE")
+		} else {
+			d.apply(d.latestGS, tsi)
+		}
+	}
+}
+
+func (d *diagram) handleGS(diffuse Diffuse1) {
 	gs := diffuse.Value.(GuideSnapshot)
 	//log.Printf("new snapshot %#v", gs)
 	for tsi, ts := range d.conf.Schedule.TSs {

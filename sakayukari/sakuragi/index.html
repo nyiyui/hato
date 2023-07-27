@@ -12,6 +12,8 @@
   </head>
   <body>
     {{ printf "%#v" .att }}
+    {{ $t := index .gs.Trains 0 }}
+    {{ printf "%#v" $t }}
     {{ $Z := index .gs.Layout.Lines 0 }}
     {{ $Zs := index .gs.LineStates 0 }}
     {{ $Y := index .gs.Layout.Lines 1 }}
@@ -22,6 +24,33 @@
     {{ $Vs := index .gs.LineStates 3 }}
     {{ $W := index .gs.Layout.Lines 4 }}
     {{ $Ws := index .gs.LineStates 4 }}
+    <svg width="2000" height="100">
+      <line x1="0" y1="20" x2="128" y2="20" stroke="{{ if $Zs.Taken }}red{{ else }}black{{ end }}" stroke-width="5" />
+      {{ if eq .att.Position.LineI 0 }}
+        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="10" />
+      {{ end }}
+      <line x1="128" y1="20" x2="1000" y2="20" stroke="{{ if $Ys.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      {{ if eq .att.Position.LineI 1 }}
+        <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
+      {{ end }}
+      <line x1="1000" y1="20" x2="1630" y2="20" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-width="5" />
+      {{ if eq .att.Position.LineI 2 }}
+        <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
+      {{ end }}
+      <line x1="1630" y1="0" x2="2382" y2="0" stroke="{{ if $Vs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      {{ if eq .att.Position.LineI 3 }}
+        <circle cx="{{ (add 1630 (div .att.Position.Precise 1000)) }}" cy="0" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 1630 (div .att.Position.Precise 1000)) }}" cy="0" r="10" />
+      {{ end }}
+      <line x1="1630" y1="20" x2="2374" y2="20" stroke="{{ if $Ws.Taken }}red{{ else }}black{{ end }}" stroke-width="5" />
+      {{ if eq .att.Position.LineI 4 }}
+        <circle cx="{{ (add 1630 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 1630 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
+      {{ end }}
+    </svg>
     <svg width="2000" height="2000">
       <text x="0" y="0">{{ $Zs.Power }}</text>
       <line x1="0" y1="0" x2="0" y2="128" stroke="{{ if $Zs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />

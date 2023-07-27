@@ -2,6 +2,7 @@ package conn
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/hex"
 	"log"
 	"strconv"
@@ -29,6 +30,7 @@ func (_ handlerRFID) NewBlankActor() Actor {
 
 func (_ handlerRFID) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
+	var prevData []byte
 	for {
 		lineRaw, err := reader.ReadString('\n')
 		if err != nil {
@@ -68,12 +70,15 @@ func (_ handlerRFID) HandleConn(a Actor, c *Conn) {
 		if data == nil {
 			continue
 		}
-		a.OutputCh <- Diffuse1{Value: ValSeen{
-			Start: now,
-			ID: []ValID{
-				ValID{RFID: data},
-			},
-		}}
+		if !bytes.Equal(prevData, data) {
+			a.OutputCh <- Diffuse1{Value: ValSeen{
+				Start: now,
+				ID: []ValID{
+					ValID{RFID: data},
+				},
+			}}
+		}
+		prevData = data
 	}
 }
 

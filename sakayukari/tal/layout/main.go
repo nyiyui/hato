@@ -270,7 +270,7 @@ func (y *Layout) connectTransposed() error {
 // Port is a connection point from a line to another line.
 // For example, a switch would have 3 ports: the base port, and 2 additional ports.
 type Port struct {
-	// Length from the base port (in µm). Must be 0 for a base port.
+	// Length from the base port (in µm). Must be 0 for a base port, and must not be 0 for a non-base port.
 	// TODO: replace this a more flexible way to describe shape (this can only describe a straight line)
 	Length uint32
 	// ConnFilled must be true to use ConnI and ConnP.
@@ -397,31 +397,15 @@ func (y *Layout) Count(path []LinePort, start, end Position) (dist int64) {
 
 // Traverse returns the Position when traversing from the port A of the first Line.
 // If displacement is larger than the length of the path itself, ok = false.
-// If displacement is negative, traverse the path backwards from the last element.
+// Displacement must not be negative.
 // Note that this means the entire length of the first Line is traversed.
-// This panics when traversing exceeds the path (both under and overruns).
 func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok bool) {
-	log.Printf("Traverse(%#v, %d)", path, displacement)
-	defer func() {
-		log.Printf("Traverse(%#v, %d) -> (%#v, %t)", path, displacement, pos, ok)
-	}()
+	//log.Printf("Traverse(%#v, %d)", path, displacement)
+	//defer func() {
+	//	log.Printf("Traverse(%#v, %d) -> (%#v, %t)", path, displacement, pos, ok)
+	//}()
 	if displacement < 0 {
-		lp := path[len(path)-1]
-		// Last LinePort may be a dummy (i.e. has the destination line with a -1 as the port).
-		var goal LineI
-		if lp.PortI == -1 {
-			// Use the line here if that is the case.
-			lp2 := path[len(path)-2]
-			if y.Lines[lp2.LineI].GetPort(lp2.PortI).ConnI != lp.LineI {
-				panic("Last LinePort (which is a dummy) points to different goal than second last LinePort.")
-			}
-			goal = lp.LineI
-		} else {
-			goal = y.Lines[lp.LineI].GetPort(lp.PortI).ConnI
-		}
-		path = y.PathTo(goal, path[0].LineI)
-		//log.Printf("PathTo %s <- %s", y.Lines[path[0].LineI].Comment, y.Lines[goal.ConnI].Comment)
-		displacement = -displacement
+		panic("negative displacement")
 	}
 	prev := LinePort{
 		LineI: path[0].LineI,
@@ -430,49 +414,54 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 	var current uint32
 	for pathI := 0; pathI < len(path); pathI++ {
 		cur := path[pathI]
-		origPrev := prev
-		log.Printf("prev %#v cur %#v count %d", prev, cur, current)
+		// prevConn is the LinePort on the same line as cur, and equivalent to prev (in terms of length from cur).
+		var prevConn LinePort
+		//log.Printf("prev %#v cur %#v count %d", prev, cur, current)
 		// Either:
 		//   a) prev points to a port that points to the same LineI as cur
 		//   b) prev and cur both use the same LineI
 		if cur.LineI != prev.LineI {
 			// use ConnI, ConnP to make the LineIs equal
-			p := y.Lines[prev.LineI].GetPort(prev.PortI)
-			prev.LineI = p.ConnI
-			prev.PortI = p.ConnP
-			log.Printf("p%#v", p)
-			if cur.LineI != prev.LineI {
+			_, p := y.GetLinePort(prev)
+			prevConn = p.Conn()
+			if cur.LineI != prevConn.LineI {
 				panic("prev points to different line than cur")
 			}
+		} else {
+			prevConn = prev
 		}
 		l := y.Lines[cur.LineI]
-		// find length between prev and cur
+		// find length between prevConn and cur
 		var length uint32
 		if cur.PortI == -1 {
 			// reached end of path
 			return Position{}, false
 		} else if cur.PortI == PortA {
-			length = l.GetPort(prev.PortI).Length
-		} else if prev.PortI == PortA {
+			length = l.GetPort(prevConn.PortI).Length
+		} else if prevConn.PortI == PortA {
 			length = l.GetPort(cur.PortI).Length
 		} else {
 			panic("cannot go between B and C")
 		}
-		_ = origPrev
-		log.Printf("length %d cl %d d %d", length, current+length, displacement)
+		//log.Printf("length %d cl %d d %d", length, current+length, displacement)
 		if current+length > uint32(displacement) {
-			pos := Position{LineI: prev.LineI}
+			var pos Position
 			delta := uint32(displacement) - current
-			log.Printf("delta %d", delta)
-			switch prev.PortI {
+			//log.Printf("delta %d", delta)
+			switch cur.PortI {
 			case PortA:
-				pos.Precise = delta
+				switch prevConn.PortI {
+				case PortA:
+					panic("prevConn.PortI == cur.PortI")
+				case PortB, PortC:
+					_, p := y.GetLinePort(prevConn)
+					pos = Position{cur.LineI, p.Length - delta, prevConn.PortI}
+				}
 			case PortB, PortC:
-				//p := y.Lines[prev.LineI].GetPort(prev.PortI)
-				//pos.Precise = p.Length - delta
-				// the previous LinePort is closer
-				pos.LineI = origPrev.LineI
-				pos.Precise = delta
+				pos = Position{cur.LineI, delta, cur.PortI}
+			}
+			if pos.Port == PortA {
+				panic("invalid pos.Port")
 			}
 			return pos, true
 		}
@@ -483,65 +472,22 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 	if current == uint32(displacement) {
 		lp := path[len(path)-1]
 		p := y.Lines[lp.LineI].GetPort(lp.PortI)
-		return Position{
-			LineI:   lp.LineI,
-			Precise: p.Length,
-		}, true
-	}
-	return Position{}, false
-	/*
-		var current int64 = 0
-		for pathI := 0; pathI < len(path); pathI++ {
-			lp := path[pathI]
-			log.Printf("pathI%d lp%#v", pathI, lp)
-			if lp.PortI == -1 {
-				log.Printf("last in path")
-				return Position{}, false
+		var port PortI
+		switch lp.PortI {
+		case PortA:
+			_, p := y.GetLinePort(path[len(path)-2])
+			prevConn := p.Conn()
+			switch prevConn.PortI {
+			case PortA:
+				panic("prevConn.PortI == cur.PortI")
+			case PortB, PortC:
+				port = prevConn.PortI
 			}
-			p := y.Lines[lp.LineI].GetPort(lp.PortI)
-			log.Printf("port%#v", p)
-			var length int64
-			var lineI LineI
-			if lp.PortI != 0 {
-				// Since the goal port is B or C, we must come from port A.
-				// Therefore, the length between ports A and B/C is port B/C's Length.
-				length = int64(p.Length)
-				lineI = lp.LineI
-			} else {
-				// Ports B and C have the distance from port A to B/C, but port A does not.
-				// Therefore, we have to count from the port we came from.
-				if pathI == 0 {
-					// We count from "port A of the first line". Since the distance between itself and itself is obviously 0, skip.
-					// Note that Length of any port A should be 0, but to be safe, assign 0 here.
-					length = 0
-					lineI = lp.LineI
-				} else {
-					// Get where we came from (to port A).
-					prevLP := path[pathI-1]
-					lineI = prevLP.LineI
-					prevP := y.Lines[prevLP.LineI].GetPort(prevLP.PortI)
-					// We came from what the previous LinePath in the path pointed to.
-					// Example:
-					//   Path: 0A → 1A (0A = line 0 port A)
-					//   Say 0A points to 1B. Then the distance we should count is the distance between 1B and 1A (port B's Length field).
-					if prevP.ConnI != lp.LineI {
-						panic("path's previous LinePort points to a different line than the path's current LinePort's line")
-					}
-					length = int64(y.Lines[lp.LineI].GetPort(prevP.ConnP).Length)
-				}
-			}
-			log.Printf("displacement%d current %d length%d", displacement, current, length)
-			_ = lineI
-			if displacement-current < length {
-				return Position{
-					LineI: lp.LineI,
-					//LineI:   lineI,
-					Precise: uint32(displacement - current),
-				}, true
-			}
-			current += length
+		case PortB, PortC:
+			port = lp.PortI
 		}
-	*/
+		return Position{lp.LineI, p.Length, port}, true
+	}
 	// total length of the path was less than displacement
 	log.Printf("never reached")
 	return Position{}, false
@@ -624,4 +570,22 @@ type Position struct {
 	LineI LineI
 	// Precise is the position from port A in µm.
 	Precise uint32
+	// Port is to where Precise is measuring to. This is needed to handle switches, where there could be two points where Precise is equal to 100000µm, on the normal and reverse sides of the switch.
+	// For example, if Precise is measuring the position form port A to port C, this field would be PortC.
+	Port PortI
+}
+
+func (y *Layout) ReversePath(path []LinePort) []LinePort {
+	if path[len(path)-1].PortI == -1 {
+		// The dummy LinePort is not needed here as it doesn't contain any more info.
+		path = path[:len(path)-1]
+	}
+	res := make([]LinePort, len(path))
+	for i := len(path) - 1; i >= 0; i-- {
+		j := len(path) - 1 - i
+		lp := path[i]
+		_, p := y.GetLinePort(lp)
+		res[j] = p.Conn()
+	}
+	return res
 }

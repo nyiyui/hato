@@ -43,7 +43,17 @@ func Sakuragi(conf Conf) *Actor {
 		conf:  conf,
 		actor: a,
 		sm:    http.NewServeMux(),
-		t:     template.Must(template.New("index").ParseFS(templates, "*.html")),
+		t: template.Must(template.New("index").Funcs(template.FuncMap{
+			"div_int64": func(a, b int64) int64 {
+				return a / b
+			},
+			"div": func(a, b uint32) uint32 {
+				return a / b
+			},
+			"add": func(a, b uint32) uint32 {
+				return a + b
+			},
+		}).ParseFS(templates, "*.html")),
 	}
 	s.setup()
 	go s.loop()

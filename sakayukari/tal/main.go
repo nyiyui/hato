@@ -73,6 +73,7 @@ func (f FormOrient) String() string {
 type Train struct {
 	// Generation is incremented whenever any other field than Power, noPowerSupplied, CurrentBack, CurrentFront, and Path changes.
 	Generation int
+	// TODO: GenerationChanges (e.g. did power, orient change?)
 
 	// Power supplied directly to soyuu-line (when moving)
 	Power           int
@@ -171,12 +172,14 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        80,
+		Power:        120,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
-		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-		Orient:       FormOrientB,
+		//FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+		FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+		Orient: FormOrientB,
 	}
 	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
 	t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
@@ -388,7 +391,7 @@ func (g *guide) reify(ti int, t *Train) {
 func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path[pathI].LineI
 	pi := t.Path[pathI].PortI
-	log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
+	//log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
 	if g.y.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
 		return
