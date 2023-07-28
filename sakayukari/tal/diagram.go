@@ -37,7 +37,7 @@ type TrainSchedule struct {
 }
 
 type trainScheduleState struct {
-	CurrentSegmentI int
+	NextSegmentI int
 }
 
 type Position = layout.Position
@@ -102,107 +102,83 @@ func (d *diagram) loop() {
 }
 
 func (d *diagram) handleAttitude(diffuse Diffuse1) {
-	att := diffuse.Value.(Attitude)
-	if att == (Attitude{}) {
+	now := diffuse.Value.(Attitude)
+	if now == (Attitude{}) {
 		return
 	}
-	//log.Printf("new Attitude %#v", att)
-	tsi := slices.IndexFunc(d.conf.Schedule.TSs, func(ts TrainSchedule) bool { return ts.TrainI == att.TrainI })
+	if !now.PositionKnown {
+		return
+	}
+
+	tsi := slices.IndexFunc(d.conf.Schedule.TSs, func(ts TrainSchedule) bool { return ts.TrainI == now.TrainI })
 	if tsi == -1 {
 		panic("handleAttitude unknown TrainSchedule")
 	}
 	ts := d.conf.Schedule.TSs[tsi]
 	tss := &d.state.TSs[tsi]
-	apply := false
-	//log.Printf("tss %#v", tss)
-	if tss.CurrentSegmentI == len(ts.Segments)-1 {
+	if tss.NextSegmentI == len(ts.Segments)-1 {
 		return
+	}
+	if tss.NextSegmentI > len(ts.Segments)-1 {
+		panic("tss.CurrentSegmentI overflow")
+	}
+	s := ts.Segments[tss.NextSegmentI]
+	y := d.latestGS.Layout
+	t := d.latestGS.Trains[ts.TrainI]
+	follows := t.Path.Follows
+	targetI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
+	nowI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == now.Position.LineI })
+	var dist int64
+	if targetI == -1 || nowI == -1 {
+		//log.Printf("att %#v", now)
+		//log.Printf("s %#v", s)
+		//log.Printf("targetI %d nowI %d", targetI, nowI)
+		//log.Printf("t %#v", t)
+		//log.Printf("t.Path %#v", t.Path)
+		panic("targetI or nowI not found")
+	}
+	if targetI <= nowI {
+		dist = -y.Count(follows[targetI:nowI+1], s.Target, now.Position)
 	} else {
-		csi := tss.CurrentSegmentI
-		if csi == len(ts.Segments) {
-			log.Printf("siOverflow %d", csi)
+		dist = y.Count(follows[nowI:targetI+1], now.Position, s.Target)
+	}
+	if dist >= 10*layout.Millimeter {
+		return
+	}
+	log.Printf("t %#v", t)
+	log.Printf("t.Path %#v", t.Path)
+	log.Printf("s.Target %#v", s.Target)
+	log.Printf("now.Position %#v", now.Position)
+	log.Printf("dist %d", dist)
+	log.Printf("=== REACHED CurrentSegmentI %d", tss.NextSegmentI)
+	current := ts.Segments[tss.NextSegmentI]
+	if current.After != nil {
+		if d.state.TSs[current.After.TS].NextSegmentI < current.After.S {
+			log.Printf("waiting on after")
 			return
 		}
-		//log.Printf("si %d", si)
-		s := ts.Segments[csi]
-		//log.Printf("for %d =? %d", s.Target.LineI, t.Path[i].LineI)
-		next := func() bool {
-			if !att.PositionKnown {
-				return false
-			}
-			y := d.latestGS.Layout
-			t := d.latestGS.Trains[ts.TrainI]
-			follows := t.Path.Follows
-			a := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
-			b := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == att.Position.LineI })
-			var dist int64
-			if a == -1 || b == -1 {
-				log.Printf("att %#v", att)
-				log.Printf("s %#v", s)
-				log.Printf("a %d b %d", a, b)
-				log.Printf("t %#v", t)
-				log.Printf("t.Path %#v", t.Path)
-				panic("a or b not found")
-			}
-			if a <= b {
-				//log.Printf("t.Path %#v", t.Path)
-				//log.Printf("Count(%#v, %#v, %#v)", follows[a:b+1], s.Target, att.Position)
-				dist = -y.Count(follows[a:b+1], s.Target, att.Position)
-			} else if a > b {
-				_ = t
-				//log.Printf("t.Path %#v", t.Path)
-				//log.Printf("Count(%#v, %#v, %#v)", follows[b:a+1], att.Position, s.Target)
-				dist = y.Count(follows[b:a+1], att.Position, s.Target)
-			} else {
-				panic("unreacheable")
-			}
-			if dist <= 300000 {
-				//log.Printf("att %#v", att)
-				//log.Printf("s %#v", s)
-				//log.Printf("a %d b %d", a, b)
-				//log.Printf("t %#v", t)
-				//log.Printf("t.Path %#v", t.Path)
-				//log.Printf("dist %d", dist)
-				//log.Printf("target %#v", s.Target)
-				//log.Printf("pos %#v", att.Position)
-			}
-			if dist > 10000 || dist < 10000 {
-				// TODO: There is a bug where dist (momentarily?) jumps to a very large negative number™ right after the next segment was applied (probably because handleDelta probably overflowed and still submitted its old delta?). Workaround this issue by making sure that the model position must be close (and not after the point, as was the original plan).
-				return false
-			}
-			current := ts.Segments[tss.CurrentSegmentI]
-			if current.After != nil {
-				if d.state.TSs[current.After.TS].CurrentSegmentI < current.After.S {
-					return false
-				}
-			}
-			return true
-		}()
-		if next {
-			// TODO: precise position (maybe using traps (e.g. if train's position goes from 0 to 100, then trigger position of 50))
-			// TODO: implement After
-			log.Printf("___ reached CurrentSegmentI: %d", tss.CurrentSegmentI)
-			log.Printf("___ reached Segment: %#v", ts.Segments[tss.CurrentSegmentI])
-			tss.CurrentSegmentI = csi + 1
-			apply = true
-		}
 	}
-	if apply {
-		if tss.CurrentSegmentI == len(ts.Segments)-1 {
-			log.Printf("*** DONE")
-		} else {
-			d.apply(d.latestGS, tsi)
-		}
+	d.nextSegment(tsi)
+}
+
+func (d *diagram) nextSegment(tsi int) {
+	ts := d.conf.Schedule.TSs[tsi]
+	tss := &d.state.TSs[tsi]
+	if tss.NextSegmentI == len(ts.Segments)-1 {
+		log.Printf("*** DONE")
+		return
 	}
+	tss.NextSegmentI++
+	d.apply(d.latestGS, tsi)
 }
 
 func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	ts := d.conf.Schedule.TSs[tsi]
-	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI]
+	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].NextSegmentI]
 	y := prevGS.Layout
 	t := prevGS.Trains[ts.TrainI]
 	nt := Train{
-		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
+		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].NextSegmentI].Power,
 		State: 0, // automatically copied from original by guide
 	}
 	{
@@ -254,4 +230,5 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 		Origin: d.conf.Guide,
 		Value:  gtu,
 	}
+	log.Printf("### APPLY DONE %#v", gtu)
 }

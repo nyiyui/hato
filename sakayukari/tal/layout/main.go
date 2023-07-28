@@ -10,6 +10,11 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
+const (
+	Millimeter = 1000
+	Micrometer = 1
+)
+
 // LineI is a line index, an index of a slice with Lines.
 type LineI int
 

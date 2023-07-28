@@ -269,6 +269,9 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 }
 
 func (g *guide) wakeup(ti int) {
+	log.Printf("wakeup %d", ti)
+	log.Printf("wakeup %#v", g.trains[ti])
+	log.Printf("wakeup %#v", g.trains[ti].Path)
 	g.check(ti)
 	g.syncLocks(ti)
 	t := g.trains[ti]
@@ -335,6 +338,8 @@ func (g *guide) loop() {
 				}
 			}
 			val.Train.Generation = orig.Generation + 1
+			log.Printf("GuideTrainUpdate %#v", val.Train)
+			log.Printf("GuideTrainUpdate.Path %#v", val.Train.Path)
 			g.trains[val.TrainI] = val.Train
 			g.wakeup(val.TrainI)
 		case conn.ValCurrent:
@@ -575,6 +580,7 @@ func (g *guide) snapshot() GuideSnapshot {
 }
 
 func (g *guide) publishSnapshot() {
+	log.Printf("publishSnapshot")
 	g.actor.OutputCh <- Diffuse1{Value: g.snapshot()}
 }
 
