@@ -32,7 +32,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
-				log.Printf("ReqLine %s %s", c.Id, req)
+				//log.Printf("ReqLine %s %s", c.Id, req)
 				var err error
 				func() {
 					state.fileLock.Lock()

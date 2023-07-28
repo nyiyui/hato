@@ -22,9 +22,13 @@ type Attitude struct {
 	Position      layout.Position
 	PositionKnown bool
 	// Velocity of the train at that instant in µm/s.
+	// Positive velocity means the train is moving in the front direction (as defined by tal-guide).
+	// TODO: change the meaning of positive velocity so positive = side A is the front
 	Velocity      int64
 	VelocityKnown bool
 }
+
+// TODO: List places where e.g. RFID Attitude is expected, and if tal-model doesn't receive an Attitude at that position and time (± error), reduce estimated velocity and position appropriately.
 
 func (a Attitude) String() string {
 	return fmt.Sprintf("attitude(t%s p%#v v%d)", a.Time, a.Position, a.Velocity)
@@ -139,6 +143,7 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 			t := m.latestGS.Trains[ti]
 			var path []LinePort
 			{
+				// t.Path has -1 as the last, but this is not useful - change Train.Path so that it contains a port for the last part as well
 				i := slices.IndexFunc(t.Path, func(lp LinePort) bool { return lp.LineI == la.Position.LineI })
 				if i == -1 {
 					log.Printf("la: %#v", la)
@@ -169,22 +174,22 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 					}
 				}
 				i := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == la.Position.LineI })
-				log.Printf("la: %#v", la)
-				log.Printf("train: %#v", t)
 				path = path[i:]
 			}
 			pos, ok := m.latestGS.Layout.Traverse(path, yi)
 			if !ok {
 				ca := m.currentAttitudes[ti]
 				m.actor.OutputCh <- Diffuse1{Value: ca}
+				log.Printf("overflow")
+				log.Printf("yi %dµm", yi)
+				log.Printf("path %#v", path)
+				log.Printf("t %#v", t)
 				continue
 			}
 			ca := m.currentAttitudes[ti]
 			ca.TrainI = ti
 			ca.TrainGeneration = t.Generation
 			ca.Position = pos
-			//_ = pos
-			//ca.Position = la.Position
 			ca.PositionKnown = true
 			ca.Velocity = la.Velocity
 			ca.VelocityKnown = true
@@ -238,8 +243,23 @@ func (m *model) handleAttitude(diffuse Diffuse1) {
 			r.Mul(r, big.NewRat(1e9, 1))
 			x.SetRat(r)
 			vel, _ := x.Int64()
-			att.Velocity = coeff * vel
-			att.VelocityKnown = true
+			t := m.latestGS.Trains[att.TrainI]
+			f, ok := m.conf.Cars.Forms[t.FormI]
+			if !ok {
+				panic(fmt.Sprintf("train %d %#v has unknown formation", att.TrainI, t))
+			}
+			if f.BaseVelocity != nil {
+				m := f.BaseVelocity.M
+				b := f.BaseVelocity.B
+				att.Velocity = coeff * (m*int64(t.Power) + b)
+				if att.Velocity < 0 {
+					att.Velocity = 0
+				}
+				att.VelocityKnown = true
+			} else {
+				att.Velocity = coeff * vel
+				att.VelocityKnown = true
+			}
 		}
 		log.Printf("latestAttitude %s", att)
 	}

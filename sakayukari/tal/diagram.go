@@ -80,6 +80,7 @@ func Diagram(conf DiagramConf) *Actor {
 }
 
 func (d *diagram) loop() {
+	firstApplied := false
 	for diffuse := range d.actor.InputCh {
 		switch {
 		case diffuse.Origin == d.conf.Model:
@@ -90,6 +91,12 @@ func (d *diagram) loop() {
 			if gs, ok := diffuse.Value.(GuideSnapshot); ok {
 				d.latestGS = gs
 				d.handleGS(diffuse)
+				if !firstApplied {
+					for tsi := range d.conf.Schedule.TSs {
+						d.apply(d.latestGS, tsi)
+					}
+					firstApplied = true
+				}
 			}
 		}
 	}
@@ -97,7 +104,10 @@ func (d *diagram) loop() {
 
 func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	att := diffuse.Value.(Attitude)
-	log.Printf("new Attitude %#v", att)
+	if att == (Attitude{}) {
+		return
+	}
+	//log.Printf("new Attitude %#v", att)
 	tsi := slices.IndexFunc(d.conf.Schedule.TSs, func(ts TrainSchedule) bool { return ts.TrainI == att.TrainI })
 	if tsi == -1 {
 		panic("handleAttitude unknown TrainSchedule")
@@ -121,7 +131,39 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 			if !att.PositionKnown {
 				return false
 			}
-			if s.Target.LineI != att.Position.LineI {
+			y := d.latestGS.Layout
+			t := d.latestGS.Trains[ts.TrainI]
+			path := d.path(tsi)
+			a := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
+			b := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == att.Position.LineI })
+			var dist int64
+			if a == -1 || b == -1 {
+				log.Printf("att %#v", att)
+				log.Printf("s %#v", s)
+				log.Printf("a %d b %d", a, b)
+				log.Printf("t %#v", t)
+				log.Printf("path %#v", path)
+				panic("a or b not found")
+			}
+			if a <= b {
+				dist = -y.Count(path[a:b+1], s.Target, att.Position)
+			} else if a > b {
+				_ = t
+				dist = y.Count(path[b:a+1], att.Position, s.Target)
+			} else {
+				panic("unreacheable")
+			}
+			if dist <= 300000 {
+				log.Printf("att %#v", att)
+				log.Printf("s %#v", s)
+				log.Printf("a %d b %d", a, b)
+				log.Printf("t %#v", t)
+				log.Printf("path %#v", path)
+				log.Printf("dist %d", dist)
+				log.Printf("target %#v", s.Target)
+				log.Printf("pos %#v", att.Position)
+			}
+			if dist > 10000 {
 				return false
 			}
 			current := ts.Segments[tss.CurrentSegmentI]
@@ -200,6 +242,17 @@ func (d *diagram) handleGS(diffuse Diffuse1) {
 			}
 		}
 	}
+}
+
+func (d *diagram) path(tsi int) []LinePort {
+	ts := d.conf.Schedule.TSs[tsi]
+	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI]
+	y := d.latestGS.Layout
+	t := d.latestGS.Trains[ts.TrainI]
+	// TODO: bug happens when current is aleady on the goal; then the longer one is not necessarily the farthest?
+	lps := y.PathToInclusive(t.Path[0].LineI, s.Target.LineI)
+	lps[len(lps)-1].PortI = s.Target.Port
+	return lps
 }
 
 func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {

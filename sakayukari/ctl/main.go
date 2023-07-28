@@ -75,8 +75,34 @@ func Main() error {
 	}))
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, tal.GuideRender(guide))
+	data, err = os.ReadFile("cars.json")
+	if err != nil {
+		return fmt.Errorf("read cars.json: %w", err)
+	}
+	var carsData cars.Data
+	err = json.Unmarshal(data, &carsData)
+	if err != nil {
+		return fmt.Errorf("parse cars.json: %w", err)
+	}
+	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
+		Guide: guide,
+		Cars:  carsData,
+		RFIDs: []tal.RFID{
+			{rfid0, layout.Position{
+				LineI:   y.MustLookupIndex("Y"),
+				Precise: 252000,
+				Port:    layout.PortB,
+			}},
+		},
+	}))
+	model := ActorRef{Index: len(g.Actors) - 1}
+	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{
+		Guide: guide,
+		Model: model,
+	}))
 	g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
 		Guide: guide,
+		Model: model,
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
@@ -101,31 +127,6 @@ func Main() error {
 				//}},
 			},
 		},
-	}))
-	data, err = os.ReadFile("cars.json")
-	if err != nil {
-		return fmt.Errorf("read cars.json: %w", err)
-	}
-	var carsData cars.Data
-	err = json.Unmarshal(data, &carsData)
-	if err != nil {
-		return fmt.Errorf("parse cars.json: %w", err)
-	}
-	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
-		Guide: guide,
-		Cars:  carsData,
-		RFIDs: []tal.RFID{
-			{rfid0, layout.Position{
-				LineI:   y.MustLookupIndex("W"),
-				Precise: 0,
-				Port:    layout.PortB,
-			}},
-		},
-	}))
-	model := ActorRef{Index: len(g.Actors) - 1}
-	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{
-		Guide: guide,
-		Model: model,
 	}))
 
 	i := runtime.NewInstance(&g)

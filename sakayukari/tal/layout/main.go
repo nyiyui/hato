@@ -2,6 +2,7 @@ package layout
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -338,7 +339,7 @@ func (y *Layout) GetLinePort(lp LinePort) (Line, Port) {
 }
 
 // Count returns the distance between start and end, going through the path specified.
-// The first and last LineIs of path must match start and end.
+// The first LineI of path must match start.
 func (y *Layout) Count(path []LinePort, start, end Position) (dist int64) {
 	if path[0].LineI != start.LineI {
 		panic("First LinePort of path doesn't match start.")
@@ -489,7 +490,6 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 		return Position{lp.LineI, p.Length, port}, true
 	}
 	// total length of the path was less than displacement
-	log.Printf("never reached")
 	return Position{}, false
 }
 
@@ -498,6 +498,20 @@ func (y *Layout) PathToInclusive(from, goal LineI) []LinePort {
 	lps := y.PathTo(from, goal)
 	lps = append(lps, LinePort{LineI: goal, PortI: -1})
 	return lps
+}
+
+func (y *Layout) FullPathTo(from, goal LinePort) ([]LinePort, error) {
+	lps := y.PathTo(from.LineI, goal.LineI)
+	start := lps[0]
+	if from.PortI != start.PortI && from.PortI != PortA && start.PortI != PortA {
+		return nil, errors.New("switchback necessary")
+	}
+	end := lps[len(lps)-1]
+	if from.PortI != end.PortI && from.PortI != PortA && end.PortI != PortA {
+		return nil, errors.New("switchback necessary")
+	}
+	lps = append(lps, goal)
+	return lps, nil
 }
 
 // PathTo returns a list of outgoing LinePorts in the order they should be followed.

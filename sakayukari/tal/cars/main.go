@@ -57,7 +57,14 @@ type Form struct {
 	// Cars is the list of cars in this carset.
 	// They must be ordered so that side A of a car is adjacent to side B of the next car (excluding the first and last cars).
 	// Side A of the first car, and side B of the last car is not adjacent to any other car in this carset.
-	Cars []Car `json:"cars"`
+	Cars         []Car         `json:"cars"`
+	BaseVelocity *BaseVelocity `json:"base-velocity"`
+}
+
+// BaseVelocity represents a linear equation y=mx+b where x is the duty cycle ([0, 255] or 0 to 255 inclusive) and y is the speed in µ/s.
+type BaseVelocity struct {
+	M int64 `json:"m"`
+	B int64 `json:"b"`
 }
 
 type Car struct {

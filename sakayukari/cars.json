@@ -35,6 +35,10 @@
     "2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91": {
       "comment": "E233-double",
       "length": 450000,
+      "base-velocity": {
+        "m": 6180,
+        "b": -34571
+      },
       "cars": [
         {
           "comment": "クハ E233-3516 (15)",
@@ -46,7 +50,7 @@
           "comment": "モハ E233-3616 (13)",
           "length": 131000,
           "mifare-id": "002d7912000003",
-          "mifare-position": 59000
+          "mifare-position": 61000
         },
         {
           "comment": "クハ E232-3516 (11)",

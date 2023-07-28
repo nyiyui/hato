@@ -1,9 +1,13 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
-#include <Adafruit_NeoPixel.h>
 
-#define VARIANT "adafruit:samd:adafruit_feather_m4/0"
+//#define ENABLE_NEOPIXEL
+#define VARIANT "leonardo-shield/0"
+
+#ifdef ENABLE_NEOPIXEL
+#include <Adafruit_NeoPixel.h>
+#endif
 
 struct meta {
   unsigned long pos; // position of the RFID sensor coil
@@ -13,8 +17,10 @@ static struct meta meta = {
   .pos = 0,
 };
 
+#ifdef ENABLE_NEOPIXEL
 // built-in NeoPixel (Feather M4)
 Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
+#endif
 
 /** Based on sample code (readMifare.pde) generously provided by Adafruit
  * Software License Agreement (BSD License)
@@ -46,10 +52,10 @@ Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
  */
 
 // If using the breakout with SPI, define the pins for SPI communication.
-#define PN532_SCK  (25)
-#define PN532_MOSI (24)
-#define PN532_SS   (13)
-#define PN532_MISO (23)
+#define PN532_SCK  (4)
+#define PN532_MOSI (7)
+#define PN532_SS   (6)
+#define PN532_MISO (5)
 
 // If using the breakout or shield with I2C, define just the pins connected
 // to the IRQ and reset lines.  Use the values below (2, 3) for the shield!
@@ -75,10 +81,12 @@ Adafruit_PN532 nfc(PN532_SS);
 //Adafruit_PN532 nfc(PN532_RESET, &Serial1);
 
 void setup() {
+#ifdef ENABLE_NEOPIXEL
   strip.begin();
   strip.show();
   strip.setPixelColor(0, 32, 32, 0);
   strip.show();
+#endif
   Serial.begin(115200);
   while (!Serial) delay(10); // the whole point of this board is to transmit RFID data using serial...
 
@@ -87,8 +95,10 @@ void setup() {
 
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (! versiondata) {
+#ifdef ENABLE_NEOPIXEL
     strip.setPixelColor(0, 255, 0, 0);
     strip.show();
+#endif
     Serial.println("Didn't find PN53x board");
     Serial.println(" Serror");
     while (1); // halt
@@ -102,8 +112,10 @@ void setup() {
   }
 
   Serial.println(" Sready");
+#ifdef ENABLE_NEOPIXEL
   strip.setPixelColor(0, 32, 32, 32);
   strip.show();
+#endif
 }
 
 void loop() {
@@ -139,7 +151,9 @@ void handleSLCP() {
 
 void readRFID() {
   // TODO: consider using this https://forum.arduino.cc/t/nonblocking-rfid-nfc-reads/177587/5
+#ifdef ENABLE_NEOPIXEL
   static boolean led_type = false;
+#endif
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -150,12 +164,14 @@ void readRFID() {
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
   if (success) {
+#ifdef ENABLE_NEOPIXEL
     if (led_type)
       strip.setPixelColor(0, 0, 0, 32);
     else
       strip.setPixelColor(0, 8, 8, 16);
     strip.show();
     led_type = !led_type;
+#endif
     Serial.print(" DNcard1 L");
     Serial.print(uidLength, DEC);
     Serial.print(" V");

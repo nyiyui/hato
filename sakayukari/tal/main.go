@@ -172,17 +172,18 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        120,
+		Power:        60,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
 		//FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
 		FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
 		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-		Orient: FormOrientB,
+		Orient: FormOrientA,
 	}
 	//t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("Z"), g.y.MustLookupIndex("W")) // normal
 	t1.Path = g.y.PathToInclusive(g.y.MustLookupIndex("W"), g.y.MustLookupIndex("Z")) // reverse
+	t1.Path[len(t1.Path)-1].PortI = layout.PortA
 	g.trains = append(g.trains, t1)
 
 	go g.loop()
@@ -195,7 +196,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 		log.Printf("unknown conn for actor %s", diffuse.Origin)
 		return
 	}
-	log.Printf("=== diffuse from %s: %s", ci, cur)
+	//log.Printf("=== diffuse from %s: %s", ci, cur)
 	for ti := range g.trains {
 		for _, inner := range cur.Values {
 			t := g.trains[ti]
@@ -216,19 +217,19 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.unlock(nextI)
 				g.apply(&t, t.CurrentBack, 0)
 				t.CurrentBack++
-				log.Printf("=== currentBack succession: %d", t.CurrentBack)
+				//log.Printf("=== currentBack succession: %d", t.CurrentBack)
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
 			cf := g.y.Lines[t.Path[t.CurrentFront].LineI]
 			if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
 				if t.CurrentFront == 0 {
-					log.Printf("=== currentFront regression (ignore): %d", t.CurrentFront)
+					//log.Printf("=== currentFront regression (ignore): %d", t.CurrentFront)
 					goto NoCurrentFront
 				}
 				if t.CurrentFront <= t.CurrentBack {
 					// this can happen e.g. when the train is at 1-1→2 and then the 1st line becomes 0 (e.g. A0, B0) (currentBack moving to 0 is prevented by an if for currentBack)
-					log.Printf("=== currentFront regression (ignore as currentFront <= currentBack): %d", t.CurrentFront)
+					//log.Printf("=== currentFront regression (ignore as currentFront <= currentBack): %d", t.CurrentFront)
 					goto NoCurrentFront
 				}
 				nextI := t.Path[t.CurrentFront].LineI
@@ -236,7 +237,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.apply(&t, t.CurrentFront, 0)
 				t.CurrentFront--
 				g.publishChange(ti, ChangeTypeCurrentFront)
-				log.Printf("=== currentFront regression: %d", t.CurrentFront)
+				//log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
 		NoCurrentFront:
 			if t.State == TrainStateNextAvail {
@@ -245,7 +246,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
 					g.publishChange(ti, ChangeTypeCurrentFront)
-					log.Printf("=== next succession: %d", t.CurrentFront)
+					//log.Printf("=== next succession: %d", t.CurrentFront)
 				}
 			}
 			g.trains[ti] = t
@@ -358,7 +359,7 @@ func reverse[S ~[]E, E any](s S) {
 }
 
 func (g *guide) reify(ti int, t *Train) {
-	log.Printf("REIFY: %s", t)
+	//log.Printf("REIFY: %s", t)
 	power := t.Power
 	stop := false
 	max := t.CurrentFront
@@ -425,7 +426,7 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 		case 2:
 			targetState = SwitchStateC
 		default:
-			panic("invalid pi")
+			panic(fmt.Sprintf("invalid pi %d", pi))
 		}
 	}
 	if g.lineStates[li].SwitchState == targetState {
@@ -446,7 +447,7 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 			Direction: targetState == SwitchStateB,
 			// true  when targetState is B
 			// false when targetState is C
-			Power:    180,
+			Power:    80,
 			Duration: 1000,
 		},
 	}
