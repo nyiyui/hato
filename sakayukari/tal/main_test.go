@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 func TestGobEncode(t *testing.T) {
@@ -15,11 +16,11 @@ func TestGobEncode(t *testing.T) {
 			noPowerSupplied: false,
 			CurrentBack:     0,
 			CurrentFront:    1,
-			Path: []LinePort{
+			Path: &layout.FullPath{Start: LinePort{0, 0}, Follows: []LinePort{
 				{0, 1},
 				{1, 1},
 				{2, 1},
-			},
+			}},
 			State: TrainStateNextAvail,
 		}},
 	}

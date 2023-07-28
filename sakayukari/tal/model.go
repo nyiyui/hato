@@ -144,15 +144,15 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 			var path []LinePort
 			{
 				// t.Path has -1 as the last, but this is not useful - change Train.Path so that it contains a port for the last part as well
-				i := slices.IndexFunc(t.Path, func(lp LinePort) bool { return lp.LineI == la.Position.LineI })
+				i := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == la.Position.LineI })
 				if i == -1 {
 					log.Printf("la: %#v", la)
 					log.Printf("train: %#v", t)
 					panic("la.Position.LineI nonexistent in Train.Path")
 				}
-				path = t.Path[i:]
+				path = t.Path.Follows[i:]
 				// Add la.Position.Precise
-				lp := t.Path[i]
+				lp := t.Path.Follows[i]
 				switch lp.PortI {
 				case layout.PortA:
 					yi -= int64(la.Position.Precise)
@@ -162,17 +162,7 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 			}
 			if yi < 0 {
 				yi = -yi
-				path = m.latestGS.Layout.ReversePath(t.Path)
-				first := t.Path[0]
-				if m.latestGS.Layout.Lines[first.LineI].PortC.Length == 0 {
-					// first is from a straight line, so we can include the connection to first too.
-					switch first.PortI {
-					case layout.PortA:
-						path = append(path, LinePort{first.LineI, layout.PortB})
-					case layout.PortB:
-						path = append(path, LinePort{first.LineI, layout.PortA})
-					}
-				}
+				path = m.latestGS.Layout.ReverseFullPath(*t.Path).Follows
 				i := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == la.Position.LineI })
 				path = path[i:]
 			}
@@ -214,8 +204,7 @@ func (m *model) handleAttitude(diffuse Diffuse1) {
 		if !att.VelocityKnown && att.PositionKnown && prevAtt.PositionKnown {
 			dt := att.Time.Sub(prevAtt.Time)
 			// TODO: handle path being reset by Diagram
-			path := m.latestGS.Trains[att.TrainI].Path
-			path = path[:len(path)-1] // remove last dummy LinePort
+			path := m.latestGS.Trains[att.TrainI].Path.Follows
 			startI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == prevAtt.Position.LineI })
 			endI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == att.Position.LineI })
 			log.Printf("path: %#v", path)
@@ -310,9 +299,9 @@ OuterLoop:
 	y := m.latestGS.Layout
 	pos := m.conf.RFIDs[ri].Position
 	// TODO: track which cars are trailing and run IndexFunc in only the CurrentBack-CurrentFront + trailers part of t.Path
-	rfidPathI := slices.IndexFunc(t.Path, func(lp LinePort) bool { return lp.LineI == pos.LineI })
+	rfidPathI := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
 	if rfidPathI == -1 {
-		panic("LineI of RFID not in train's currents")
+		panic("LineI of RFID not in train's path")
 	}
 	// === Determine side A of the train
 	// Consider the 4 scenarios:
@@ -343,7 +332,7 @@ OuterLoop:
 	//   ^^^^^^     = + pos.Precise - tagOffset
 	var displacement int64
 	{
-		lp := t.Path[rfidPathI]
+		lp := t.Path.Follows[rfidPathI]
 		precise := int64(pos.Precise)
 		tagOffset := int64(tagOffset)
 		switch lp.PortI {
@@ -366,17 +355,7 @@ OuterLoop:
 	var path []LinePort
 	if displacement < 0 {
 		displacement = -displacement
-		path = y.ReversePath(t.Path)
-		first := t.Path[0]
-		if y.Lines[first.LineI].PortC.Length == 0 {
-			// first is from a straight line, so we can include the connection to first too.
-			switch first.PortI {
-			case layout.PortA:
-				path = append(path, LinePort{first.LineI, layout.PortB})
-			case layout.PortB:
-				path = append(path, LinePort{first.LineI, layout.PortA})
-			}
-		}
+		path = y.ReverseFullPath(*t.Path).Follows
 		rfidPathI2 := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == pos.LineI })
 		if rfidPathI2 == -1 {
 			log.Printf("pos %#v", pos)
@@ -387,7 +366,7 @@ OuterLoop:
 		}
 		path = path[rfidPathI2:]
 	} else {
-		path = t.Path[rfidPathI:]
+		path = t.Path.Follows[rfidPathI:]
 	}
 	log.Printf("train %#v", t)
 	log.Printf("tagOffset %d", tagOffset)

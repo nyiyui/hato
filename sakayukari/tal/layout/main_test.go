@@ -259,7 +259,7 @@ func TestCount(t *testing.T) {
 	t.Logf("path2: %#v", path2)
 	setups := []setup{
 		{y, y.PathTo(Z, X), Position{Z, 10, 0}, Position{Y, 0, 0}, int64(y.Lines[Z].PortB.Length - 10)},
-		{y, y.MustFullPathTo(LinePort{Z, PortA}, LinePort{Y, PortB})[1:], Position{Z, 10, 0}, Position{Y, 0, 0}, int64(y.Lines[Z].PortB.Length - 10)},
+		{y, y.MustFullPathTo(LinePort{Z, PortA}, LinePort{Y, PortB}).Follows, Position{Z, 10, 0}, Position{Y, 0, 0}, int64(y.Lines[Z].PortB.Length - 10)},
 		//{y, []LinePort{LinePort{4, 1}, LinePort{4, 0}, LinePort{2, 0}, LinePort{1, 0}}, Position{4, 0, 1}, Position{1, 0x3dbbd, 1}, 0},
 		//{y, []LinePort{LinePort{4, 1}, LinePort{4, 0}, LinePort{2, 0}, LinePort{1, 0}}, Position{4, 0, 0}, Position{1, 0x3dbbd, 1}, 0},
 		// TODO: more tests
@@ -277,6 +277,7 @@ func TestCount(t *testing.T) {
 		})
 	}
 }
+
 func TestReversePath(t *testing.T) {
 	y, err := InitTestbench3()
 	if err != nil {
@@ -314,6 +315,61 @@ func TestReversePath(t *testing.T) {
 			res := y.ReversePath(setup.path)
 			if !cmp.Equal(res, setup.want) {
 				t.Fatalf("want %d, got %d", setup.want, res)
+			}
+		})
+	}
+}
+
+func TestReverseFullPath(t *testing.T) {
+	y, err := InitTestbench3()
+	if err != nil {
+		t.Fatalf("InitTestbench3: %s", err)
+	}
+	Z := y.MustLookupIndex("Z")
+	ZA := LinePort{Z, PortA}
+	ZB := LinePort{Z, PortB}
+	Y := y.MustLookupIndex("Y")
+	YA := LinePort{Y, PortA}
+	YB := LinePort{Y, PortB}
+	X := y.MustLookupIndex("X")
+	XA := LinePort{X, PortA}
+	XB := LinePort{X, PortB}
+	XC := LinePort{X, PortC}
+	W := y.MustLookupIndex("W")
+	WA := LinePort{W, PortA}
+	WB := LinePort{W, PortB}
+	V := y.MustLookupIndex("V")
+	VA := LinePort{V, PortA}
+	VB := LinePort{V, PortB}
+	type setup struct {
+		y    *Layout
+		path FullPath
+	}
+	setups := []setup{
+		{y, y.MustFullPathTo(ZA, ZB)},
+		{y, y.MustFullPathTo(ZA, YA)},
+		{y, y.MustFullPathTo(ZB, YA)},
+		{y, y.MustFullPathTo(ZA, YB)},
+		{y, y.MustFullPathTo(ZB, YB)},
+		{y, y.MustFullPathTo(ZA, XA)},
+		{y, y.MustFullPathTo(ZA, XB)},
+		{y, y.MustFullPathTo(ZA, XC)},
+		{y, y.MustFullPathTo(ZA, WA)},
+		{y, y.MustFullPathTo(ZA, VA)},
+		{y, y.MustFullPathTo(XA, WA)},
+		{y, y.MustFullPathTo(XA, WB)},
+		{y, y.MustFullPathTo(XA, VA)},
+		{y, y.MustFullPathTo(XA, VB)},
+	}
+	for i, setup := range setups {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			reversed := y.ReverseFullPath(setup.path)
+			equiv := y.ReverseFullPath(reversed)
+			if !cmp.Equal(equiv, setup.path) {
+				t.Logf("original %s", setup.path)
+				t.Logf("reversed %s", reversed)
+				t.Logf("twice %s", equiv)
+				t.Fatalf("reversing twice didn't get result: original → reversed twice: %s", cmp.Diff(setup.path, equiv))
 			}
 		})
 	}

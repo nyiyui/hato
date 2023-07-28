@@ -513,14 +513,25 @@ func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {
 }
 
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
+	if from.LineI == goal.LineI {
+		if from.PortI == goal.PortI {
+			return FullPath{}, errors.New("from == goal")
+		}
+		return FullPath{
+			Start:   from,
+			Follows: []LinePort{goal},
+		}, nil
+	}
 	lps := y.PathTo(from.LineI, goal.LineI)
 	start := lps[0]
 	if from.PortI != start.PortI && from.PortI != PortA && start.PortI != PortA {
-		return FullPath{}, errors.New("switchback necessary")
+		return FullPath{}, errors.New("switchback necessary (from)")
 	}
-	end := lps[len(lps)-1]
+	_, p := y.GetLinePort(lps[len(lps)-1])
+	end := p.Conn()
 	if goal.PortI != end.PortI && goal.PortI != PortA && end.PortI != PortA {
-		return FullPath{}, errors.New("switchback necessary")
+		log.Printf("end %#v", end)
+		return FullPath{}, errors.New("switchback necessary (goal)")
 	}
 	lps = append(lps, goal)
 	return FullPath{
@@ -617,4 +628,17 @@ func (y *Layout) ReversePath(path []LinePort) []LinePort {
 		res[j] = p.Conn()
 	}
 	return res
+}
+
+func (y *Layout) ReverseFullPath(fp FullPath) FullPath {
+	res := make([]LinePort, len(fp.Follows)-1)
+	for i := range res {
+		j := len(fp.Follows) - 2 - i
+		_, p := y.GetLinePort(fp.Follows[j])
+		res[i] = p.Conn()
+	}
+	return FullPath{
+		Start:   fp.Follows[len(fp.Follows)-1],
+		Follows: append(res, fp.Start),
+	}
 }
