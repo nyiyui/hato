@@ -13,7 +13,8 @@ import (
 type handlerLine struct{}
 
 type lineState struct {
-	fileLock sync.Mutex
+	fileLock    sync.Mutex
+	latestLines map[LineName]ReqLine
 }
 
 func (_ handlerLine) String() string {
@@ -28,10 +29,17 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		return
 	}
 	state := new(lineState)
+	state.latestLines = map[LineName]ReqLine{}
 	go func() {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
+				{
+					latest, ok := state.latestLines[req.Line]
+					if ok && latest == req {
+						continue
+					}
+				}
 				//log.Printf("ReqLine %s %s", c.Id, req)
 				var err error
 				func() {
@@ -45,6 +53,8 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 				}()
 				if err != nil {
 					log.Printf("commit %s: %s", req, err)
+				} else {
+					state.latestLines[req.Line] = req
 				}
 			case ReqSwitch:
 				log.Printf("ReqSwitch %s %s", c.Id, req)

@@ -170,10 +170,10 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 			if !ok {
 				ca := m.currentAttitudes[ti]
 				m.actor.OutputCh <- Diffuse1{Value: ca}
-				log.Printf("overflow")
-				log.Printf("yi %dµm", yi)
-				log.Printf("path %#v", path)
-				log.Printf("t %#v", t)
+				//log.Printf("overflow")
+				//log.Printf("yi %dµm", yi)
+				//log.Printf("path %#v", path)
+				//log.Printf("t %#v", t)
 				continue
 			}
 			ca := m.currentAttitudes[ti]

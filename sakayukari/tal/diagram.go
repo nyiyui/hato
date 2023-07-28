@@ -145,8 +145,8 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 				panic("a or b not found")
 			}
 			if a <= b {
-				log.Printf("t.Path %#v", t.Path)
-				log.Printf("Count(%#v, %#v, %#v)", follows[a:b+1], s.Target, att.Position)
+				//log.Printf("t.Path %#v", t.Path)
+				//log.Printf("Count(%#v, %#v, %#v)", follows[a:b+1], s.Target, att.Position)
 				dist = -y.Count(follows[a:b+1], s.Target, att.Position)
 			} else if a > b {
 				_ = t
@@ -157,16 +157,17 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 				panic("unreacheable")
 			}
 			if dist <= 300000 {
-				log.Printf("att %#v", att)
-				log.Printf("s %#v", s)
-				log.Printf("a %d b %d", a, b)
-				log.Printf("t %#v", t)
-				log.Printf("t.Path %#v", t.Path)
-				log.Printf("dist %d", dist)
-				log.Printf("target %#v", s.Target)
-				log.Printf("pos %#v", att.Position)
+				//log.Printf("att %#v", att)
+				//log.Printf("s %#v", s)
+				//log.Printf("a %d b %d", a, b)
+				//log.Printf("t %#v", t)
+				//log.Printf("t.Path %#v", t.Path)
+				//log.Printf("dist %d", dist)
+				//log.Printf("target %#v", s.Target)
+				//log.Printf("pos %#v", att.Position)
 			}
-			if dist > 10000 {
+			if dist > 10000 || dist < 10000 {
+				// TODO: There is a bug where dist (momentarily?) jumps to a very large negative number™ right after the next segment was applied (probably because handleDelta probably overflowed and still submitted its old delta?). Workaround this issue by making sure that the model position must be close (and not after the point, as was the original plan).
 				return false
 			}
 			current := ts.Segments[tss.CurrentSegmentI]
