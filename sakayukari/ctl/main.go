@@ -106,11 +106,11 @@ func Main() error {
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, 0}, 60, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, 0}, 60, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0, 0}, 60, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
+					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
 					//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
 					//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
 					//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},

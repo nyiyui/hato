@@ -133,7 +133,7 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 			}
 			y := d.latestGS.Layout
 			t := d.latestGS.Trains[ts.TrainI]
-			path := d.path(tsi)
+			path := t.Path[1:]
 			a := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
 			b := slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == att.Position.LineI })
 			var dist int64
@@ -142,13 +142,17 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 				log.Printf("s %#v", s)
 				log.Printf("a %d b %d", a, b)
 				log.Printf("t %#v", t)
-				log.Printf("path %#v", path)
+				log.Printf("t.Path %#v", t.Path)
 				panic("a or b not found")
 			}
 			if a <= b {
+				log.Printf("t.Path %#v", t.Path)
+				log.Printf("Count(%#v, %#v, %#v)", path[a:b+1], s.Target, att.Position)
 				dist = -y.Count(path[a:b+1], s.Target, att.Position)
 			} else if a > b {
 				_ = t
+				//log.Printf("t.Path %#v", t.Path)
+				//log.Printf("Count(%#v, %#v, %#v)", path[b:a+1], att.Position, s.Target)
 				dist = y.Count(path[b:a+1], att.Position, s.Target)
 			} else {
 				panic("unreacheable")
@@ -158,7 +162,7 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 				log.Printf("s %#v", s)
 				log.Printf("a %d b %d", a, b)
 				log.Printf("t %#v", t)
-				log.Printf("path %#v", path)
+				log.Printf("t.Path %#v", t.Path)
 				log.Printf("dist %d", dist)
 				log.Printf("target %#v", s.Target)
 				log.Printf("pos %#v", att.Position)
@@ -244,6 +248,7 @@ func (d *diagram) handleGS(diffuse Diffuse1) {
 	}
 }
 
+/*
 func (d *diagram) path(tsi int) []LinePort {
 	ts := d.conf.Schedule.TSs[tsi]
 	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI]
@@ -254,6 +259,7 @@ func (d *diagram) path(tsi int) []LinePort {
 	lps[len(lps)-1].PortI = s.Target.Port
 	return lps
 }
+*/
 
 func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	ts := d.conf.Schedule.TSs[tsi]
@@ -266,9 +272,15 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	}
 	{
 		// TODO: bug happens when current is aleady on the goal; then the longer one is not necessarily the farthest?
-		log.Printf("### apply tsi %d target %#v", tsi, s.Target)
-		lpsBack := y.PathToInclusive(t.Path[t.CurrentBack].LineI, s.Target.LineI)
-		lpsFront := y.PathToInclusive(t.Path[t.CurrentFront].LineI, s.Target.LineI)
+		target := s.Target
+		if target.Precise == 0 {
+			target.Port = layout.PortA
+		}
+		log.Printf("### apply tsi %d target %#v (%#v)", tsi, s.Target, target)
+		lpsBack := y.MustFullPathTo(t.Path[t.CurrentBack-1], LinePort{target.LineI, target.Port})
+		lpsFront := y.MustFullPathTo(t.Path[t.CurrentFront-1], LinePort{target.LineI, target.Port})
+		//lpsBack := y.PathToInclusive(t.Path[t.CurrentBack].LineI, s.Target.LineI)
+		//lpsFront := y.PathToInclusive(t.Path[t.CurrentFront].LineI, s.Target.LineI)
 		log.Printf("### lpsBack %d -> %#v", t.Path[t.CurrentBack].LineI, lpsBack)
 		log.Printf("### lpsFront %d -> %#v", t.Path[t.CurrentFront].LineI, lpsFront)
 		// We have to include all currents in the new path.

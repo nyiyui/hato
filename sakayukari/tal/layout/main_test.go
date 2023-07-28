@@ -259,6 +259,9 @@ func TestCount(t *testing.T) {
 	t.Logf("path2: %#v", path2)
 	setups := []setup{
 		{y, y.PathTo(Z, X), Position{Z, 10, 0}, Position{Y, 0, 0}, int64(y.Lines[Z].PortB.Length - 10)},
+		{y, y.MustFullPathTo(LinePort{Z, PortA}, LinePort{Y, PortB})[1:], Position{Z, 10, 0}, Position{Y, 0, 0}, int64(y.Lines[Z].PortB.Length - 10)},
+		//{y, []LinePort{LinePort{4, 1}, LinePort{4, 0}, LinePort{2, 0}, LinePort{1, 0}}, Position{4, 0, 1}, Position{1, 0x3dbbd, 1}, 0},
+		//{y, []LinePort{LinePort{4, 1}, LinePort{4, 0}, LinePort{2, 0}, LinePort{1, 0}}, Position{4, 0, 0}, Position{1, 0x3dbbd, 1}, 0},
 		// TODO: more tests
 	}
 	// TODO: negative traversal testing
