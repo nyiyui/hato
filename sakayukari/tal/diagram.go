@@ -38,6 +38,8 @@ type TrainSchedule struct {
 
 type trainScheduleState struct {
 	NextSegmentI int
+	// minGeneration is the minimum acceptable Train.Generation. This is used to prevent working on outdated Train objects.
+	minGeneration int
 }
 
 type Position = layout.Position
@@ -125,16 +127,19 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	s := ts.Segments[tss.NextSegmentI]
 	y := d.latestGS.Layout
 	t := d.latestGS.Trains[ts.TrainI]
+	if t.Generation < tss.minGeneration {
+		return
+	}
 	follows := t.Path.Follows
 	targetI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
 	nowI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == now.Position.LineI })
 	var dist int64
 	if targetI == -1 || nowI == -1 {
-		//log.Printf("att %#v", now)
-		//log.Printf("s %#v", s)
-		//log.Printf("targetI %d nowI %d", targetI, nowI)
-		//log.Printf("t %#v", t)
-		//log.Printf("t.Path %#v", t.Path)
+		log.Printf("att %#v", now)
+		log.Printf("s %#v", s)
+		log.Printf("targetI %d nowI %d", targetI, nowI)
+		log.Printf("t %#v", t)
+		log.Printf("t.Path %#v", t.Path)
 		panic("targetI or nowI not found")
 	}
 	if targetI <= nowI {
@@ -224,6 +229,8 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 		TrainI: d.conf.Schedule.TSs[tsi].TrainI,
 		Train:  nt,
 	}
+	tss := &d.state.TSs[tsi]
+	tss.minGeneration = t.Generation + 1
 	//log.Printf("### apply (DRY-RUN) %#v", gtu)
 	log.Printf("### apply %#v", gtu)
 	d.actor.OutputCh <- Diffuse1{

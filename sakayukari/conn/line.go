@@ -40,7 +40,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 						continue
 					}
 				}
-				//log.Printf("ReqLine %s %s", c.Id, req)
+				log.Printf("ReqLine %s %s", c.Id, req)
 				var err error
 				func() {
 					state.fileLock.Lock()

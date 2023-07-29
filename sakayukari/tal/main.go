@@ -371,7 +371,7 @@ func reverse[S ~[]E, E any](s S) {
 }
 
 func (g *guide) reify(ti int, t *Train) {
-	//log.Printf("REIFY: %s", t)
+	log.Printf("REIFY: %s", t)
 	power := t.Power
 	stop := false
 	max := t.CurrentFront
@@ -485,12 +485,12 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 	g.lineStates[li].Power = rl.Power
 	rl.Direction = l.GetPort(pi).Direction
 	// TODO: fix direction to follow layout.Layout rules
-	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,
 	}
-	//log.Printf("apply2 %s", rl)
+	log.Printf("apply2 %s", rl)
 }
 
 // syncLocks verifies locking of all currents and next (if next is available) of a train.
@@ -580,7 +580,6 @@ func (g *guide) snapshot() GuideSnapshot {
 }
 
 func (g *guide) publishSnapshot() {
-	log.Printf("publishSnapshot")
 	g.actor.OutputCh <- Diffuse1{Value: g.snapshot()}
 }
 
