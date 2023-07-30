@@ -7,7 +7,7 @@ sets:
   e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0:
     comment: "E233系 E-66編成"
     length: 45000 # µm
-    base-velocity:
+    base-velocity: # speed = m(duty cycle)+b
       m: 6180 # µm/duty cycle
       b: -34574 # µm
     cars:
