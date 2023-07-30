@@ -134,7 +134,10 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	targetI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == s.Target.LineI })
 	nowI := slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == now.Position.LineI })
 	var dist int64
-	if targetI == -1 || nowI == -1 {
+	if nowI == -1 {
+		return
+	}
+	if targetI == -1 {
 		log.Printf("att %#v", now)
 		log.Printf("s %#v", s)
 		log.Printf("targetI %d nowI %d", targetI, nowI)
