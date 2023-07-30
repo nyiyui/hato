@@ -6,6 +6,7 @@
       "cars": [
         {
           "comment": "1007 (1)",
+          "large-current": true,
           "length": 38000,
           "mifare-id": "00646f12000003",
           "mifare-position": 10000
@@ -16,6 +17,7 @@
         },
         {
           "comment": "1007 (3)",
+          "large-current": true,
           "length": 38000,
           "mifare-id": "005a9712000003",
           "mifare-position": 28000
@@ -28,6 +30,7 @@
       "cars": [
         {
           "comment": "EF210-317",
+          "large-current": true,
           "length": 120000
         }
       ]
@@ -48,6 +51,7 @@
         },
         {
           "comment": "モハ E233-3616 (13)",
+          "large-current": true,
           "length": 131000,
           "mifare-id": "002d7912000003",
           "mifare-position": 61000
