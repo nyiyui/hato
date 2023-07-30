@@ -10,9 +10,6 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
-// Length represents a length in 1µm precision.
-type Length = int64
-
 const (
 	Millimeter = 1000
 	Micrometer = 1
@@ -344,11 +341,6 @@ func (y *Layout) reversePath(path []LinePort) []LinePort {
 func (y *Layout) GetLinePort(lp LinePort) (Line, Port) {
 	l := y.Lines[lp.LineI]
 	return l, l.GetPort(lp.PortI)
-}
-
-func (y *Layout) GetPort(lp LinePort) Port {
-	l := y.Lines[lp.LineI]
-	return l.GetPort(lp.PortI)
 }
 
 // Count returns the distance between start and end, going through the path specified.
