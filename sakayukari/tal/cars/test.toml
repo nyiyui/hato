@@ -9,6 +9,7 @@ mifare-position = 73000
 [[sets.2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91.cars]]
 comment = "モハ E233-3616 (13)"
 length = 131000
+large-current = true
 mifare-id = "002d7912000003"
 mifare-position = 59000
 [[sets.2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91.cars]]

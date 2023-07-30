@@ -194,6 +194,72 @@ func Guide(conf GuideConf) Actor {
 	return a
 }
 
+func (g *guide) updateCurrentTrailers(ti int) {
+	t := g.trains[ti]
+	backPossible := true
+	// back is the length from port A of CurrentBack to the backside of the trailers.
+	var back int64
+	frontPossible := true
+	// front is the length from port A of CurrentFront to the frontside of the trailers.
+	var front int64
+	{
+		sideA, sideB := g.conf.Cars.Forms[t.FormI].TrailerLength()
+		log.Printf("sideA %d", sideA)
+		log.Printf("sideB %d", sideB)
+		switch t.Orient {
+		case FormOrientA:
+			front, back = sideA, sideB
+		case FormOrientB:
+			front, back = sideB, sideA
+		}
+		if t.CurrentBack == 0 {
+			backPossible = false
+		} else {
+			behindBack := t.Path.Follows[t.CurrentBack-1]
+			// backside is the backmost port of CurrentBack.
+			backside := g.y.GetPort(behindBack).Conn()
+			if backside.PortI == -1 {
+				// I guess there's not much of a point now…
+			} else if backside.PortI != layout.PortA {
+				back += int64(g.y.GetPort(backside).Length)
+			}
+		}
+		if t.CurrentFront == len(t.Path.Follows)-1 {
+			frontPossible = false
+		} else if lp := t.Path.Follows[t.CurrentFront]; lp.PortI != layout.PortA {
+			_, p := g.y.GetLinePort(lp)
+			front += int64(p.Length)
+		}
+	}
+	log.Printf("back %d", back)
+	log.Printf("front %d", front)
+	_ = backPossible
+	if frontPossible {
+		follows := t.Path.Follows[t.CurrentFront:]
+		pos, ok := g.y.Traverse(follows, front)
+		if !ok {
+			log.Printf("train %d: trailer overrun (front)", ti)
+		} else {
+			newCurrentFront := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
+			log.Printf("new CurrentFront = %d %#v", newCurrentFront, t.Path.Follows[newCurrentFront])
+		}
+	}
+	if backPossible {
+		follows := g.y.ReverseFullPath(*t.Path).Follows
+		log.Printf("t.Path %#v", t.Path)
+		log.Printf("follows1 %#v", follows)
+		follows = follows[slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == t.Path.Follows[t.CurrentBack].LineI }):]
+		log.Printf("follows2 %#v", follows)
+		pos, ok := g.y.Traverse(follows, back)
+		if !ok {
+			log.Printf("train %d: trailer overrun (back)", ti)
+		} else {
+			newCurrentBack := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
+			log.Printf("new CurrentBack = %d %#v", newCurrentBack, t.Path.Follows[newCurrentBack])
+		}
+	}
+}
+
 func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 	ci, ok := g.conf.actorsReverse[diffuse.Origin]
 	if !ok {
@@ -222,6 +288,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.apply(&t, t.CurrentBack, 0)
 				t.CurrentBack++
 				//log.Printf("=== currentBack succession: %d", t.CurrentBack)
+				g.updateCurrentTrailers(ti)
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
@@ -240,6 +307,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.unlock(nextI)
 				g.apply(&t, t.CurrentFront, 0)
 				t.CurrentFront--
+				g.updateCurrentTrailers(ti)
 				g.publishChange(ti, ChangeTypeCurrentFront)
 				//log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
@@ -249,6 +317,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				cf := g.y.Lines[t.Path.Follows[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
+					g.updateCurrentTrailers(ti)
 					g.publishChange(ti, ChangeTypeCurrentFront)
 					//log.Printf("=== next succession: %d", t.CurrentFront)
 				}

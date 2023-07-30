@@ -69,11 +69,34 @@ type BaseVelocity struct {
 
 type Car struct {
 	Comment string `json:"comment"`
+	// LargeCurrent marks whether this car is detectable by soyuu-line at 15 (uint8) duty cycle.
+	// In other words, whether the car passes more than 12 mA (the threshold for soyuu-line to detect a car) at ~5% duty cycle (12 V0.
+	// If LargeCurrent = true, this car is called a motor car.
+	// If LargeCurrent = false, this car is called a trailer.
+	LargeCurrent bool `json:"large-current"`
 	// Length of the car in µm.
 	Length   uint32   `json:"length"`
 	MifareID MifareID `json:"mifare-id"`
 	// MifarePosition is the position of the Mifare card/tag from side A to side B.
 	MifarePosition uint32 `json:"mifare-pos"`
+}
+
+// TrailerLength returns the length of trailers (cars that have LargeCurrent = false) in µm.
+func (f Form) TrailerLength() (sideA, sideB int64) {
+	for _, c := range f.Cars {
+		if c.LargeCurrent {
+			break
+		}
+		sideA += int64(c.Length)
+	}
+	for i := len(f.Cars) - 1; i >= 0; i-- {
+		c := f.Cars[i]
+		if c.LargeCurrent {
+			break
+		}
+		sideB += int64(c.Length)
+	}
+	return
 }
 
 // MifareID represents a 7-byte UID for a Mifare card/tag.

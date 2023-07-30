@@ -13,6 +13,7 @@
         {
           "comment": "モハ E233-3616 (13)",
           "length": 131000,
+          "large-current": true,
           "mifare-id": "002d7912000003",
           "mifare-position": 59000
         },
