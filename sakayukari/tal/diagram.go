@@ -205,27 +205,25 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 			log.Printf("### ALREADY THERE")
 			return
 		}
-		var path layout.FullPath
 		if len(lpsBack.Follows) > len(lpsFront.Follows) {
-			path = lpsBack
+			nt.Path = &lpsBack
+			nt.CurrentBack = 0
+			nt.CurrentFront = len(lpsBack.Follows) - len(lpsFront.Follows)
 		} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
-			path = lpsFront
+			nt.Path = &lpsFront
+			nt.CurrentBack = 0
+			nt.CurrentFront = len(lpsFront.Follows) - len(lpsBack.Follows)
 		} else {
-			path = lpsFront // shouldn't matter
+			nt.Path = &lpsFront // shouldn't matter
+			nt.CurrentBack = 0
+			nt.CurrentFront = 0
 			if t.CurrentBack != t.CurrentFront {
 				panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.CurrentBack, t.CurrentFront))
 			}
+			if nt.CurrentBack < 0 || nt.CurrentFront < 0 || len(nt.Path.Follows) == 0 {
+				panic("assert failed")
+			}
 		}
-		newCurrentBack := slices.IndexFunc(path.Follows, func(lp LinePort) bool { return lp.LineI == t.Path.Follows[t.CurrentBack].LineI })
-		if newCurrentBack == -1 {
-			panic("cannot find CurrentBack equivalent in new path")
-		}
-		if t.CurrentBack == newCurrentBack {
-			nt.Orient = t.Orient
-		} else {
-			nt.Orient = t.Orient.Flip()
-		}
-		nt.Path = &path
 	}
 	gtu := GuideTrainUpdate{
 		TrainI: d.conf.Schedule.TSs[tsi].TrainI,

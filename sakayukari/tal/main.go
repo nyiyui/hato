@@ -199,16 +199,6 @@ func Guide(conf GuideConf) Actor {
 
 func (g *guide) updateCurrent() {
 	for ti, t := range g.trains {
-		t.CurrentBack = t.MotorBack - 1
-		if t.CurrentBack < 0 {
-			t.CurrentBack = 0
-		}
-		t.CurrentFront = t.MotorFront + 1
-		if t.MotorFront >= len(t.Path.Follows) {
-			t.MotorFront = len(t.Path.Follows) - 1
-		}
-		continue
-		// TODO: fix
 		// back is the length from port A of MotorBack to the backside of the trailers.
 		var back int64
 		// front is the length from port A of MotorFront to the frontside of the trailers.
@@ -240,7 +230,7 @@ func (g *guide) updateCurrent() {
 		{
 			r := g.y.ReverseFullPath(*t.Path)
 			path := r.Follows
-			path = path[slices.IndexFunc(path, func(lp LinePort) bool { return lp.LineI == t.Path.Follows[t.MotorBack].LineI }):]
+			path = path[slices.Index(path, t.Path.Follows[t.MotorBack]):]
 			trailer, ok := g.y.Traverse(path, back)
 			if !ok {
 				// It seems that the trailers overran...but we don't care! :D
@@ -454,7 +444,6 @@ func (g *guide) loop() {
 			log.Printf("GuideTrainUpdate %#v", val.Train)
 			log.Printf("GuideTrainUpdate.Path %#v", val.Train.Path)
 			g.trains[val.TrainI] = val.Train
-			g.updateCurrent()
 			g.wakeup(val.TrainI)
 		case conn.ValCurrent:
 			g.handleValCurrent(diffuse, val)
