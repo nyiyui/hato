@@ -188,6 +188,7 @@ func Guide(conf GuideConf) Actor {
 	}
 	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("W"), layout.PortB}, LinePort{g.y.MustLookupIndex("Z"), layout.PortA})
 	t1.Path = &path
+	log.Printf("t1.Path %#v", path)
 	g.trains = append(g.trains, t1)
 
 	go g.loop()
