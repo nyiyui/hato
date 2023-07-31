@@ -186,14 +186,16 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	y := prevGS.Layout
 	t := prevGS.Trains[ts.TrainI]
 	nt := Train{
-		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
-		State: 0, // automatically copied from original by guide
+		Power:             d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
+		State:             0, // automatically copied from original by guide
+		DisableStopOnLock: true,
 	}
 	{
 		target := s.Target
 		if target.Precise == 0 {
 			target.Port = layout.PortA
 		}
+		log.Printf("### t %#v", t)
 		log.Printf("### apply tsi %d target %#v (%#v)", tsi, s.Target, target)
 		lpsBack := y.MustFullPathTo(t.Path.Follows[t.TrailerBack], LinePort{target.LineI, target.Port})
 		lpsFront := y.MustFullPathTo(t.Path.Follows[t.TrailerFront], LinePort{target.LineI, target.Port})

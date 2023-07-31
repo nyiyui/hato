@@ -80,6 +80,11 @@ type Train struct {
 	Power           int
 	noPowerSupplied bool
 
+	// DisableStopOnLock disables stopping the train (when the next line is locked).
+	// When stop-on-lock is disabled, some actor must use GuideSnapshots and appropriately control this Train to not overrun into any locked lines, as that would not be preventable.
+	// Note that this does not change stopping behaviour while waiting for changing (i.e. unsafe) switches.
+	DisableStopOnLock bool
+
 	// dynamic fields
 
 	TrailerBack  int
@@ -182,10 +187,11 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        60,
-		CurrentBack:  0,
-		CurrentFront: 0,
-		State:        TrainStateNextAvail,
+		Power:             60,
+		CurrentBack:       0,
+		CurrentFront:      0,
+		State:             TrainStateNextAvail,
+		DisableStopOnLock: true,
 		//FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
 		FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
 		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
@@ -482,9 +488,16 @@ func (g *guide) reify(ti int, t *Train) {
 			break
 		}
 	}
-	stop = stop || (t.State == TrainStateNextLocked)
+	if !t.DisableStopOnLock {
+		if t.State == TrainStateNextLocked {
+			log.Printf("=== TrainStateNextLocked")
+			log.Printf("t %#v", t)
+			stop = true
+		}
+	} else {
+		log.Printf("=== ignore TrainStateNextLocked (DisableStopOnLock)")
+	}
 	if stop {
-		log.Printf("=== TrainStateNextLocked")
 		power = g.idlePower(ti)
 	}
 	t.noPowerSupplied = power < 15

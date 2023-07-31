@@ -2,11 +2,11 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
-//#define ENABLE_NEOPIXEL
-#define ENABLE_BUILTIN_LED
-//#define ENABLE_SPI
-//#define HARDWARE_SPI
-#define ENABLE_I2C
+#define ENABLE_NEOPIXEL
+//#define ENABLE_BUILTIN_LED
+#define ENABLE_SPI
+#define HARDWARE_SPI
+//#define ENABLE_I2C
 #define VARIANT "leonardo-shield/0"
 
 #if defined(ENABLE_SPI) && defined(ENABLE_I2C)
@@ -64,10 +64,10 @@ Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
 
 #ifdef ENABLE_SPI
 // If using the breakout with SPI, define the pins for SPI communication.
-#define PN532_SCK  (4)
-#define PN532_MOSI (7)
-#define PN532_SS   (6)
-#define PN532_MISO (5)
+#define PN532_SCK  (25)
+#define PN532_MOSI (24)
+#define PN532_SS   (13)
+#define PN532_MISO (23)
 
 #ifdef HARDWARE_SPI
 // Use this line for a breakout with a hardware SPI connection.  Note that
