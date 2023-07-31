@@ -3,7 +3,15 @@
 #include <Adafruit_PN532.h>
 
 //#define ENABLE_NEOPIXEL
+#define ENABLE_BUILTIN_LED
+//#define ENABLE_SPI
+//#define HARDWARE_SPI
+#define ENABLE_I2C
 #define VARIANT "leonardo-shield/0"
+
+#if defined(ENABLE_SPI) && defined(ENABLE_I2C)
+#error "can only enable one of ENABLE_SPI and ENABLE_I2C"
+#endif
 
 #ifdef ENABLE_NEOPIXEL
 #include <Adafruit_NeoPixel.h>
@@ -51,31 +59,37 @@ Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Uncomment just _one_ line below depending on how your breakout or shield
+// is connected to the Arduino:
+
+#ifdef ENABLE_SPI
 // If using the breakout with SPI, define the pins for SPI communication.
 #define PN532_SCK  (4)
 #define PN532_MOSI (7)
 #define PN532_SS   (6)
 #define PN532_MISO (5)
 
-// If using the breakout or shield with I2C, define just the pins connected
-// to the IRQ and reset lines.  Use the values below (2, 3) for the shield!
-//#define PN532_IRQ   (2)
-//#define PN532_RESET (3)  // Not connected by default on the NFC Shield
-
-// Uncomment just _one_ line below depending on how your breakout or shield
-// is connected to the Arduino:
-
-// Use this line for a breakout with a software SPI connection (recommended):
-//Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-
+#ifdef HARDWARE_SPI
 // Use this line for a breakout with a hardware SPI connection.  Note that
 // the PN532 SCK, MOSI, and MISO pins need to be connected to the Arduino's
 // hardware SPI SCK, MOSI, and MISO pins.  On an Arduino Uno these are
 // SCK = 13, MOSI = 11, MISO = 12.  The SS line can be any digital IO pin.
 Adafruit_PN532 nfc(PN532_SS);
+#else
+// Use this line for a breakout with a software SPI connection (recommended):
+Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
+#endif
+#endif
+
+#ifdef ENABLE_I2C
+// If using the breakout or shield with I2C, define just the pins connected
+// to the IRQ and reset lines.  Use the values below (2, 3) for the shield!
+#define PN532_IRQ   (6)
+#define PN532_RESET (3)  // Not connected by default on the NFC Shield
 
 // Or use this line for a breakout or shield with an I2C connection:
-//Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+#endif
 
 // Or use hardware Serial:
 //Adafruit_PN532 nfc(PN532_RESET, &Serial1);
@@ -87,10 +101,28 @@ void setup() {
   strip.setPixelColor(0, 32, 32, 0);
   strip.show();
 #endif
+#ifdef ENABLE_BUILTIN_LED
+  pinMode(13, OUTPUT);
+#endif
   Serial.begin(115200);
   while (!Serial) delay(10); // the whole point of this board is to transmit RFID data using serial...
 
-  Serial.println("init: PN53x");
+  Serial.print("Options: ");
+  #ifdef ENABLE_NEOPIXEL
+  Serial.print("ENABLE_NEOPIXEL ");
+  #endif
+  #ifdef ENABLE_SPI
+  Serial.print("ENABLE_SPI ");
+  #endif
+  #ifdef ENABLE_I2C
+  Serial.print("ENABLE_I2C ");
+  #endif
+  #ifdef HARDWARE_SPI
+  Serial.print("HARDWARE_SPI ");
+  #endif
+  Serial.println(";");
+
+  Serial.println("init: PN53x...");
   nfc.begin();
 
   uint32_t versiondata = nfc.getFirmwareVersion();
@@ -154,6 +186,9 @@ void readRFID() {
 #ifdef ENABLE_NEOPIXEL
   static boolean led_type = false;
 #endif
+#ifdef ENABLE_BUILTIN_LED
+  static boolean led_type = false;
+#endif
   uint8_t success;
   uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -170,6 +205,10 @@ void readRFID() {
     else
       strip.setPixelColor(0, 8, 8, 16);
     strip.show();
+    led_type = !led_type;
+#endif
+#ifdef ENABLE_BUILTIN_LED
+    digitalWrite(13, led_type ? HIGH : LOW);
     led_type = !led_type;
 #endif
     Serial.print(" DNcard1 L");
