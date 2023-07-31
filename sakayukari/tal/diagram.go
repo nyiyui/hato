@@ -37,7 +37,7 @@ type TrainSchedule struct {
 }
 
 type trainScheduleState struct {
-	NextSegmentI int
+	CurrentSegmentI int
 	// minGeneration is the minimum acceptable Train.Generation. This is used to prevent working on outdated Train objects.
 	minGeneration int
 }
@@ -118,13 +118,13 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	}
 	ts := d.conf.Schedule.TSs[tsi]
 	tss := &d.state.TSs[tsi]
-	if tss.NextSegmentI == len(ts.Segments)-1 {
+	if tss.CurrentSegmentI == len(ts.Segments)-1 {
 		return
 	}
-	if tss.NextSegmentI > len(ts.Segments)-1 {
+	if tss.CurrentSegmentI > len(ts.Segments)-1 {
 		panic("tss.CurrentSegmentI overflow")
 	}
-	s := ts.Segments[tss.NextSegmentI]
+	s := ts.Segments[tss.CurrentSegmentI]
 	y := d.latestGS.Layout
 	t := d.latestGS.Trains[ts.TrainI]
 	if t.Generation < tss.minGeneration {
@@ -158,10 +158,10 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	log.Printf("s.Target %#v", s.Target)
 	log.Printf("now.Position %#v", now.Position)
 	log.Printf("dist %d", dist)
-	log.Printf("=== REACHED CurrentSegmentI %d", tss.NextSegmentI)
-	current := ts.Segments[tss.NextSegmentI]
+	log.Printf("=== REACHED CurrentSegmentI %d", tss.CurrentSegmentI)
+	current := ts.Segments[tss.CurrentSegmentI]
 	if current.After != nil {
-		if d.state.TSs[current.After.TS].NextSegmentI < current.After.S {
+		if d.state.TSs[current.After.TS].CurrentSegmentI < current.After.S {
 			log.Printf("waiting on after")
 			return
 		}
@@ -172,21 +172,21 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 func (d *diagram) nextSegment(tsi int) {
 	ts := d.conf.Schedule.TSs[tsi]
 	tss := &d.state.TSs[tsi]
-	if tss.NextSegmentI == len(ts.Segments)-1 {
+	if tss.CurrentSegmentI == len(ts.Segments)-1 {
 		log.Printf("*** DONE")
 		return
 	}
-	tss.NextSegmentI++
+	tss.CurrentSegmentI++
 	d.apply(d.latestGS, tsi)
 }
 
 func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	ts := d.conf.Schedule.TSs[tsi]
-	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].NextSegmentI]
+	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI]
 	y := prevGS.Layout
 	t := prevGS.Trains[ts.TrainI]
 	nt := Train{
-		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].NextSegmentI].Power,
+		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
 		State: 0, // automatically copied from original by guide
 	}
 	{
@@ -195,35 +195,34 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 			target.Port = layout.PortA
 		}
 		log.Printf("### apply tsi %d target %#v (%#v)", tsi, s.Target, target)
-		// TODO: Only accounting for CurrentBack→CurrentFront might miss trailers that e.g. RFID uses. Maybe somwhow include trailers in guide's info?
-		lpsBack := y.MustFullPathTo(t.Path.Follows[t.CurrentBack], LinePort{target.LineI, target.Port})
-		lpsFront := y.MustFullPathTo(t.Path.Follows[t.CurrentFront], LinePort{target.LineI, target.Port})
-		//lpsBack := y.PathToInclusive(t.Path[t.CurrentBack].LineI, s.Target.LineI)
-		//lpsFront := y.PathToInclusive(t.Path[t.CurrentFront].LineI, s.Target.LineI)
-		log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.CurrentBack].LineI, lpsBack)
-		log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.CurrentFront].LineI, lpsFront)
+		lpsBack := y.MustFullPathTo(t.Path.Follows[t.TrailerBack], LinePort{target.LineI, target.Port})
+		lpsFront := y.MustFullPathTo(t.Path.Follows[t.TrailerFront], LinePort{target.LineI, target.Port})
+		//lpsBack := y.PathToInclusive(t.Path[t.TrailerBack].LineI, s.Target.LineI)
+		//lpsFront := y.PathToInclusive(t.Path[t.TrailerFront].LineI, s.Target.LineI)
+		log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
+		log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
 		// We have to include all currents in the new path.
-		// The longer one will include both CurrentBack and CurrentFront regardless of direction.
+		// The longer one will include both TrailerBack and TrailerFront regardless of direction.
 		if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
 			log.Printf("### ALREADY THERE")
 			return
 		}
 		if len(lpsBack.Follows) > len(lpsFront.Follows) {
 			nt.Path = &lpsBack
-			nt.CurrentBack = 0
-			nt.CurrentFront = len(lpsBack.Follows) - len(lpsFront.Follows)
+			nt.TrailerBack = 0
+			nt.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
 		} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
 			nt.Path = &lpsFront
-			nt.CurrentBack = 0
-			nt.CurrentFront = len(lpsFront.Follows) - len(lpsBack.Follows)
+			nt.TrailerBack = 0
+			nt.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
 		} else {
 			nt.Path = &lpsFront // shouldn't matter
-			nt.CurrentBack = 0
-			nt.CurrentFront = 0
-			if t.CurrentBack != t.CurrentFront {
-				panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.CurrentBack, t.CurrentFront))
+			nt.TrailerBack = 0
+			nt.TrailerFront = 0
+			if t.TrailerBack != t.TrailerFront {
+				panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
 			}
-			if nt.CurrentBack < 0 || nt.CurrentFront < 0 || len(nt.Path.Follows) == 0 {
+			if nt.TrailerBack < 0 || nt.TrailerFront < 0 || len(nt.Path.Follows) == 0 {
 				panic("assert failed")
 			}
 		}
