@@ -58,6 +58,17 @@ func Main() error {
 	if err != nil {
 		panic(err)
 	}
+	var carsData cars.Data
+	{
+		data, err := os.ReadFile("cars.json")
+		if err != nil {
+			return fmt.Errorf("read cars.json: %w", err)
+		}
+		err = json.Unmarshal(data, &carsData)
+		if err != nil {
+			return fmt.Errorf("parse cars.json: %w", err)
+		}
+	}
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
@@ -72,18 +83,10 @@ func Main() error {
 			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "C"}:  ActorRef{Index: 3},
 			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "D"}:  ActorRef{Index: 3},
 		},
+		Cars: carsData,
 	}))
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, tal.GuideRender(guide))
-	data, err = os.ReadFile("cars.json")
-	if err != nil {
-		return fmt.Errorf("read cars.json: %w", err)
-	}
-	var carsData cars.Data
-	err = json.Unmarshal(data, &carsData)
-	if err != nil {
-		return fmt.Errorf("parse cars.json: %w", err)
-	}
 	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
 		Guide: guide,
 		Cars:  carsData,
@@ -100,34 +103,34 @@ func Main() error {
 		Guide: guide,
 		Model: model,
 	}))
-	g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
-		Guide: guide,
-		Model: model,
-		Schedule: tal.Schedule{
-			TSs: []tal.TrainSchedule{
-				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
-					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
-					//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
-				}},
-				//{TrainI: 1, Segments: []tal.Segment{
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
-				//}},
-			},
-		},
-	}))
+	//g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
+	//	Guide: guide,
+	//	Model: model,
+	//	Schedule: tal.Schedule{
+	//		TSs: []tal.TrainSchedule{
+	//			{TrainI: 0, Segments: []tal.Segment{
+	//				{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
+	//				//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
+	//			}},
+	//			//{TrainI: 1, Segments: []tal.Segment{
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
+	//			//}},
+	//		},
+	//	},
+	//}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

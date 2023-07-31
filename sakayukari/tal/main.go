@@ -19,7 +19,7 @@ import (
 type LineID = layout.LineID
 type LinePort = layout.LinePort
 
-const idlePower = 20
+const idlePower = 15
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -82,6 +82,8 @@ type Train struct {
 
 	// dynamic fields
 
+	motorBack  int
+	motorFront int
 	// CurrentBack is the path index of the last car's occupying line.
 	// Must always be larger than 0.
 	CurrentBack int
@@ -148,6 +150,9 @@ type LineStates struct {
 }
 
 func Guide(conf GuideConf) Actor {
+	if conf.Cars.Forms == nil {
+		panic("conf.Cars required")
+	}
 	a := Actor{
 		Comment:  "tal-guide",
 		InputCh:  make(chan Diffuse1),
@@ -195,8 +200,9 @@ func Guide(conf GuideConf) Actor {
 	return a
 }
 
-func (g *guide) updateCurrentTrailers(ti int) {
+func (g *guide) calculateTrailers(ti int) (trailerBack, trailerFront int) {
 	t := g.trains[ti]
+	trailerBack, trailerFront = t.CurrentBack, t.CurrentFront
 	backPossible := true
 	// back is the length from port A of CurrentBack to the backside of the trailers.
 	var back int64
@@ -204,6 +210,8 @@ func (g *guide) updateCurrentTrailers(ti int) {
 	// front is the length from port A of CurrentFront to the frontside of the trailers.
 	var front int64
 	{
+		log.Printf("form %#v", g.conf.Cars.Forms[t.FormI])
+		log.Printf("formI %#v", t.FormI)
 		sideA, sideB := g.conf.Cars.Forms[t.FormI].TrailerLength()
 		log.Printf("sideA %d", sideA)
 		log.Printf("sideB %d", sideB)
@@ -241,8 +249,8 @@ func (g *guide) updateCurrentTrailers(ti int) {
 		if !ok {
 			log.Printf("train %d: trailer overrun (front)", ti)
 		} else {
-			newCurrentFront := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
-			log.Printf("new CurrentFront = %d %#v", newCurrentFront, t.Path.Follows[newCurrentFront])
+			trailerFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
+			log.Printf("new CurrentFront = %d %#v", trailerFront, t.Path.Follows[trailerFront])
 		}
 	}
 	if backPossible {
@@ -255,10 +263,11 @@ func (g *guide) updateCurrentTrailers(ti int) {
 		if !ok {
 			log.Printf("train %d: trailer overrun (back)", ti)
 		} else {
-			newCurrentBack := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
-			log.Printf("new CurrentBack = %d %#v", newCurrentBack, t.Path.Follows[newCurrentBack])
+			trailerBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI })
+			log.Printf("new CurrentBack = %d %#v", trailerBack, t.Path.Follows[trailerBack])
 		}
 	}
+	return
 }
 
 func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
@@ -289,7 +298,6 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.apply(&t, t.CurrentBack, 0)
 				t.CurrentBack++
 				//log.Printf("=== currentBack succession: %d", t.CurrentBack)
-				g.updateCurrentTrailers(ti)
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
@@ -308,7 +316,6 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.unlock(nextI)
 				g.apply(&t, t.CurrentFront, 0)
 				t.CurrentFront--
-				g.updateCurrentTrailers(ti)
 				g.publishChange(ti, ChangeTypeCurrentFront)
 				//log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
@@ -318,7 +325,6 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				cf := g.y.Lines[t.Path.Follows[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
-					g.updateCurrentTrailers(ti)
 					g.publishChange(ti, ChangeTypeCurrentFront)
 					//log.Printf("=== next succession: %d", t.CurrentFront)
 				}
@@ -440,28 +446,43 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
+func (g *guide) idlePower(ti int) int {
+	t := g.trains[ti]
+	f, ok := g.conf.Cars.Forms[t.FormI]
+	if !ok {
+		return idlePower
+	}
+	if f.BaseVelocity == nil {
+		return idlePower
+	}
+	m := f.BaseVelocity.M
+	b := f.BaseVelocity.B
+	return int(conn.AbsClampPower(int(-b / m)))
+}
+
 func (g *guide) reify(ti int, t *Train) {
 	log.Printf("REIFY: %s", t)
 	power := t.Power
 	stop := false
-	max := t.CurrentFront
+	trailerBack, trailerFront := g.calculateTrailers(ti)
+	max := trailerFront
 	if t.State == TrainStateNextAvail {
 		max += 1
 	}
-	for i := t.CurrentBack; i <= max; i++ {
+	for i := trailerBack; i <= max; i++ {
 		if g.lineStates[t.Path.Follows[i].LineI].SwitchState == SwitchStateUnsafe {
 			log.Printf("=== STOP UNSAFE")
 			stop = true
-			power = idlePower
+			power = g.idlePower(ti)
 			break
 		}
 	}
 	stop = stop || (t.State == TrainStateNextLocked)
 	if stop {
-		power = idlePower
+		power = g.idlePower(ti)
 	}
 	t.noPowerSupplied = power == 0
-	for i := t.CurrentBack; i <= t.CurrentFront; i++ {
+	for i := trailerBack; i <= trailerFront; i++ {
 		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
 	}
@@ -566,14 +587,15 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 // syncLocks verifies locking of all currents and next (if next is available) of a train.
 func (g *guide) syncLocks(ti int) {
 	t := g.trains[ti]
+	trailerBack, trailerFront := g.calculateTrailers(ti)
 	defer func() { g.trains[ti] = t }()
-	for i := t.CurrentBack; i <= t.CurrentFront; i++ {
+	for i := trailerBack; i <= trailerFront; i++ {
 		ok := g.lock(t.Path.Follows[i].LineI, ti)
 		if !ok {
 			panic(fmt.Sprintf("train %s currents %d: locking failed", &t, i))
 		}
 	}
-	if t.CurrentFront == len(t.Path.Follows)-1 {
+	if trailerFront == len(t.Path.Follows)-1 {
 		// end of path
 		t.State = TrainStateNextLocked
 	} else {

@@ -30,7 +30,7 @@ length = 120000
 comment = "E233-double"
 length = 450000
 [sets.2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91.base-velocity]
-m = 6180
+m = 2424
 b = -34571
 [[sets.2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91.cars]]
 comment = "クハ E233-3516 (15)"
