@@ -103,34 +103,34 @@ func Main() error {
 		Guide: guide,
 		Model: model,
 	}))
-	g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
-		Guide: guide,
-		Model: model,
-		Schedule: tal.Schedule{
-			TSs: []tal.TrainSchedule{
-				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 70, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
-					//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
-				}},
-				//{TrainI: 1, Segments: []tal.Segment{
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
-				//}},
-			},
-		},
-	}))
+	//g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
+	//	Guide: guide,
+	//	Model: model,
+	//	Schedule: tal.Schedule{
+	//		TSs: []tal.TrainSchedule{
+	//			{TrainI: 0, Segments: []tal.Segment{
+	//				{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 70, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				//{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
+	//				//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
+	//				//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
+	//				//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
+	//			}},
+	//			//{TrainI: 1, Segments: []tal.Segment{
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
+	//			//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
+	//			//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
+	//			//}},
+	//		},
+	//	},
+	//}))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

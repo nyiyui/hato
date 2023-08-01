@@ -7,10 +7,14 @@
 #define ENABLE_SPI
 #define HARDWARE_SPI
 //#define ENABLE_I2C
-#define VARIANT "leonardo-shield/0"
+#define VARIANT "v2/1"
 
 #if defined(ENABLE_SPI) && defined(ENABLE_I2C)
 #error "can only enable one of ENABLE_SPI and ENABLE_I2C"
+#endif
+
+#if defined(HARDWARE_SPI) && defined(ENABLE_I2C)
+#error "HARDWARE_SPI required ENABLE_SPI"
 #endif
 
 #ifdef ENABLE_NEOPIXEL
@@ -75,7 +79,8 @@ Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
 // hardware SPI SCK, MOSI, and MISO pins.  On an Arduino Uno these are
 // SCK = 13, MOSI = 11, MISO = 12.  The SS line can be any digital IO pin.
 Adafruit_PN532 nfc(PN532_SS);
-#else
+#endif
+#ifndef HARDWARE_SPI
 // Use this line for a breakout with a software SPI connection (recommended):
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 #endif
