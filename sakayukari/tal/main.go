@@ -20,6 +20,7 @@ type LineID = layout.LineID
 type LinePort = layout.LinePort
 
 const idlePower = 15
+const switchPower = 192
 
 // guide - uses line to move trains
 // adjuster - adjusts power level etc
@@ -574,7 +575,7 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 			Direction: targetState == SwitchStateB,
 			// true  when targetState is B
 			// false when targetState is C
-			Power:    80,
+			Power:    switchPower,
 			Duration: 1000,
 		},
 	}
