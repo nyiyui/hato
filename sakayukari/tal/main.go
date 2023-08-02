@@ -22,9 +22,6 @@ type LinePort = layout.LinePort
 const idlePower = 15
 const switchPower = 192
 
-// guide - uses line to move trains
-// adjuster - adjusts power level etc
-
 type GuideConf struct {
 	Layout        *layout.Layout
 	Actors        map[LineID]ActorRef
