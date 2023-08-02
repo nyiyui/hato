@@ -186,9 +186,8 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	y := prevGS.Layout
 	t := prevGS.Trains[ts.TrainI]
 	nt := Train{
-		Power:             d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
-		State:             0, // automatically copied from original by guide
-		DisableStopOnLock: true,
+		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
+		State: 0, // automatically copied from original by guide
 	}
 	{
 		target := s.Target
