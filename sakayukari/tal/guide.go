@@ -43,7 +43,7 @@ const (
 type TrainMode int
 
 const (
-	TrainModeLine TrainMode = iota + 1
+	TrainModeLine TrainMode = iota
 	TrainModePrecise
 )
 

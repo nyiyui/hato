@@ -33,6 +33,7 @@ func Main() error {
 		conn.Id{"soyuu-line", "v2", "yellow"},
 		conn.Id{"soyuu-line", "v2", "white"},
 		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
+		conn.Id{"soyuu-rfid", "v2", "1"},
 		//conn.Id{"soyuu-line", "v2", "1"},
 		//conn.Id{"soyuu-breakbeam", "itsybitsy0", "0"},
 	})
@@ -41,6 +42,7 @@ func Main() error {
 		return fmt.Errorf("conn find: %w", err)
 	}
 	rfid0 := ActorRef{Index: len(g.Actors) + 2}
+	rfid1 := ActorRef{Index: len(g.Actors) + 3}
 	g.Actors = append(g.Actors, connActors...)
 	//g.Actors = append(g.Actors, conn.Velocity2(
 	//	ActorRef{Index: 3},
@@ -94,6 +96,11 @@ func Main() error {
 			{rfid0, layout.Position{
 				LineI:   y.MustLookupIndex("Y"),
 				Precise: 252000,
+				Port:    layout.PortB,
+			}},
+			{rfid1, layout.Position{
+				LineI:   y.MustLookupIndex("X"),
+				Precise: 50000,
 				Port:    layout.PortB,
 			}},
 		},
