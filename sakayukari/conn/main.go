@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -145,6 +146,20 @@ type Id struct {
 	Type     string
 	Variant  string
 	Instance string
+}
+
+func (i *Id) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		return err
+	}
+	*i = ParseId(s)
+	return nil
+}
+
+func (i Id) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.String())
 }
 
 func (i Id) String() string {
