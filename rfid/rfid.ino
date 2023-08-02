@@ -7,7 +7,7 @@
 #define ENABLE_SPI
 #define HARDWARE_SPI
 //#define ENABLE_I2C
-#define VARIANT "v2/1"
+#define VARIANT "v2/2"
 
 #if defined(ENABLE_SPI) && defined(ENABLE_I2C)
 #error "can only enable one of ENABLE_SPI and ENABLE_I2C"
