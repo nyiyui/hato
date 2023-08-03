@@ -141,7 +141,7 @@ func (t *Train) next() int {
 // nextUnsafe returns the path index of the next LinePort.
 // Note: this does not check if this train has a next available.
 func (t *Train) nextUnsafe() int {
-	return t.CurrentFront + 1
+	return t.TrailerFront + 1
 }
 
 func (t *Train) String() string {
@@ -285,6 +285,8 @@ func (g *guide) calculateTrailers(t *Train) {
 				trailerBack = t.CurrentBack
 			}
 		}
+		log.Printf("TrainModePrecise trailer %d-%d", trailerBack, trailerFront)
+		log.Printf("TrainModePrecise current %d-%d", t.CurrentBack, t.CurrentFront)
 	case TrainModeLine:
 		log.Printf("form %#v", g.conf.Cars.Forms[t.FormI])
 		log.Printf("formI %#v", t.FormI)
@@ -572,7 +574,6 @@ func (g *guide) idlePower(ti int) int {
 }
 
 func (g *guide) reify(ti int, t *Train) {
-	log.Printf("REIFY: %s", t)
 	power := t.Power
 	stop := false
 	max := t.TrailerFront
@@ -595,6 +596,7 @@ func (g *guide) reify(ti int, t *Train) {
 	if stop {
 		power = g.idlePower(ti)
 	}
+	log.Printf("REIFY: %d %s", power, t)
 	t.noPowerSupplied = power < 15
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
 		g.applySwitch(ti, t, i)
@@ -701,30 +703,24 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 // syncLocks verifies locking of all currents and next (if next is available) of a train.
 func (g *guide) syncLocks(ti int) {
 	t := g.trains[ti]
-	if t.Mode == TrainModeLine || (t.Mode == TrainModePrecise && t.PreciseAttitudeOnly) {
-		defer func() { g.trains[ti] = t }()
-		for i := t.TrailerBack; i <= t.TrailerFront; i++ {
-			ok := g.lock(t.Path.Follows[i].LineI, ti)
-			if !ok {
-				panic(fmt.Sprintf("train %s currents %d: locking failed", &t, i))
-			}
+	defer func() { g.trains[ti] = t }()
+	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
+		ok := g.lock(t.Path.Follows[i].LineI, ti)
+		if !ok {
+			panic(fmt.Sprintf("train %s currents %d: locking failed", &t, i))
 		}
-		if t.TrailerFront == len(t.Path.Follows)-1 {
-			// end of path
-			t.State = TrainStateNextLocked
-		} else {
-			ok := g.lock(t.Path.Follows[t.nextUnsafe()].LineI, ti)
-			if ok {
-				t.State = TrainStateNextAvail
-			} else {
-				t.State = TrainStateNextLocked
-				log.Printf("train %d: failed to lock %d", ti, t.nextUnsafe())
-			}
-		}
-	} else if t.Mode == TrainModePrecise && !t.PreciseAttitudeOnly {
-		panic("not implemented yet")
+	}
+	if t.TrailerFront == len(t.Path.Follows)-1 {
+		// end of path
+		t.State = TrainStateNextLocked
 	} else {
-		panic("unreacheable")
+		ok := g.lock(t.Path.Follows[t.nextUnsafe()].LineI, ti)
+		if ok {
+			t.State = TrainStateNextAvail
+		} else {
+			t.State = TrainStateNextLocked
+			log.Printf("train %d: failed to lock %d", ti, t.nextUnsafe())
+		}
 	}
 }
 

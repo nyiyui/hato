@@ -527,10 +527,16 @@ func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {
 	return fp
 }
 
+type PathToSelfError struct{}
+
+func (p PathToSelfError) Error() string {
+	return "path to self (from == goal)"
+}
+
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	if from.LineI == goal.LineI {
 		if from.PortI == goal.PortI {
-			return FullPath{}, errors.New("from == goal")
+			return FullPath{}, PathToSelfError{}
 		}
 		return FullPath{
 			Start:   from,

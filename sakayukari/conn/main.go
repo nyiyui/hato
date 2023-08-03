@@ -163,7 +163,7 @@ func (i Id) MarshalJSON() ([]byte, error) {
 }
 
 func (i Id) String() string {
-	return fmt.Sprintf("%s/%s-%s", i.Type, i.Variant, i.Instance)
+	return fmt.Sprintf("%s/%s/%s", i.Type, i.Variant, i.Instance)
 }
 
 func ParseId(id string) Id {

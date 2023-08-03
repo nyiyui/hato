@@ -204,6 +204,7 @@ func (m *model) handleAttitude(diffuse Diffuse1) {
 		if !att.VelocityKnown && att.PositionKnown && prevAtt.PositionKnown {
 			dt := att.Time.Sub(prevAtt.Time)
 			// TODO: handle path being reset by Diagram
+			// TODO: make sure Position never exceeds TrailerBack and TrailerFront (these also may depend on the model itself due to TrainModePrecise...)
 			path := m.latestGS.Trains[att.TrainI].Path.Follows
 			startI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == prevAtt.Position.LineI })
 			endI := slices.IndexFunc(path, func(e LinePort) bool { return e.LineI == att.Position.LineI })
@@ -232,23 +233,22 @@ func (m *model) handleAttitude(diffuse Diffuse1) {
 			r.Mul(r, big.NewRat(1e9, 1))
 			x.SetRat(r)
 			vel, _ := x.Int64()
-			t := m.latestGS.Trains[att.TrainI]
-			f, ok := m.conf.Cars.Forms[t.FormI]
-			if !ok {
-				panic(fmt.Sprintf("train %d %#v has unknown formation", att.TrainI, t))
+			att.Velocity = coeff * vel
+			att.VelocityKnown = true
+		}
+		t := m.latestGS.Trains[att.TrainI]
+		f, ok := m.conf.Cars.Forms[t.FormI]
+		if !ok {
+			panic(fmt.Sprintf("train %d %#v has unknown formation", att.TrainI, t))
+		}
+		if !att.VelocityKnown && f.BaseVelocity != nil {
+			m := f.BaseVelocity.M
+			b := f.BaseVelocity.B
+			att.Velocity = (m*int64(t.Power) + b)
+			if att.Velocity < 0 {
+				att.Velocity = 0
 			}
-			if f.BaseVelocity != nil {
-				m := f.BaseVelocity.M
-				b := f.BaseVelocity.B
-				att.Velocity = coeff * (m*int64(t.Power) + b)
-				if att.Velocity < 0 {
-					att.Velocity = 0
-				}
-				att.VelocityKnown = true
-			} else {
-				att.Velocity = coeff * vel
-				att.VelocityKnown = true
-			}
+			att.VelocityKnown = true
 		}
 		log.Printf("latestAttitude %s", att)
 	}
