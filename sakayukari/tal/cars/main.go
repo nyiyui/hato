@@ -81,6 +81,17 @@ type Car struct {
 	MifarePosition uint32 `json:"mifare-pos"`
 }
 
+// TagOffset returns the distance from side A of the formation to the tag at car index ci.
+func (f Form) TagOffset(ci int) (tagOffset int64) {
+	targetCI := ci
+	for ci := 0; ci < targetCI; ci++ {
+		c := f.Cars[ci]
+		tagOffset += int64(c.Length)
+	}
+	tagOffset += int64(f.Cars[targetCI].MifarePosition)
+	return
+}
+
 // TrailerLength returns the length of trailers (cars that have LargeCurrent = false) in µm.
 func (f Form) TrailerLength() (sideA, sideB int64) {
 	for _, c := range f.Cars {

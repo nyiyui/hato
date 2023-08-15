@@ -98,7 +98,7 @@ func (m *model) loop() {
 			if diffuse.Origin == m.conf.Guide {
 				if gs, ok := diffuse.Value.(GuideSnapshot); ok {
 					m.latestGS = gs
-					m.updateEAPasses()
+					//m.updateEAPasses() // TODO: ExpectedAttitudes
 					// TODO: generate latestAttitudes
 					if m.latestAttitudes != nil && len(m.latestAttitudes) != len(gs.Trains) {
 						panic("adding/removing trains is not implemented yet")
@@ -150,6 +150,7 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 				if i == -1 {
 					log.Printf("la: %#v", la)
 					log.Printf("train: %#v", t)
+					log.Printf("train.Path: %#v", t.Path)
 					panic("la.Position.LineI nonexistent in Train.Path")
 				}
 				path = t.Path.Follows[i:]
@@ -178,7 +179,7 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 				//log.Printf("t %#v", t)
 				continue
 			}
-			pos = m.clampExpectedAttitudes(ti, pos)
+			//pos = m.clampExpectedAttitudes(ti, pos) // TODO: ExpectedAttitudes
 			ca := m.currentAttitudes[ti]
 			ca.TrainI = ti
 			ca.TrainGeneration = t.Generation
@@ -273,7 +274,6 @@ func (m *model) handleRFID(diffuse Diffuse1) {
 		panic(fmt.Sprintf("got non-7-length RFID: %#v", val.RFID))
 	}
 	var fci cars.FormCarI
-	var tagOffset uint32
 	filled := false
 OuterLoop:
 	for fi, f := range m.conf.Cars.Forms {
@@ -281,11 +281,6 @@ OuterLoop:
 			if c.MifareID == *(*[7]byte)(val.RFID) {
 				fci.Form = fi
 				fci.Index = ci
-				for ci2 := 0; ci2 < ci; ci2++ {
-					c := f.Cars[ci2]
-					tagOffset += c.Length
-				}
-				tagOffset += c.MifarePosition
 				filled = true
 				break OuterLoop
 			}
@@ -295,6 +290,7 @@ OuterLoop:
 		panic(fmt.Sprintf("tal-model: unknown form: %#v", val.RFID))
 	}
 	f := m.conf.Cars.Forms[fci.Form]
+	tagOffset := f.TagOffset(fci.Index)
 	_ = f
 	ti := slices.IndexFunc(m.latestGS.Trains, func(t Train) bool { return t.FormI == fci.Form })
 	if ti == -1 {

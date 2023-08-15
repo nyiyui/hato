@@ -2,7 +2,6 @@
 package tal
 
 import (
-	"fmt"
 	"log"
 
 	"golang.org/x/exp/slices"
@@ -183,54 +182,16 @@ func (d *diagram) nextSegment(tsi int) {
 func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 	ts := d.conf.Schedule.TSs[tsi]
 	s := d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI]
-	y := prevGS.Layout
 	t := prevGS.Trains[ts.TrainI]
-	nt := Train{
-		Power: d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
-		State: 0, // automatically copied from original by guide
-	}
-	{
-		target := s.Target
-		if target.Precise == 0 {
-			target.Port = layout.PortA
-		}
-		log.Printf("### t %#v", t)
-		log.Printf("### apply tsi %d target %#v (%#v)", tsi, s.Target, target)
-		lpsBack := y.MustFullPathTo(t.Path.Follows[t.TrailerBack], LinePort{target.LineI, target.Port})
-		lpsFront := y.MustFullPathTo(t.Path.Follows[t.TrailerFront], LinePort{target.LineI, target.Port})
-		//lpsBack := y.PathToInclusive(t.Path[t.TrailerBack].LineI, s.Target.LineI)
-		//lpsFront := y.PathToInclusive(t.Path[t.TrailerFront].LineI, s.Target.LineI)
-		log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
-		log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
-		// We have to include all currents in the new path.
-		// The longer one will include both TrailerBack and TrailerFront regardless of direction.
-		if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
-			log.Printf("### ALREADY THERE")
-			return
-		}
-		if len(lpsBack.Follows) > len(lpsFront.Follows) {
-			nt.Path = &lpsBack
-			nt.TrailerBack = 0
-			nt.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
-		} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
-			nt.Path = &lpsFront
-			nt.TrailerBack = 0
-			nt.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
-		} else {
-			nt.Path = &lpsFront // shouldn't matter
-			nt.TrailerBack = 0
-			nt.TrailerFront = 0
-			if t.TrailerBack != t.TrailerFront {
-				panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
-			}
-			if nt.TrailerBack < 0 || nt.TrailerFront < 0 || len(nt.Path.Follows) == 0 {
-				panic("assert failed")
-			}
-		}
+	target := s.Target
+	if target.Precise == 0 {
+		target.Port = layout.PortA
 	}
 	gtu := GuideTrainUpdate{
-		TrainI: d.conf.Schedule.TSs[tsi].TrainI,
-		Train:  nt,
+		TrainI:      d.conf.Schedule.TSs[tsi].TrainI,
+		Target:      &layout.LinePort{target.LineI, target.Port},
+		Power:       d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
+		PowerFilled: true,
 	}
 	tss := &d.state.TSs[tsi]
 	tss.minGeneration = t.Generation + 1
