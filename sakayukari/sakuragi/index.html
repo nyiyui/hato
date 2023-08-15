@@ -14,6 +14,7 @@
     {{ printf "%#v" .att }}
     {{ $t := index .gs.Trains 0 }}
     {{ printf "%#v" $t }}
+    {{ printf "%#v" $t.Path }}
     {{ $Z := index .gs.Layout.Lines 0 }}
     {{ $Zs := index .gs.LineStates 0 }}
     {{ $Y := index .gs.Layout.Lines 1 }}

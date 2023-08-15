@@ -667,3 +667,35 @@ func (y *Layout) ReverseFullPath(fp FullPath) FullPath {
 		Follows: append(res, fp.Start),
 	}
 }
+
+func SameDirection(a, b FullPath) (same, ok bool) {
+	// only consider Follows: Start is only useful with Follows[0]
+	for _, alp := range a.Follows {
+		for _, blp := range b.Follows {
+			if alp.LineI == blp.LineI {
+				if alp.PortI == PortA && blp.PortI != PortA {
+					return false, true
+				}
+				if alp.PortI != PortA && blp.PortI == PortA {
+					return false, true
+				}
+				if alp.PortI != PortA && blp.PortI != PortA {
+					if alp.PortI == blp.PortI {
+						return true, true
+					} else {
+						// two lines split here, but may converge again:
+						//      *---*
+						//     /     \
+						// ---*-------*---
+						// alp can take the top route, and blp can take the bottom route
+						continue
+					}
+				}
+				if alp.PortI == PortA && blp.PortI == PortA {
+					return true, true
+				}
+			}
+		}
+	}
+	return false, false
+}

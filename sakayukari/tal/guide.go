@@ -511,26 +511,17 @@ func (g *guide) loop() {
 			if val.Train.FormI == (uuid.UUID{}) {
 				val.Train.FormI = orig.FormI
 			}
-			backSame := val.Train.Path.Follows[val.Train.CurrentBack] == orig.Path.Follows[orig.CurrentBack]
-			frontSame := val.Train.Path.Follows[val.Train.CurrentFront] == orig.Path.Follows[orig.CurrentFront]
-			if backSame != frontSame {
-				backA := val.Train.Path.Follows[val.Train.CurrentBack]
-				backB := orig.Path.Follows[orig.CurrentBack]
-				frontA := val.Train.Path.Follows[val.Train.CurrentFront]
-				frontB := orig.Path.Follows[orig.CurrentFront]
-				log.Printf("backA %#v", backA)
-				log.Printf("backB %#v", backB)
-				log.Printf("frontA %#v", frontA)
-				log.Printf("frontB %#v", frontB)
-				panic("The two lines pointed to by CurrentFront and CurrentBack must be the same two, in any order (they can be swapped).")
+			// figure out if the path is flipped
+			sameDir, ok := layout.SameDirection(*val.Train.Path, *orig.Path)
+			if !ok {
+				panic("SameDirection failed (paths do not overlap")
 			}
+			// TODO: check if the current CurrentBack/Front is covered in the new CurrentBack/Front
 			if val.Train.Orient == 0 {
-				if backSame && frontSame {
+				if sameDir {
 					val.Train.Orient = orig.Orient
-				} else if !backSame && !frontSame {
-					val.Train.Orient = orig.Orient.Flip()
 				} else {
-					panic("unreachable")
+					val.Train.Orient = orig.Orient.Flip()
 				}
 			}
 			val.Train.Generation = orig.Generation + 1
