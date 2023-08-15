@@ -495,15 +495,19 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 		var port PortI
 		switch lp.PortI {
 		case PortA:
-			_, p := y.GetLinePort(path[len(path)-2])
-			prevConn := p.Conn()
-			switch prevConn.PortI {
-			case PortA:
-				// Assume the path "ends" here (as it points back to itself).
-				//return Position{}, false
-				panic("prevConn.PortI == cur.PortI")
-			case PortB, PortC:
-				port = prevConn.PortI
+			if len(path) != 1 {
+				_, p := y.GetLinePort(path[len(path)-2])
+				prevConn := p.Conn()
+				switch prevConn.PortI {
+				case PortA:
+					// Assume the path "ends" here (as it points back to itself).
+					//return Position{}, false
+					panic("prevConn.PortI == cur.PortI")
+				case PortB, PortC:
+					port = prevConn.PortI
+				}
+			} else {
+				// give up as we need FullPath for this
 			}
 		case PortB, PortC:
 			port = lp.PortI

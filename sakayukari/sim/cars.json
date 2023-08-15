@@ -31,9 +31,7 @@
         {
           "comment": "EF210-317",
           "large-current": true,
-          "length": 120000,
-          "mifare-id": "00525712000003",
-          "mifare-position": 128000
+          "length": 120000
         }
       ]
     },
@@ -41,7 +39,7 @@
       "comment": "E233-double",
       "length": 450000,
       "base-velocity": {
-        "m": 2424,
+        "m": 6180,
         "b": -34571
       },
       "cars": [

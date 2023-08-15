@@ -31,18 +31,18 @@ func Main() error {
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
 		conn.Id{"soyuu-line", "v2", "yellow"},
-		conn.Id{"soyuu-line", "v2", "white"},
+		//conn.Id{"soyuu-line", "v2", "white"},
 		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
-		conn.Id{"soyuu-rfid", "v2", "1"},
+		conn.Id{"soyuu-rfid", "v2", "2"},
 	})
 	err = connState.Find()
 	if err != nil {
 		return fmt.Errorf("conn find: %w", err)
 	}
-	rfid0 := ActorRef{Index: 4}
-	rfid1 := ActorRef{Index: 5}
+	rfid0 := ActorRef{Index: 3}
+	rfid1 := ActorRef{Index: 4}
 	g.Actors = append(g.Actors, connActors...)
-	y, err := layout.InitTestbench3()
+	y, err := layout.InitTestbench4()
 	if err != nil {
 		panic(err)
 	}
@@ -60,6 +60,7 @@ func Main() error {
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
+		//Virtual: true,
 		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
 			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "A"}: ActorRef{Index: 2},
@@ -80,13 +81,13 @@ func Main() error {
 		Cars:  carsData,
 		RFIDs: []tal.RFID{
 			{rfid0, layout.Position{
-				LineI:   y.MustLookupIndex("Y"),
-				Precise: 252000,
+				LineI:   y.MustLookupIndex("B"),
+				Precise: 0,
 				Port:    layout.PortB,
 			}},
 			{rfid1, layout.Position{
-				LineI:   y.MustLookupIndex("X"),
-				Precise: 50000,
+				LineI:   y.MustLookupIndex("C"),
+				Precise: 0,
 				Port:    layout.PortB,
 			}},
 		},
@@ -102,25 +103,9 @@ func Main() error {
 		Schedule: tal.Schedule{
 			TSs: []tal.TrainSchedule{
 				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 70, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("W"), 0, layout.PortB}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0, layout.PortA}, 60, nil},
-					//{tal.Position{y.MustLookupIndex("V"), 0}, 70, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 125, nil},
-					//{tal.Position{y.MustLookupIndex("W"), 0}, 100, nil},
-					//{tal.Position{y.MustLookupIndex("Z"), 0}, 126, nil},
+					{tal.Position{y.MustLookupIndex("A"), 0, layout.PortA}, 60, nil},
+					{tal.Position{y.MustLookupIndex("C"), 0, layout.PortB}, 70, nil},
 				}},
-				//{TrainI: 1, Segments: []tal.Segment{
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 121,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 123,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 70,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 125,nil},
-				//	{tal.Position{y.MustLookupIndex("V"), 0}, 100,nil},
-				//	{tal.Position{y.MustLookupIndex("Z"), 0}, 126,nil},
-				//}},
 			},
 		},
 	}))

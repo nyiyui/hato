@@ -20,6 +20,33 @@
     {{ $Ys := index .gs.LineStates 1 }}
     {{ $X := index .gs.Layout.Lines 2 }}
     {{ $Xs := index .gs.LineStates 2 }}
+    <svg width="2000" height="100">
+      <line x1="0" y1="20" x2="376" y2="20" stroke="{{ if $Zs.Taken }}red{{ else }}black{{ end }}" stroke-width="5" />
+      {{ if eq .att.Position.LineI 0 }}
+        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="10" />
+      {{ end }}
+      <line x1="376" y1="20" x2="752" y2="20" stroke="{{ if $Ys.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
+      {{ if eq .att.Position.LineI 1 }}
+        <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
+      {{ end }}
+      <line x1="752" y1="20" x2="1128" y2="20" stroke="{{ if $Xs.Taken }}red{{ else }}black{{ end }}" stroke-width="5" />
+      {{ if eq .att.Position.LineI 2 }}
+        <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
+      {{ end }}
+    </svg>
+    {{/*
+    {{ printf "%#v" .att }}
+    {{ $t := index .gs.Trains 0 }}
+    {{ printf "%#v" $t }}
+    {{ $Z := index .gs.Layout.Lines 0 }}
+    {{ $Zs := index .gs.LineStates 0 }}
+    {{ $Y := index .gs.Layout.Lines 1 }}
+    {{ $Ys := index .gs.LineStates 1 }}
+    {{ $X := index .gs.Layout.Lines 2 }}
+    {{ $Xs := index .gs.LineStates 2 }}
     {{ $V := index .gs.Layout.Lines 3 }}
     {{ $Vs := index .gs.LineStates 3 }}
     {{ $W := index .gs.Layout.Lines 4 }}
@@ -51,6 +78,7 @@
         <circle cx="{{ (add 1630 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
       {{ end }}
     </svg>
+
     <svg width="2000" height="2000">
       <text x="0" y="0">{{ $Zs.Power }}</text>
       <line x1="0" y1="0" x2="0" y2="128" stroke="{{ if $Zs.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
@@ -70,6 +98,7 @@
       <text x="468" y="1282">{{ $Ws.Power }}</text>
       <path d="M468 1282 l744 0" stroke="{{ if $Ws.Taken }}red{{ else }}black{{ end }}" stroke-width="10" />
     </svg>
+    */}}
   </body>
 </html>
 {{ end }}

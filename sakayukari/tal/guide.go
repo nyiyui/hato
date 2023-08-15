@@ -28,6 +28,8 @@ type GuideConf struct {
 	Actors        map[LineID]ActorRef
 	actorsReverse map[ActorRef]conn.Id
 	Cars          cars.Data
+	// Virtual disables serial commands to lines.
+	Virtual bool
 }
 
 type TrainState int
@@ -216,12 +218,12 @@ func Guide(conf GuideConf) Actor {
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
-		//FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-		FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+		//FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
 		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
 		Orient: FormOrientA,
 	}
-	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("W"), layout.PortB}, LinePort{g.y.MustLookupIndex("Z"), layout.PortA})
+	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("C"), layout.PortA})
 	t1.Path = &path
 	log.Printf("t1.Path %#v", path)
 	g.trains = append(g.trains, t1)
@@ -231,6 +233,12 @@ func Guide(conf GuideConf) Actor {
 }
 
 func (g *guide) calculateTrailers(t *Train) {
+	sideA, sideB := g.conf.Cars.Forms[t.FormI].TrailerLength()
+	if sideA == 0 && sideB == 0 {
+		t.TrailerBack = t.CurrentBack
+		t.TrailerFront = t.CurrentFront
+		return
+	}
 	trailerBack, trailerFront := t.CurrentBack, t.CurrentFront
 	backPossible := true
 	// back is the length from port A of CurrentBack to the backside of the trailers.
@@ -522,7 +530,7 @@ func (g *guide) loop() {
 				} else if !backSame && !frontSame {
 					val.Train.Orient = orig.Orient.Flip()
 				} else {
-					panic("unreacheable")
+					panic("unreachable")
 				}
 			}
 			val.Train.Generation = orig.Generation + 1
@@ -676,6 +684,9 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 		},
 	}
 	//log.Printf("diffuse %#v", d)
+	if g.conf.Virtual {
+		return
+	}
 	g.actor.OutputCh <- d
 }
 
@@ -693,6 +704,10 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 	rl.Direction = l.GetPort(pi).Direction
 	// TODO: fix direction to follow layout.Layout rules
 	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	if g.conf.Virtual {
+		log.Printf("apply2 virtual %s", rl)
+		return
+	}
 	g.actor.OutputCh <- Diffuse1{
 		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,

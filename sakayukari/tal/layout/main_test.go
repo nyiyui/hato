@@ -160,6 +160,18 @@ func TestTestbench3(t *testing.T) {
 	t.Logf("%s", data)
 }
 
+func TestTestbench4(t *testing.T) {
+	y, err := InitTestbench4()
+	if err != nil {
+		t.Fatalf("error: %s", err)
+	}
+	data, err := json.MarshalIndent(y, "", "  ")
+	if err != nil {
+		t.Fatalf("json: %s", err)
+	}
+	t.Logf("%s", data)
+}
+
 /*
 func TestReversePath(t *testing.T) {
 	y, err := InitTestbench3()

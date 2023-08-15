@@ -178,7 +178,36 @@ func InitTestbench3() (*Layout, error) {
 			PortB:     Port{Length: 248000 * 3, Direction: true},
 			PowerConn: white("C"),
 		},
-		// TODO: support merging switches
+	})
+	return &y, err
+}
+
+func InitTestbench4() (*Layout, error) {
+	yellow := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-line", "v2", "yellow"},
+			Line: line,
+		}
+	}
+	y, err := Connect([]Line{
+		Line{
+			Comment:   "A",
+			PortA:     Port{Direction: false},
+			PortB:     Port{Length: 248000 + 128000, Direction: true},
+			PowerConn: yellow("A"),
+		},
+		Line{
+			Comment:   "B",
+			PortA:     Port{Direction: false},
+			PortB:     Port{Length: 248000 + 128000, Direction: true},
+			PowerConn: yellow("B"),
+		},
+		Line{
+			Comment:   "C",
+			PortA:     Port{Direction: false},
+			PortB:     Port{Length: 248000 + 128000, Direction: true},
+			PowerConn: yellow("C"),
+		},
 	})
 	return &y, err
 }

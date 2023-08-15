@@ -50,6 +50,7 @@ type model struct {
 	actor           *Actor
 	rfid            map[ActorRef]int
 	latestGS        GuideSnapshot
+	eaps            []EAPass
 	latestAttitudes []Attitude
 	// currentAttitudes is the delta-updated attitudes derived from latestAttitudes.
 	// This is to make sure the error is not going to increase every iteration of the handleDelta method.
@@ -97,6 +98,7 @@ func (m *model) loop() {
 			if diffuse.Origin == m.conf.Guide {
 				if gs, ok := diffuse.Value.(GuideSnapshot); ok {
 					m.latestGS = gs
+					m.updateEAPasses()
 					// TODO: generate latestAttitudes
 					if m.latestAttitudes != nil && len(m.latestAttitudes) != len(gs.Trains) {
 						panic("adding/removing trains is not implemented yet")
@@ -176,6 +178,7 @@ func (m *model) handleDelta(now time.Time, delta time.Duration) {
 				//log.Printf("t %#v", t)
 				continue
 			}
+			pos = m.clampExpectedAttitudes(ti, pos)
 			ca := m.currentAttitudes[ti]
 			ca.TrainI = ti
 			ca.TrainGeneration = t.Generation
@@ -236,6 +239,8 @@ func (m *model) handleAttitude(diffuse Diffuse1) {
 			att.Velocity = coeff * vel
 			att.VelocityKnown = true
 		}
+	}
+	if !m.attitudeOld(att) {
 		t := m.latestGS.Trains[att.TrainI]
 		f, ok := m.conf.Cars.Forms[t.FormI]
 		if !ok {
@@ -287,7 +292,7 @@ OuterLoop:
 		}
 	}
 	if !filled {
-		panic(fmt.Sprintf("tal-model: unknown setcar: %#v", val.RFID))
+		panic(fmt.Sprintf("tal-model: unknown form: %#v", val.RFID))
 	}
 	f := m.conf.Cars.Forms[fci.Form]
 	_ = f
