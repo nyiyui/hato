@@ -12,8 +12,8 @@ struct ina219_calibration {
 struct ina219_line {
   long weighted_uA;
   long direct_uA;
-  long underThresholdElapsed;
-  bool ignoreUnder;
+  unsigned long onUntil_us;
+  bool now;
 };
 
 Adafruit_INA219 ina2190;
@@ -33,6 +33,7 @@ int ina219_threshold = 12000;
 // Set this to a "high enough" threshold such that drift (due to high common-mode voltage) won't affect this - this drift is usually around 3 to 4 mA.
 // https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/790103/ina219-ina219---bidirectional-current-measurement-to-measure-motor-current?ReplyFilter=Answers&ReplySortBy=Answers&ReplySortOrder=Descending
 // See issue #14 for details.
+long ina219_hysteresis_delay_us = 100 * 1000;
 
 void ina219_init() {
   Wire.setWireTimeout();
@@ -95,6 +96,18 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
   ina219_lines[i].weighted_uA =
       (ina219_lines[i].weighted_uA * weight + current_uA * (100 - weight)) /
       100;
+  long w = ina219_lines[i].weighted_uA;
+  bool now = w > ina219_threshold || w < -ina219_threshold;
+  if (now) {
+    ina219_lines[i].onUntil_us = micros() + ina219_hysteresis_delay_us;
+    ina219_lines[i].now = now;
+  } else {
+    if (micros() > ina219_lines[i].onUntil_us) {
+      ina219_lines[i].now = now;
+    } else {
+      ina219_lines[i].now = true;
+    }
+  }
 }
 
 void ina219_update(int elapsed) {

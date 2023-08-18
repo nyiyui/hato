@@ -129,11 +129,10 @@ void loop() {
         Serial.print("Done calibration.");
       }
     }
-#define outOfRange(v, threshold) (v > threshold || v < -threshold)
-    bool nowA = outOfRange(ina219_lines[0].weighted_uA, ina219_threshold);
-    bool nowB = outOfRange(ina219_lines[1].weighted_uA, ina219_threshold);
-    bool nowC = outOfRange(ina219_lines[2].weighted_uA, ina219_threshold);
-    bool nowD = outOfRange(ina219_lines[3].weighted_uA, ina219_threshold);
+    bool nowA = ina219_lines[0].now;
+    bool nowB = ina219_lines[1].now;
+    bool nowC = ina219_lines[2].now;
+    bool nowD = ina219_lines[3].now;
 #ifdef DEBUG
     if (debug) {
       // Serial.print("elapsed:");
@@ -303,6 +302,15 @@ void handleSLCP() {
     ina219_threshold = atoi(buffer);
     Serial.print("ina219_threshold set to ");
     Serial.print(ina219_threshold);
+    Serial.println(". Note: this is only saved to RAM.");
+  } else if (kind == 'f') {
+    buffer[0] = Serial.read();
+    buffer[1] = Serial.read();
+    buffer[2] = Serial.read();
+    buffer[3] = '\0';
+    ina219_hysteresis_delay_us = (long) atoi(buffer) * 1000;
+    Serial.print("ina219_hysteresis_delay_us set to ");
+    Serial.print(ina219_hysteresis_delay_us);
     Serial.println(". Note: this is only saved to RAM.");
   } else if (kind == 'G') {
     debug = !debug;
