@@ -60,8 +60,8 @@ func Main() error {
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
-		//Virtual: true,
-		Layout: y,
+		Virtual: true,
+		Layout:  y,
 		Actors: map[layout.LineID]ActorRef{
 			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "A"}: ActorRef{Index: 2},
 			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "B"}: ActorRef{Index: 2},

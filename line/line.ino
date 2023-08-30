@@ -7,7 +7,7 @@
 #define INSTANCE "4"
 
 // === EEPROM Layout
-// 00-10  version string
+// 00-10  variant string
 // 10-31  instance name (null-terminated)
 // 40-TBD calibration data
 #define EEPROM_VERSION_ADDR 0x0
@@ -78,8 +78,6 @@ void Line_update(Line *line) {
     line->stop_ms = 0;
   }
 }
-
-//#include "shortcheck.h"
 
 void setup() {
   Serial.begin(9600);
