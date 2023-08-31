@@ -2,6 +2,11 @@ package sakayukari
 
 import "fmt"
 
+// Message convenience type to send strings.
+type Message string
+
+func (m Message) String() string { return string(m) }
+
 // ActorRef refernces a single Actor.
 // Only positive numbers are valid, and negative numbers are reserved.
 // A 32-bit number was chosen as some (most?) MCUs do not have 64-bit numbers

@@ -23,6 +23,7 @@ type sakuragi struct {
 	actor          *Actor
 	sm             *http.ServeMux
 	t              *template.Template
+	latestMessage  string
 	latestGS       tal.GuideSnapshot
 	latestAttitude tal.Attitude
 }
@@ -63,6 +64,7 @@ func Sakuragi(conf Conf) *Actor {
 func (s *sakuragi) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	err := s.t.ExecuteTemplate(w, "index", map[string]interface{}{
+		"msg": s.latestMessage,
 		"gs":  s.latestGS,
 		"att": s.latestAttitude,
 	})
@@ -92,6 +94,9 @@ func (s *sakuragi) loop() {
 			case tal.Attitude:
 				s.latestAttitude = val
 			}
+		}
+		if msg, ok := diffuse.Value.(Message); ok {
+			s.latestMessage = string(msg)
 		}
 	}
 }

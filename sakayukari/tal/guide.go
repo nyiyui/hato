@@ -497,61 +497,86 @@ func (g *guide) loop() {
 			if val.PowerFilled {
 				t.Power = val.Power
 			}
-			func() {
-				y := g.conf.Layout
-				log.Printf("### t %#v", t)
-				lpsBack, err := y.FullPathTo(t.Path.Follows[t.TrailerBack], *val.Target)
-				if errors.Is(err, layout.PathToSelfError{}) {
-					return
-				} else if err != nil {
-					panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
-				}
-				lpsFront, err := y.FullPathTo(t.Path.Follows[t.TrailerFront], *val.Target)
-				if errors.Is(err, layout.PathToSelfError{}) {
-					return
-				} else if err != nil {
-					panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
-				}
-				log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
-				log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
-				// We have to include all currents in the new path.
-				// The longer one will include both TrailerBack and TrailerFront regardless of direction.
-				if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
-					log.Printf("### ALREADY THERE")
-				} else {
-					if len(lpsBack.Follows) > len(lpsFront.Follows) {
-						t.Path = &lpsBack
-						t.TrailerBack = 0
-						t.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
-					} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
-						t.Path = &lpsFront
-						t.TrailerBack = 0
-						t.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
+			if val.Target != nil {
+				var sameDir bool
+				func() {
+					y := g.conf.Layout
+					log.Printf("### t %#v", t)
+					lpsBack, err := y.FullPathTo(t.Path.Follows[t.TrailerBack], *val.Target)
+					if errors.Is(err, layout.PathToSelfError{}) {
+						return
+					} else if err != nil {
+						panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
+					}
+					lpsFront, err := y.FullPathTo(t.Path.Follows[t.TrailerFront], *val.Target)
+					if errors.Is(err, layout.PathToSelfError{}) {
+						return
+					} else if err != nil {
+						panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
+					}
+					log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
+					log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
+					// We have to include all currents in the new path.
+					// The longer one will include both TrailerBack and TrailerFront regardless of direction.
+					if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
+						log.Printf("### ALREADY THERE")
 					} else {
-						t.Path = &lpsFront // shouldn't matter
-						t.TrailerBack = 0
-						t.TrailerFront = 0
-						if t.TrailerBack != t.TrailerFront {
-							panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
+						if len(lpsBack.Follows) > len(lpsFront.Follows) {
+							t.Path = &lpsBack
+							t.TrailerBack = 0
+							t.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
+						} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
+							t.Path = &lpsFront
+							t.TrailerBack = 0
+							t.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
+						} else {
+							t.Path = &lpsFront // shouldn't matter
+							t.TrailerBack = 0
+							t.TrailerFront = 0
+							if t.TrailerBack != t.TrailerFront {
+								panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
+							}
+							if t.TrailerBack < 0 || t.TrailerFront < 0 || len(t.Path.Follows) == 0 {
+								panic("assert failed")
+							}
 						}
-						if t.TrailerBack < 0 || t.TrailerFront < 0 || len(t.Path.Follows) == 0 {
-							panic("assert failed")
+						// TODO: when train flips, CurrentBack and CurrentFront needs to be flipped too!
+						t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
+						t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
+						if t.CurrentBack > t.CurrentFront {
+							t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
+							sameDir = false
+						} else if t.CurrentBack == t.CurrentFront {
+							if oldT.CurrentBack != oldT.CurrentFront {
+								panic("new train CurrentBack/Front is same but old train CurrentBack/Front")
+							}
+							// check if flipped
+							if !layout.SameDir1(t.Path.Follows[t.CurrentBack], oldT.Path.Follows[oldT.CurrentBack]) {
+								t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
+								sameDir = false
+							} else {
+								sameDir = true
+							}
+						} else {
+							sameDir = true
 						}
 					}
-					t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
-					t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
+				}()
+				log.Printf("t %#v", t)
+				log.Printf("t.Path %#v", t.Path)
+				log.Printf("oldT %#v", oldT)
+				log.Printf("oldT.Path %#v", oldT.Path)
+				if sameDir {
+					t.Orient = oldT.Orient
+				} else {
+					t.Orient = oldT.Orient.Flip()
 				}
-			}()
-			// figure out if the path is flipped
-			sameDir, ok := layout.SameDirection(*t.Path, *oldT.Path)
-			if !ok {
-				panic("SameDirection failed (paths do not overlap")
-			}
-			// TODO: check if the current CurrentBack/Front is covered in the new CurrentBack/Front
-			if sameDir {
-				t.Orient = oldT.Orient
-			} else {
-				t.Orient = oldT.Orient.Flip()
+				if t.CurrentBack > t.CurrentFront {
+					log.Printf("t %#v", t)
+					log.Printf("t.Path %#v", t.Path)
+					log.Printf("sameDir %t", sameDir)
+					panic("t.CurrentBack > t.CurrentFront")
+				}
 			}
 			t.Generation = oldT.Generation + 1
 			log.Printf("GuideTrainUpdate %#v", t)
@@ -625,7 +650,7 @@ func (g *guide) reify(ti int, t *Train) {
 		power = g.idlePower(ti)
 	}
 	log.Printf("REIFY: %d %s", power, t)
-	t.noPowerSupplied = power < 15
+	t.noPowerSupplied = power < 20
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
 		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
@@ -723,7 +748,7 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 	g.lineStates[li].Power = rl.Power
 	rl.Direction = l.GetPort(pi).Direction
 	// TODO: fix direction to follow layout.Layout rules
-	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	if g.conf.Virtual {
 		log.Printf("apply2 virtual %s", rl)
 		return
@@ -732,7 +757,7 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 		Origin: g.conf.Actors[l.PowerConn],
 		Value:  rl,
 	}
-	log.Printf("apply2 %s", rl)
+	//log.Printf("apply2 %s", rl)
 }
 
 // syncLocks verifies locking of all currents and next (if next is available) of a train.

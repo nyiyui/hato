@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"errors"
 	"fmt"
 
 	"golang.org/x/exp/slices"
@@ -99,4 +100,23 @@ func (y *Layout) distanceBetween(a, b LinePort) int64 {
 	default:
 		panic("unreachable")
 	}
+}
+
+func SameDirection2(prev, next []LinePort) (sameDir bool, err error) {
+	if prev[0] == next[0] {
+		return true, nil
+	}
+	if prev[len(prev)-1].LineI == next[0].LineI {
+		return false, nil
+	}
+	return false, errors.New("idk")
+}
+
+func SameDir1(a, b LinePort) bool {
+	if a.LineI != b.LineI {
+		panic("different Line")
+	}
+	aSame := a.PortI == PortA
+	bSame := b.PortI == PortA
+	return aSame == bSame
 }

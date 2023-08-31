@@ -2,6 +2,7 @@
 package tal
 
 import (
+	"fmt"
 	"log"
 
 	"golang.org/x/exp/slices"
@@ -12,6 +13,7 @@ import (
 type DiagramConf struct {
 	Guide    ActorRef
 	Model    ActorRef
+	Sakuragi ActorRef
 	Schedule Schedule
 }
 
@@ -94,6 +96,8 @@ func (d *diagram) loop() {
 				if !firstApplied {
 					for tsi := range d.conf.Schedule.TSs {
 						d.apply(d.latestGS, tsi)
+						log.Printf("####################")
+						log.Printf("firstApplied")
 					}
 					firstApplied = true
 				}
@@ -149,15 +153,23 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 	} else {
 		dist = y.Count(follows[nowI:targetI+1], now.Position, s.Target)
 	}
+	d.actor.OutputCh <- Diffuse1{
+		Origin: d.conf.Sakuragi,
+		Value:  Message(fmt.Sprintf("next: dist %d mm; index %d", dist/1000, tss.CurrentSegmentI+1)),
+	}
 	if dist >= 10*layout.Millimeter {
 		return
 	}
-	log.Printf("t %#v", t)
-	log.Printf("t.Path %#v", t.Path)
-	log.Printf("s.Target %#v", s.Target)
-	log.Printf("now.Position %#v", now.Position)
-	log.Printf("dist %d", dist)
-	log.Printf("=== REACHED CurrentSegmentI %d", tss.CurrentSegmentI)
+	//log.Printf("t %#v", t)
+	//log.Printf("t.Path %#v", t.Path)
+	//log.Printf("s.Target %#v", s.Target)
+	//log.Printf("now.Position %#v", now.Position)
+	//log.Printf("dist %d", dist)
+	//log.Printf("=== REACHED CurrentSegmentI %d", tss.CurrentSegmentI)
+	//d.actor.OutputCh <- Diffuse2{
+	//	Origin: d.conf.Sakuragi,
+	//	Value:  Message(fmt.Sprintf("reached %d", tss.CurrentSegmentI)),
+	//}
 	current := ts.Segments[tss.CurrentSegmentI]
 	if current.After != nil {
 		if d.state.TSs[current.After.TS].CurrentSegmentI < current.After.S {
@@ -165,7 +177,7 @@ func (d *diagram) handleAttitude(diffuse Diffuse1) {
 			return
 		}
 	}
-	d.nextSegment(tsi)
+	//d.nextSegment(tsi)
 }
 
 func (d *diagram) nextSegment(tsi int) {
@@ -188,10 +200,11 @@ func (d *diagram) apply(prevGS GuideSnapshot, tsi int) {
 		target.Port = layout.PortA
 	}
 	gtu := GuideTrainUpdate{
-		TrainI:      d.conf.Schedule.TSs[tsi].TrainI,
-		Target:      &layout.LinePort{target.LineI, target.Port},
-		Power:       d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
-		PowerFilled: true,
+		TrainI: d.conf.Schedule.TSs[tsi].TrainI,
+		Target: &layout.LinePort{target.LineI, target.Port},
+		// NOTE: for demo; for changing power via LiveControl
+		//Power:       d.conf.Schedule.TSs[tsi].Segments[d.state.TSs[tsi].CurrentSegmentI].Power,
+		//PowerFilled: true,
 	}
 	tss := &d.state.TSs[tsi]
 	tss.minGeneration = t.Generation + 1

@@ -501,8 +501,8 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 				switch prevConn.PortI {
 				case PortA:
 					// Assume the path "ends" here (as it points back to itself).
-					//return Position{}, false
-					panic("prevConn.PortI == cur.PortI")
+					return Position{}, false
+					//panic("prevConn.PortI == cur.PortI")
 				case PortB, PortC:
 					port = prevConn.PortI
 				}

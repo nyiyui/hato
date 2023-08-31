@@ -30,7 +30,7 @@ func Main() error {
 		},
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
-		conn.Id{"soyuu-line", "v2", "yellow"},
+		conn.Id{"soyuu-line", "v2", "deepgreen"},
 		//conn.Id{"soyuu-line", "v2", "white"},
 		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
 		conn.Id{"soyuu-rfid", "v2", "2"},
@@ -60,17 +60,17 @@ func Main() error {
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
 	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
-		Virtual: true,
-		Layout:  y,
+		//Virtual: true,
+		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
-			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "A"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "B"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "C"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "yellow"}, "D"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "A"}:  ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "B"}:  ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "C"}:  ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "D"}:  ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "A"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "B"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "C"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "D"}: ActorRef{Index: 2},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "A"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "B"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "C"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "D"}:     ActorRef{Index: 3},
 		},
 		Cars: carsData,
 	}))
@@ -97,18 +97,22 @@ func Main() error {
 		Guide: guide,
 		Model: model,
 	}))
-	g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
-		Guide: guide,
-		Model: model,
-		Schedule: tal.Schedule{
-			TSs: []tal.TrainSchedule{
-				{TrainI: 0, Segments: []tal.Segment{
-					{tal.Position{y.MustLookupIndex("A"), 0, layout.PortA}, 60, nil},
-					{tal.Position{y.MustLookupIndex("C"), 0, layout.PortB}, 70, nil},
-				}},
-			},
-		},
-	}))
+	sakuragi := ActorRef{Index: len(g.Actors) - 1}
+	_ = sakuragi
+	//g.Actors = append(g.Actors, *tal.Diagram(tal.DiagramConf{
+	//	Guide:    guide,
+	//	Model:    model,
+	//	Sakuragi: sakuragi,
+	//	Schedule: tal.Schedule{
+	//		TSs: []tal.TrainSchedule{
+	//			{TrainI: 0, Segments: []tal.Segment{
+	//				{tal.Position{y.MustLookupIndex("A"), 0, layout.PortA}, 60, nil},
+	//				{tal.Position{y.MustLookupIndex("C"), 0, layout.PortB}, 70, nil},
+	//			}},
+	//		},
+	//	},
+	//}))
+	g.Actors = append(g.Actors, LiveControl(ActorRef{Index: 0}, guide))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

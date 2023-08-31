@@ -5,7 +5,80 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
+	"nyiyui.ca/hato/sakayukari/tal"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
+
+func LiveControl(uiEvents, guide ActorRef) Actor {
+	a := Actor{
+		Comment:  "control",
+		InputCh:  make(chan Diffuse1),
+		OutputCh: make(chan Diffuse1),
+		Inputs:   []ActorRef{uiEvents},
+		Type: ActorType{
+			Input:       true,
+			LinearInput: true,
+			Output:      true,
+		},
+	}
+	//go func() {
+	//	for range time.Tick(4 * time.Second) {
+	//		a.OutputCh <- Diffuse1{
+	//			Origin: guide,
+	//			Value: tal.GuideTrainUpdate{
+	//				TrainI: 0,
+	//				Target: &layout.LinePort{0, layout.PortA},
+	//			},
+	//		}
+	//		time.Sleep(4 * time.Second)
+	//		a.OutputCh <- Diffuse1{
+	//			Origin: guide,
+	//			Value: tal.GuideTrainUpdate{
+	//				TrainI: 0,
+	//				Target: &layout.LinePort{2, layout.PortB},
+	//			},
+	//		}
+	//	}
+	//}()
+	go func() {
+		power := 70
+		for e := range a.InputCh {
+			key := e.Value.(UIEvent).E.ID
+			switch key {
+			case "Q":
+				power += 2
+				fallthrough
+			case "q":
+				power--
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI:      0,
+						Power:       power,
+						PowerFilled: true,
+					},
+				}
+			case "a":
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI: 0,
+						Target: &layout.LinePort{0, layout.PortA},
+					},
+				}
+			case "c":
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI: 0,
+						Target: &layout.LinePort{2, layout.PortB},
+					},
+				}
+			}
+		}
+	}()
+	return a
+}
 
 type controlState struct {
 	Direction bool

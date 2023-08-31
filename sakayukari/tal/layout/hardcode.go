@@ -183,30 +183,31 @@ func InitTestbench3() (*Layout, error) {
 }
 
 func InitTestbench4() (*Layout, error) {
-	yellow := func(line string) LineID {
+	board := func(line string) LineID {
 		return LineID{
-			Conn: conn.Id{"soyuu-line", "v2", "yellow"},
+			Conn: conn.Id{"soyuu-line", "v2", "deepgreen"},
 			Line: line,
 		}
 	}
+	r183 := math.Pi * 183000 * 2
 	y, err := Connect([]Line{
 		Line{
 			Comment:   "A",
 			PortA:     Port{Direction: false},
-			PortB:     Port{Length: 248000 + 128000, Direction: true},
-			PowerConn: yellow("A"),
+			PortB:     Port{Length: 2 * 248000, Direction: true},
+			PowerConn: board("A"),
 		},
 		Line{
 			Comment:   "B",
 			PortA:     Port{Direction: false},
-			PortB:     Port{Length: 248000 + 128000, Direction: true},
-			PowerConn: yellow("B"),
+			PortB:     Port{Length: 64000 + uint32(r183/2), Direction: true},
+			PowerConn: board("B"),
 		},
 		Line{
 			Comment:   "C",
-			PortA:     Port{Direction: false},
-			PortB:     Port{Length: 248000 + 128000, Direction: true},
-			PowerConn: yellow("C"),
+			PortA:     Port{Direction: true},
+			PortB:     Port{Length: uint32(r183 / 2), Direction: false},
+			PowerConn: board("C"),
 		},
 	})
 	return &y, err

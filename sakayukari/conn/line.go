@@ -23,9 +23,9 @@ func (_ handlerLine) String() string {
 
 func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
-	_, err := fmt.Fprint(c.F, "gD087")
+	_, err := fmt.Fprint(c.F, "f090gD087")
 	if err != nil {
-		log.Printf("%s: gD087: write line: %s", c.Path, err)
+		log.Printf("%s: f090gD087: write line: %s", c.Path, err)
 		return
 	}
 	state := new(lineState)

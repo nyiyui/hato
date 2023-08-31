@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"golang.org/x/exp/slices"
-	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
@@ -15,7 +14,7 @@ type EAPass struct {
 }
 
 type ExpectedAttitude struct {
-	Position layout.Position
+	RFIDPosition layout.Position
 	// TODO: need some way to determine which RFID sensor-tag pair it is
 	//       tag is easy, how to identify sensor? ActorRef?
 }
@@ -23,24 +22,11 @@ type ExpectedAttitude struct {
 func (m *model) getExpectedAttitudes(ti int) []ExpectedAttitude {
 	eas := make([]ExpectedAttitude, 0)
 	t := m.latestGS.Trains[ti]
-	f := m.conf.Cars.Forms[t.FormI]
+	//f := m.conf.Cars.Forms[t.FormI]
 	for _, p := range t.Path.Follows {
 		for _, r := range m.conf.RFIDs {
 			if r.Position.LineI == p.LineI {
-				for ci, c := range f.Cars {
-					if c.MifareID != (cars.MifareID{}) {
-						// calculate TagOffset
-						tagOffset := f.TagOffset(ci)
-						_ = tagOffset
-						switch t.Orient {
-						case FormOrientA:
-						case FormOrientB:
-						default:
-							panic("invalid Train.FormOrient")
-						}
-						eas = append(eas, ExpectedAttitude{r.Position})
-					}
-				}
+				eas = append(eas, ExpectedAttitude{r.Position})
 			}
 		}
 	}
@@ -62,13 +48,19 @@ func (m *model) clampExpectedAttitudes(ti int, pos layout.Position) layout.Posit
 	// find extremes
 	eap := m.eaps[ti]
 	t := m.latestGS.Trains[ti]
+	for _, pass := range eap.Passes {
+		if pass {
+			continue
+		}
+		// calculate
+	}
 	backI := slices.Index(eap.Passes, true)
 	frontI := reverseIndex(eap.Passes, true)
 	if backI == -1 || frontI == -1 {
 		log.Printf("blank EAPasses: %#v", eap)
 		return pos
 	}
-	back, front := eap.Attitudes[backI].Position, eap.Attitudes[frontI].Position
+	back, front := eap.Attitudes[backI].RFIDPosition, eap.Attitudes[frontI].RFIDPosition
 	if backI > frontI {
 		panic("backI > frontI")
 	}

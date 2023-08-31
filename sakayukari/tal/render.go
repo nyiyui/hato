@@ -28,6 +28,7 @@ func GuideRender(guide ActorRef) Actor {
 				b := new(strings.Builder)
 				for ti, t := range val.Trains {
 					fmt.Fprintf(b, "%d %s\n", ti, &t)
+					fmt.Fprintf(b, "%d %s\n", ti, t.Path)
 					fmt.Fprintf(b, "%d %#v\n", ti, t)
 				}
 				state.Text = b.String()
