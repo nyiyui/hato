@@ -1,6 +1,8 @@
 package ctl
 
 import (
+	"time"
+
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	. "nyiyui.ca/hato/sakayukari"
@@ -21,25 +23,25 @@ func LiveControl(uiEvents, guide ActorRef) Actor {
 			Output:      true,
 		},
 	}
-	//go func() {
-	//	for range time.Tick(4 * time.Second) {
-	//		a.OutputCh <- Diffuse1{
-	//			Origin: guide,
-	//			Value: tal.GuideTrainUpdate{
-	//				TrainI: 0,
-	//				Target: &layout.LinePort{0, layout.PortA},
-	//			},
-	//		}
-	//		time.Sleep(4 * time.Second)
-	//		a.OutputCh <- Diffuse1{
-	//			Origin: guide,
-	//			Value: tal.GuideTrainUpdate{
-	//				TrainI: 0,
-	//				Target: &layout.LinePort{2, layout.PortB},
-	//			},
-	//		}
-	//	}
-	//}()
+	go func() {
+		for range time.Tick(4 * time.Second) {
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI: 0,
+					Target: &layout.LinePort{0, layout.PortA},
+				},
+			}
+			time.Sleep(4 * time.Second)
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI: 0,
+					Target: &layout.LinePort{2, layout.PortB},
+				},
+			}
+		}
+	}()
 	go func() {
 		power := 70
 		for e := range a.InputCh {
