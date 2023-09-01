@@ -16,16 +16,12 @@ struct ina219_line {
   bool now;
 };
 
-#ifndef INA219_USE_ANALOG
 Adafruit_INA219 ina2190;
 Adafruit_INA219 ina2191(0x41);
 Adafruit_INA219 ina2192(0x44);
 Adafruit_INA219 ina2193(0x45);
 struct ina219_line ina219_lines[4] = {0};
 #define INA219_LENGTH 4
-#else
-const int pins[4] = { INA240_PIN0, INA240_PIN1, INA240_PIN2, INA240_PIN3 };
-#endif
 
 static struct ina219_calibration calibs[4] = {0};
 static bool use_calibs = true;
@@ -40,7 +36,6 @@ int ina219_threshold = 12000;
 long ina219_hysteresis_delay_us = 100 * 1000;
 
 void ina219_init() {
-#ifndef INA219_USE_ANALOG
   Wire.setWireTimeout();
   while (!ina2190.begin())
     Serial.println(" Sina2190 init failed"), delay(1000);
@@ -54,12 +49,6 @@ void ina219_init() {
   ina2191.setCalibration_16V_400mA();
   ina2192.setCalibration_16V_400mA();
   ina2193.setCalibration_16V_400mA();
-#else
-  pinMode(INA240_PIN0, ANALOG_INPUT);
-  pinMode(INA240_PIN1, ANALOG_INPUT);
-  pinMode(INA240_PIN2, ANALOG_INPUT);
-  pinMode(INA240_PIN3, ANALOG_INPUT);
-#endif
 }
 
 static const long CLAMP_LIMIT = 300;
@@ -73,14 +62,10 @@ static long clamp(long a) {
 }
 
 static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
-#ifndef INA219_USE_ANALOG
   long current_uA = ina219->getCurrent_mA() * 1000;
   int weight = ina219_weight + (int)(ina219_elapsed_weight * (float)elapsed);
   // TODO: ina219 moving average is highly affected my timing
   ina219_lines[i].direct_uA = current_uA;
-#else
-  ina219_lines[i].direct_uA = analogRead(pins[i]) - 512;
-#endif
 #define handle2(j)                                                             \
   do {if (i == j) {                                                                \
     Serial.print(#j "direct:");\
@@ -126,17 +111,10 @@ static void ina219_update_single(int i, Adafruit_INA219 *ina219, int elapsed) {
 }
 
 void ina219_update(int elapsed) {
-#ifndef INA219_USE_ANALOG
   ina219_update_single(0, &ina2190, elapsed);
   ina219_update_single(1, &ina2191, elapsed);
   ina219_update_single(2, &ina2192, elapsed);
-  ina219_update_single(0, &ina2190, elapsed);
-#else
-  ina219_update_single(0, null, elapsed);
-  ina219_update_single(1, null, elapsed);
-  ina219_update_single(2, null, elapsed);
-  ina219_update_single(3, null, elapsed);
-#endif
+  ina219_update_single(3, &ina2193, elapsed);
   ina219_count ++;
 }
 
