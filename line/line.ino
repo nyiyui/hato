@@ -13,6 +13,11 @@
 #define EEPROM_VERSION_ADDR 0x0
 #define EEPROM_INSTANCE_ADDR 0x10
 #define EEPROM_CALIBRATION_ADDR 0x40
+#define INA219_USE_ANALOG
+#define INA240_PIN0 A0
+#define INA240_PIN1 A1
+#define INA240_PIN2 A2
+#define INA240_PIN3 A3
 #include "ina219.h"
 
 static bool calibrating = false;
