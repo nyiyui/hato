@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/tal"
@@ -54,6 +55,14 @@ func Sakuragi(conf Conf) *Actor {
 			"add": func(a, b uint32) uint32 {
 				return a + b
 			},
+			"contains": func(t tal.Train, lineI int) bool {
+				for i := t.CurrentBack; i <= t.CurrentFront; i++ {
+					if int(t.Path.Follows[i].LineI) == lineI {
+						return true
+					}
+				}
+				return false
+			},
 		}).ParseFS(templates, "*.html")),
 	}
 	s.setup()
@@ -67,6 +76,7 @@ func (s *sakuragi) handleIndex(w http.ResponseWriter, r *http.Request) {
 		"msg": s.latestMessage,
 		"gs":  s.latestGS,
 		"att": s.latestAttitude,
+		"now": time.Now().Format("15:04:05"),
 	})
 	if err != nil {
 		panic(err)

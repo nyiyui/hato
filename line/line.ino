@@ -9,13 +9,9 @@
 // === EEPROM Layout
 // 00-10  variant string
 // 10-31  instance name (null-terminated)
-// 40-TBD calibration data
 #define EEPROM_VERSION_ADDR 0x0
 #define EEPROM_INSTANCE_ADDR 0x10
-#define EEPROM_CALIBRATION_ADDR 0x40
-#include "ina219.h"
-
-static bool calibrating = false;
+#include "ina240.h"
 
 typedef struct Line {
   char id;
@@ -95,11 +91,6 @@ void setup() {
       instance[i] = EEPROM.read(EEPROM_INSTANCE_ADDR + i);
     }
   }
-  if (EEPROM.read(EEPROM_CALIBRATION_ADDR) != 0) {
-    Serial.println(" SLoading calibration data from EEPROM...");
-    ina219_load_calibrate();
-    Serial.println(" SLoaded calibration data from EEPROM.");
-  }
   // === Motor Shield
   while (!shield0.begin()) {
     Serial.println(" Smotor shield init failed");
@@ -119,39 +110,8 @@ void loop() {
   static bool prevC = false;
   static bool prevD = false;
   unsigned long now = micros();
+  ina240_update();
   if (prev + 3000 <= now) {
-    ina219_update((now - prev) / 1000);
-    if (calibrating) {
-      calibrating = !ina219_calibrate_step_stop();
-      if (!calibrating) {
-        Serial.print("Done calibration.");
-      }
-    }
-    bool nowA = ina219_lines[0].now;
-    bool nowB = ina219_lines[1].now;
-    bool nowC = ina219_lines[2].now;
-    bool nowD = ina219_lines[3].now;
-#ifdef DEBUG
-    if (debug) {
-      // Serial.print("elapsed:");
-      // Serial.print(now - prev);
-#define show(i, letter)                                                        \
-  Serial.print(",w" #letter ":");                                              \
-  Serial.print(ina219_lines[i].weighted_uA);                                   \
-  Serial.print(",d" #letter ":");                                              \
-  Serial.print(ina219_lines[i].direct_uA);                                     \
-  Serial.print(",p" #letter ":");                                              \
-  Serial.print(prev##letter);                                                  \
-  Serial.print(",n" #letter ":");                                              \
-  Serial.print(now##letter);
-      show(0, A) show(1, B) show(2, C) show(3, D)
-          Serial.print(",thresholdPositive:");
-      Serial.print(ina219_threshold);
-      Serial.print(",thresholdNegative:");
-      Serial.print(-ina219_threshold);
-      Serial.println();
-    }
-#endif
 #define same(letter) now##letter == prev##letter
     if (!(same(A) && same(B) && same(C) && same(D))) {
 #undef same
@@ -186,9 +146,6 @@ void loop() {
   Line_update(&lineB);
   Line_update(&lineC);
   Line_update(&lineD);
-  //if (linecalib_step_stop()) {
-  //  Serial.println("Z: done calibration");
-  //}
   handleSLCP();
 }
 
@@ -315,7 +272,6 @@ void handleSLCP() {
   } else if (kind == 'g') {
     debugPoint = !debugPoint;
   } else if (kind == 'H') {
-    // calibration
     Serial.println("Clearing EEPROM...");
     for (int i = 0; i < EEPROM.length(); i++) {
       EEPROM.update(i, 0);
@@ -341,25 +297,8 @@ void handleSLCP() {
     for (size_t i = 0; i < 0x20; i++) {
       instance[i] = newInstance[i];
     }
-  } else if (kind == 'L') {
-    Serial.println("Starting calibration for 40s...");
-    calibrating = true;
-    ina219_calibrate_start(40000);
-  } else if (kind == 'l') {
-    char line = Serial.read();
-    Serial.readBytes(buffer, 10);
-    int i = line - 'A';
-    calibs[i].offset_uA = atoi(buffer);
-    EEPROM.put(EEPROM_CALIBRATION_ADDR + i * 4, calibs[i].offset_uA);
-  } else if (kind == 'M') {
-    ina219_load_calibrate();
   } else if (kind == '\n') {
     // ignore
-  //} else if (kind == 'Z') {
-  //  Serial.println("Z: starting calibration");
-  //  linecalib_start();
-  //} else if (kind == 'z') {
-  //  linecalib_show();
   } else {
     Serial.print(" Eunknown kind ");
     Serial.println(kind);
