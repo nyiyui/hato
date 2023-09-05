@@ -5,7 +5,7 @@
     <title>HATO Sakayukari Sakuragi</title>
     <!-- <meta http-equiv="refresh" content="1"> -->
     <script>
-      //setTimeout(() => { window.location.reload(1); }, 100);
+      setTimeout(() => { window.location.reload(1); }, 100);
     </script>
   </head>
   <body style="background: #000;">
@@ -14,15 +14,16 @@
     {{ $t := index .gs.Trains 0 }}
     {{ printf "%#v" $t }}
     {{ printf "%#v" $t.Path }}
-    {{ $At := contains $t 2 }}
-    {{ $Bt := contains $t 1 }}
-    {{ $Ct := contains $t 0 }}
-    {{ $Z := index .gs.Layout.Lines 0 }}
-    {{ $Zs := index .gs.LineStates 0 }}
-    {{ $Y := index .gs.Layout.Lines 1 }}
-    {{ $Ys := index .gs.LineStates 1 }}
-    {{ $X := index .gs.Layout.Lines 2 }}
-    {{ $Xs := index .gs.LineStates 2 }}
+    {{ $At := contains $t 3 }}
+    {{ $Bt := contains $t 2 }}
+    {{ $Ct := contains $t 1 }}
+    {{ $Z := index .gs.Layout.Lines 1 }}
+    {{ $Zs := index .gs.LineStates 1 }}
+    {{ $Y := index .gs.Layout.Lines 2 }}
+    {{ $Ys := index .gs.LineStates 2 }}
+    {{ $X := index .gs.Layout.Lines 3 }}
+    {{ $Xs := index .gs.LineStates 3 }}
+    {{ $tColor := "white" }}
     <svg width="2000" height="100" style="background: #000; fill: #fff;">
       <text x="1000" y="50">
         HATO デモ用制御盤 未踏中央線
@@ -31,13 +32,19 @@
       <text x="500" y="20" style="font-size: 12px;">
         <tspan x="500" dy="1.2em">列車 1M</tspan>
         <tspan x="500" dy="1.2em">編成 7b920d78-0c1b-49ef-ab2e-c1209f49bbc6 1007</tspan>
+        <tspan x="500" dy="1.2em">power {{ $t.Power }}</tspan>
+        <!--
         <tspan x="500" dy="2.42em">列車 2M</tspan>
         <tspan x="500" dy="1.2em">編成 e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0 EF210-317</tspan>
+        -->
       </text>
     </svg>
     <svg width="2000" height="100" style="background: #000; padding-left: 200px; padding-bottom: 200px; padding-right: 200px; fill: #fff;">
       <text x="0" y="40">長瀬駅</text>
       <line x1="0" y1="20" x2="376" y2="20" stroke="{{ if $At }}green{{ else }}white{{ end }}" stroke-width="5" />
+      {{ if $At }}
+        <rect x="100" y="10" width="100" height="5" fill="{{ $tColor }}" />
+      {{ end }}
       {{ if eq .att.Position.LineI 2 }}
         <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
         <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="10" />
@@ -45,13 +52,19 @@
       <text x="526" y="40">未踏中央駅</text>
       <line x1="376" y1="0" x2="376" y2="40" stroke="black" stroke-width="10" />
       <line x1="376" y1="20" x2="752" y2="20" stroke="{{ if $Bt }}green{{ else }}white{{ end }}" stroke-width="5" />
+      {{ if $Bt }}
+        <rect x="426" y="10" width="100" height="5" fill="{{ $tColor }}" />
+      {{ end }}
       {{ if eq .att.Position.LineI 1 }}
         <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
         <circle cx="{{ (add 128 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />
       {{ end }}
       <line x1="752" y1="0" x2="752" y2="40" stroke="black" stroke-width="10" />
       <line x1="752" y1="20" x2="1128" y2="20" stroke="{{ if $Ct }}green{{ else }}white{{ end }}" stroke-width="5" />
-      <text x="752" y="40">新日本橋駅</text>
+      <text x="1028" y="40">新日本橋駅</text>
+      {{ if $Ct }}
+        <rect x="852" y="10" width="100" height="5" fill="{{ $tColor }}" />
+      {{ end }}
       {{ if eq .att.Position.LineI 0 }}
         <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
         <circle cx="{{ (add 1000 (div .att.Position.Precise 1000)) }}" cy="20" r="10" />

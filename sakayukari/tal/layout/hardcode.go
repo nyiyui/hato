@@ -192,6 +192,10 @@ func InitTestbench4() (*Layout, error) {
 	r183 := math.Pi * 183000 * 2
 	y, err := Connect([]Line{
 		Line{
+			Comment: "nA",
+			PortB:   Port{Length: 1, Direction: true},
+		},
+		Line{
 			Comment:   "A",
 			PortA:     Port{Direction: false},
 			PortB:     Port{Length: 2 * 248000, Direction: true},
@@ -208,6 +212,10 @@ func InitTestbench4() (*Layout, error) {
 			PortA:     Port{Direction: true},
 			PortB:     Port{Length: uint32(r183 / 2), Direction: false},
 			PowerConn: board("C"),
+		},
+		Line{
+			Comment: "nC",
+			PortB:   Port{Length: 1, Direction: true},
 		},
 	})
 	return &y, err

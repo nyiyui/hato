@@ -112,7 +112,7 @@ func Main() error {
 	//		},
 	//	},
 	//}))
-	g.Actors = append(g.Actors, LiveControl(ActorRef{Index: 0}, guide))
+	g.Actors = append(g.Actors, WaypointControl(ActorRef{Index: 0}, guide))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

@@ -215,7 +215,7 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        60,
+		Power:        80,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,
@@ -224,7 +224,7 @@ func Guide(conf GuideConf) Actor {
 		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
 		Orient: FormOrientA,
 	}
-	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("C"), layout.PortA})
+	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("nC"), layout.PortA})
 	t1.Path = &path
 	log.Printf("t1.Path %#v", path)
 	g.trains = append(g.trains, t1)
