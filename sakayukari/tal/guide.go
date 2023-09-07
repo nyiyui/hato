@@ -215,7 +215,7 @@ func Guide(conf GuideConf) Actor {
 		y:          conf.Layout,
 	}
 	t1 := Train{
-		Power:        80,
+		Power:        60,
 		CurrentBack:  0,
 		CurrentFront: 0,
 		State:        TrainStateNextAvail,

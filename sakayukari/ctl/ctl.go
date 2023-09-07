@@ -43,27 +43,30 @@ func WaypointControl(uiEvents, guide ActorRef) Actor {
 				},
 			}
 		}
-		speed := 80
+		smoothSpeed := func(ti, current, target int) {
+			if current > target {
+				for p := current; p >= target; p-- {
+					setPower(ti, p)
+					time.Sleep(120 * time.Millisecond)
+				}
+			} else {
+				for p := current; p <= target; p++ {
+					setPower(ti, p)
+					time.Sleep(150 * time.Millisecond)
+				}
+			}
+		}
+		speed := 60
 		for len(gs.Trains) == 0 {
 		}
 		for {
 			waitUntil(func() bool {
 				t := gs.Trains[0]
-				//return t.CurrentBack == t.CurrentFront && t.Path.Follows[t.CurrentBack].LineI == gs.Layout.MustLookupIndex("C")
-				return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex("C")
-				//for i := t.CurrentBack; i <= t.CurrentFront; i++ {
-				//	lp := t.Path.Follows[i]
-				//	if lp.LineI == 2 {
-				//		return true
-				//	}
-				//}
-				//return false
+				return t.Path.Follows[t.CurrentBack].LineI == gs.Layout.MustLookupIndex("C")
 			})
-			for p := speed; p >= 13; p-- {
-				setPower(0, p)
-				time.Sleep(70 * time.Millisecond)
-			}
-			time.Sleep(1 * time.Second)
+			//time.Sleep(3*time.Second + 500*time.Millisecond)
+			smoothSpeed(0, speed, 12)
+			time.Sleep(3 * time.Second)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
@@ -71,21 +74,14 @@ func WaypointControl(uiEvents, guide ActorRef) Actor {
 					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nA"), layout.PortA},
 				},
 			}
-			time.Sleep(10 * time.Second)
-			for p := 13; p <= speed; p++ {
-				setPower(0, p)
-				time.Sleep(100 * time.Millisecond)
-			}
+			smoothSpeed(0, 12, speed)
 			waitUntil(func() bool {
 				t := gs.Trains[0]
-				//return t.CurrentBack == t.CurrentFront && t.Path.Follows[t.CurrentBack].LineI == gs.Layout.MustLookupIndex("A")
-				return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex("A")
+				return t.Path.Follows[t.CurrentBack].LineI == gs.Layout.MustLookupIndex("A")
 			})
-			for p := speed; p >= 13; p-- {
-				setPower(0, p)
-				time.Sleep(70 * time.Millisecond)
-			}
-			time.Sleep(1 * time.Second)
+			//time.Sleep(3 * time.Second)
+			smoothSpeed(0, speed, 12)
+			time.Sleep(3 * time.Second)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
@@ -93,11 +89,30 @@ func WaypointControl(uiEvents, guide ActorRef) Actor {
 					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nC"), layout.PortA},
 				},
 			}
-			time.Sleep(10 * time.Second)
-			for p := 13; p <= speed; p++ {
-				setPower(0, p)
-				time.Sleep(100 * time.Millisecond)
-			}
+			smoothSpeed(0, 12, speed)
+			/*
+				for p := 12; p <= speed; p++ {
+					setPower(0, p)
+					time.Sleep(100 * time.Millisecond)
+				}
+				for p := speed; p >= 12; p-- {
+					setPower(0, p)
+					time.Sleep(70 * time.Millisecond)
+				}
+				time.Sleep(1 * time.Second)
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI: 0,
+						Target: &layout.LinePort{gs.Layout.MustLookupIndex("nC"), layout.PortA},
+					},
+				}
+				time.Sleep(10 * time.Second)
+				for p := 12; p <= speed; p++ {
+					setPower(0, p)
+					time.Sleep(100 * time.Millisecond)
+				}
+			*/
 		}
 	}()
 	/*
