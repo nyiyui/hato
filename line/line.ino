@@ -19,6 +19,7 @@ typedef struct Line {
   bool direction;
   unsigned long stop_ms;
   bool stop_brake;
+  int pwm;
 } Line;
 
 static char instance[0x21] = INSTANCE;
@@ -60,6 +61,7 @@ void Line_setPwm(Line *line, int value, bool brake) {
     return;
   }
   line->motor->run(brake ? BRAKE : (line->direction ? FORWARD : BACKWARD));
+  line->pwm = value;
 }
 
 void Line_update(Line *line) {
@@ -96,51 +98,68 @@ void setup() {
     Serial.println(" Smotor shield init failed");
     delay(1000);
   }
+  ina240_init();
   // === INA219
-  ina219_init();
+  //ina219_init();
   Serial.println(" Swait 1 second...");
   delay(1000);
   Serial.println(" Sready");
 }
 
+bool allEqual(bool a[], bool b[], size_t n) {
+  for (size_t i = 0; i < n; i ++)
+    if (a[i] != b[i]) return false;
+  return true;
+}
+
 void loop() {
   static unsigned long prev = 0;
-  static bool prevA = false;
-  static bool prevB = false;
-  static bool prevC = false;
-  static bool prevD = false;
+  static bool prev_values[4] = { 0 };
   unsigned long now = micros();
   ina240_update();
+  
+  // Protect against drift (?):
+  // - A is shorted with B using a motor train
+  // - CAAN000 or CABN000
+  // - try CBAN020 and CBBN020:
+  //   - CBAN020: 508 (-03)
+  //   - CBBN020: 550 (+39)
+  // - ignore ina240_values when pwm applied is 0.
+  for (size_t i = 0; i < 4; i ++) {
+    Line line;
+    if (i == 0) line = lineA;
+    if (i == 1) line = lineB;
+    if (i == 2) line = lineC;
+    if (i == 3) line = lineD;
+    if (line.pwm == 0)
+      ina240_values[i] = false;
+  }
+
   if (prev + 3000 <= now) {
-#define same(letter) now##letter == prev##letter
-    if (!(same(A) && same(B) && same(C) && same(D))) {
-#undef same
+    if (!allEqual(prev_values, ina240_values, sizeof(ina240_values)/sizeof(ina240_values[0]))) {
       if (debugPoint) {
-        show(0, A) show(1, B) show(2, C) show(3, D)
-            Serial.print(",thresholdPositive:");
-        Serial.print(ina219_threshold);
-        Serial.print(",thresholdNegative:");
-        Serial.print(-ina219_threshold);
-        Serial.println();
+        //show(0, A) show(1, B) show(2, C) show(3, D)
+        //Serial.print(",thresholdPositive:");
+        //Serial.print(ina219_threshold);
+        //Serial.print(",thresholdNegative:");
+        //Serial.print(-ina219_threshold);
+        //Serial.println();
       }
-#undef show
       Serial.print(" DC");
       Serial.print("A");
-      Serial.print(nowA);
+      Serial.print(ina240_values[0]);
       Serial.print("B");
-      Serial.print(nowB);
+      Serial.print(ina240_values[1]);
       Serial.print("C");
-      Serial.print(nowC);
+      Serial.print(ina240_values[2]);
       Serial.print("D");
-      Serial.print(nowD);
+      Serial.print(ina240_values[3]);
       Serial.print("T");
       Serial.println(now);
     }
     prev = now;
-    prevA = nowA;
-    prevB = nowB;
-    prevC = nowC;
-    prevD = nowD;
+    for (size_t i = 0; i < sizeof(ina240_values)/sizeof(ina240_values[0]); i ++)
+      prev_values[i] = ina240_values[i];
   }
   Line_update(&lineA);
   Line_update(&lineB);
@@ -229,43 +248,36 @@ void handleSLCP() {
     handleShort(true);
   } else if (kind == 'C') {
     handleShort(false);
-  } else if (kind == 'D') {
-    buffer[0] = Serial.read();
-    buffer[1] = Serial.read();
-    buffer[2] = Serial.read();
-    buffer[3] = '\0';
-    ina219_weight = atoi(buffer);
-    Serial.print("ina219_weight set to ");
-    Serial.print(ina219_weight);
-    Serial.println(". Note: this is only saved to RAM.");
-  } else if (kind == 'E') {
+  } else if (kind == 'L') {
     buffer[0] = Serial.read();
     buffer[1] = Serial.read();
     buffer[2] = Serial.read();
     buffer[3] = Serial.read();
     buffer[4] = Serial.read();
     buffer[5] = '\0';
-    ina219_elapsed_weight = atof(buffer);
-    Serial.print("ina219_elapsed_weight set to ");
-    Serial.print(ina219_elapsed_weight);
+    ina240_offset = atoi(buffer);
+    Serial.print("ina240_offset set to ");
+    Serial.print(ina240_offset);
     Serial.println(". Note: this is only saved to RAM.");
-  } else if (kind == 'F') {
+  } else if (kind == 'M') {
     buffer[0] = Serial.read();
     buffer[1] = Serial.read();
     buffer[2] = Serial.read();
-    buffer[3] = '\0';
-    ina219_threshold = atoi(buffer);
-    Serial.print("ina219_threshold set to ");
-    Serial.print(ina219_threshold);
+    buffer[3] = Serial.read();
+    buffer[4] = Serial.read();
+    buffer[5] = '\0';
+    ina240_threshold = atoi(buffer);
+    Serial.print("ina240_threshold set to ");
+    Serial.print(ina240_threshold);
     Serial.println(". Note: this is only saved to RAM.");
   } else if (kind == 'f') {
     buffer[0] = Serial.read();
     buffer[1] = Serial.read();
     buffer[2] = Serial.read();
     buffer[3] = '\0';
-    ina219_hysteresis_delay_us = (long) atoi(buffer) * 1000;
-    Serial.print("ina219_hysteresis_delay_us set to ");
-    Serial.print(ina219_hysteresis_delay_us);
+    ina240_hysteresis_delay_us = (long) atoi(buffer) * 1000;
+    Serial.print("ina240_hysteresis_delay_us set to ");
+    Serial.print(ina240_hysteresis_delay_us);
     Serial.println(". Note: this is only saved to RAM.");
   } else if (kind == 'G') {
     debug = !debug;
