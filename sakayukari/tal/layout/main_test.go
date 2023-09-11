@@ -375,6 +375,7 @@ func TestReverseFullPath(t *testing.T) {
 	}
 	for i, setup := range setups {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			y := setup.y
 			reversed := y.ReverseFullPath(setup.path)
 			equiv := y.ReverseFullPath(reversed)
 			if !cmp.Equal(equiv, setup.path) {
