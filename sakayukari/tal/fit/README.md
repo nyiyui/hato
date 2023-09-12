@@ -1,0 +1,10 @@
+- record power changes in time
+  - e.g. `[(0s, 0), (1s, 0→100), (2s, 100→0)]`
+- measurement section = section between two measurements of train
+- calculate the average speed between measurement sections using power changes
+- to change f(power)=speed function
+  - half of time was speed 10, other half was speed 20
+  - speed by function=f(10*0.5+20*0.5)
+  - given actual speed
+  - d=delta between speed given by function and measured
+  - add these new points to the function and re-polyfit (10, f(10)+0.5*d) (20, f(20)+0.5*d)

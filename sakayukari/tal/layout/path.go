@@ -111,7 +111,51 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
 		}
 		cum += step
 	}
-	panic("offset overran path")
+	if cum == offset {
+		a := fp.Follows[len(fp.Follows)-2]
+		b := fp.Follows[len(fp.Follows)-1]
+		if a.LineI != b.LineI {
+			_, p := y.GetLinePort(a)
+			a = p.Conn()
+			if a.LineI != b.LineI {
+				panic("LinePort A not connected to same line as LinePort B")
+			}
+		}
+		// for debugging
+		// log.Printf("fp %#v", fp)
+		// log.Printf("a %#v", a)
+		// log.Printf("b %#v", b)
+		switch a.PortI {
+		case PortA:
+			switch b.PortI {
+			case PortA:
+				panic("unreachable")
+			case PortB, PortC:
+				// A → B/C
+				_, p := y.GetLinePort(b)
+				return Position{
+					LineI:   a.LineI,
+					Precise: p.Length,
+					Port:    b.PortI,
+				}
+			default:
+				panic("unreachable")
+			}
+		case PortB, PortC:
+			if b.PortI != PortA {
+				panic("B/C to B/C")
+			}
+			// B/C → A
+			return Position{
+				LineI:   a.LineI,
+				Precise: 0,
+				Port:    a.PortI,
+			}
+		default:
+			panic("unreachable")
+		}
+	}
+	panic(fmt.Sprintf("offset overran path (cum=%d)", cum))
 }
 
 func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {

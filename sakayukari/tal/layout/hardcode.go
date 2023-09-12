@@ -114,38 +114,6 @@ func InitTestbench3() (*Layout, error) {
 	station := 2*64000 + 2*718000*math.Pi*2*15/360 + 248000
 	_, _, _ = normal, reverse, station
 	y, err := Connect([]Line{
-		//Line{
-		//	Comment:   "Z",
-		//	PortA:     Port{Direction: true},
-		//	PortB:     Port{Length: 128000, Direction: false},
-		//	PowerConn: yellow("A"),
-		//},
-		//Line{
-		//	Comment:   "Y",
-		//	PortB:     Port{Length: 3*248000 + 128000, Direction: true},
-		//	PowerConn: yellow("B"),
-		//},
-		//Line{
-		//	Comment: "X",
-		//	PortA:   Port{Direction: true},
-		//	PortB:   Port{Length: uint32(normal), Direction: false},
-		//	PortC: Port{Length: uint32(reverse), Direction: false, ConnInline: []Line{
-		//		Line{
-		//			Comment:   "V",
-		//			PortA:     Port{Direction: false},
-		//			PortB:     Port{Length: uint32(station), Direction: true},
-		//			PowerConn: white("A"),
-		//		},
-		//	}},
-		//	PowerConn:  yellow("C"),
-		//	SwitchConn: white("B"),
-		//},
-		//Line{
-		//	Comment:   "W",
-		//	PortA:     Port{Direction: true},
-		//	PortB:     Port{Length: 248000 * 3, Direction: false},
-		//	PowerConn: white("C"),
-		//},
 		Line{
 			Comment:   "Z",
 			PortA:     Port{Direction: true},
@@ -189,6 +157,12 @@ func InitTestbench4() (*Layout, error) {
 			Line: line,
 		}
 	}
+	swBoard := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-line", "v2", "gold"},
+			Line: line,
+		}
+	}
 	r183 := math.Pi * 183000 * 2
 	y, err := Connect([]Line{
 		Line{
@@ -196,10 +170,19 @@ func InitTestbench4() (*Layout, error) {
 			PortB:   Port{Length: 1, Direction: true},
 		},
 		Line{
-			Comment:   "A",
-			PortA:     Port{Direction: true},
-			PortB:     Port{Length: 2 * 248000, Direction: false},
-			PowerConn: board("C"),
+			Comment: "A",
+			PortA:   Port{Direction: true},
+			PortB:   Port{Length: 2 * 248000, Direction: false},
+			PortC: Port{Length: 2 * 248000, Direction: false, ConnInline: []Line{
+				Line{
+					Comment:   "D",
+					PortA:     Port{Direction: true},
+					PortB:     Port{Length: 64000 + uint32(r183/2), Direction: false},
+					PowerConn: board("D"),
+				},
+			}},
+			PowerConn:  board("C"),
+			SwitchConn: swBoard("C"),
 		},
 		Line{
 			Comment:   "B",
@@ -208,15 +191,25 @@ func InitTestbench4() (*Layout, error) {
 			PowerConn: board("A"),
 		},
 		Line{
-			Comment:   "C",
-			PortA:     Port{Direction: false},
-			PortB:     Port{Length: uint32(r183 / 2), Direction: true},
-			PowerConn: board("B"),
+			Comment:    "C",
+			PortA:      Port{Direction: false},
+			PortB:      Port{Length: uint32(r183 / 2), Direction: true},
+			PowerConn:  board("B"),
+			SwitchConn: swBoard("C"),
 		},
 		Line{
 			Comment: "nC",
 			PortB:   Port{Length: 1, Direction: true},
 		},
 	})
+	y.Lines[y.MustLookupIndex("C")].PortA.ConnI = y.MustLookupIndex("nC")
+	y.Lines[y.MustLookupIndex("C")].PortA.ConnP = PortA
+	y.Lines[y.MustLookupIndex("C")].PortA.ConnFilled = true
+	y.Lines[y.MustLookupIndex("C")].PortB.ConnI = y.MustLookupIndex("B")
+	y.Lines[y.MustLookupIndex("C")].PortB.ConnP = PortB
+	y.Lines[y.MustLookupIndex("C")].PortB.ConnFilled = true
+	y.Lines[y.MustLookupIndex("C")].PortC.ConnI = y.MustLookupIndex("D")
+	y.Lines[y.MustLookupIndex("C")].PortC.ConnP = PortC
+	y.Lines[y.MustLookupIndex("C")].PortC.ConnFilled = true
 	return &y, err
 }
