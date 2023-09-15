@@ -1,6 +1,8 @@
 package ctl
 
 import (
+	"log"
+	"sync"
 	"time"
 
 	"github.com/gizak/termui/v3"
@@ -11,7 +13,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
-func WaypointControl(uiEvents, guide ActorRef) Actor {
+func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 	var gs tal.GuideSnapshot
 	a := Actor{
 		Comment:  "control",
@@ -24,14 +26,43 @@ func WaypointControl(uiEvents, guide ActorRef) Actor {
 			Output:      true,
 		},
 	}
+	init := func(trainI int) {
+		a.OutputCh <- Diffuse1{
+			Origin: guide,
+			Value: tal.GuideTrainUpdate{
+				TrainI:       trainI,
+				SetRunOnLock: true,
+				RunOnLock:    true,
+			},
+		}
+	}
+	_ = init
+	//init(0)
 	go func() {
-		waitUntil := func(f func() bool) {
+		waitUntil := func(f func() bool, timeout time.Duration) {
+			start := time.Now()
 			for {
+				if timeout != 0 && time.Since(start) > timeout {
+					return
+				}
 				if f() {
 					return
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
+		}
+		waitUntilTrainOn := func(trainI int, comment string) {
+			waitUntil(func() bool {
+				t := gs.Trains[trainI]
+				return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex(comment)
+			}, 0)
+		}
+		waitUntilTrainIn := func(trainI int, comment string, timeout time.Duration) {
+			waitUntil(func() bool {
+				t := gs.Trains[trainI]
+				return t.CurrentFront == t.CurrentBack && t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex(comment)
+				//return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex(comment)
+			}, timeout)
 		}
 		setPower := func(trainI, power int) {
 			a.OutputCh <- Diffuse1{
@@ -57,43 +88,89 @@ func WaypointControl(uiEvents, guide ActorRef) Actor {
 			}
 		}
 		speed := 75
+		_ = speed
+		_ = smoothSpeed
 		for len(gs.Trains) == 0 {
 		}
 		for {
-			waitUntil(func() bool {
-				t := gs.Trains[0]
-				return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex("C")
-			})
-			time.Sleep(1200 * time.Millisecond)
-			smoothSpeed(0, speed, 40)
-			time.Sleep(1500 * time.Millisecond)
-			smoothSpeed(0, 40, 12)
-			time.Sleep(3 * time.Second)
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI:       0,
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("B"), layout.PortB},
+					SetRunOnLock: true,
+					RunOnLock:    true,
+				},
+			}
+			setPower(0, 60)
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI:       1,
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("D"), layout.PortB},
+					SetRunOnLock: true,
+					RunOnLock:    true,
+				},
+			}
+			setPower(1, 60)
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				waitUntilTrainOn(0, "B")
+				setPower(0, 30)
+				waitUntilTrainIn(0, "B", 4000*time.Millisecond)
+				for i := 0; i < 10; i++ {
+					log.Printf("=== 0REACHED")
+				}
+				setPower(0, 0)
+			}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				waitUntilTrainOn(1, "D")
+				setPower(1, 30)
+				waitUntilTrainIn(1, "D", 4000*time.Millisecond)
+				for i := 0; i < 10; i++ {
+					log.Printf("=== 1REACHED")
+				}
+				setPower(1, 0)
+			}()
+			wg.Wait()
+			time.Sleep(1000 * time.Millisecond)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
 					TrainI: 0,
-					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nA"), layout.PortA},
+					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nC"), layout.PortB},
 				},
 			}
-			smoothSpeed(0, 12, speed)
-			waitUntil(func() bool {
-				t := gs.Trains[0]
-				return t.Path.Follows[t.CurrentFront].LineI == gs.Layout.MustLookupIndex("A")
-			})
-			time.Sleep(4000 * time.Millisecond)
-			smoothSpeed(0, speed, 40)
-			time.Sleep(4000 * time.Millisecond)
-			smoothSpeed(0, 40, 12)
-			time.Sleep(3 * time.Second)
+			setPower(0, 60)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
-					TrainI: 0,
-					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nC"), layout.PortA},
+					TrainI: 1,
+					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nA"), layout.PortB},
 				},
 			}
-			smoothSpeed(0, 12, speed)
+			setPower(1, 60)
+			{
+				var wg sync.WaitGroup
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					waitUntilTrainIn(0, "C", 0)
+					setPower(0, 0)
+				}()
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					waitUntilTrainIn(1, "A", 0)
+					setPower(1, 0)
+				}()
+				wg.Wait()
+			}
+			panic("OK")
 		}
 	}()
 	/*

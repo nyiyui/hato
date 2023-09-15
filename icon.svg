@@ -1,0 +1,10 @@
+<svg version="1.1"
+     width="300" height="424"
+     xmlns="http://www.w3.org/2000/svg">
+  <!--
+  <path d="M30 30 l240 0 l0 364 l-240 0 l0 -364" fill="#000" />
+  -->
+  <line x1="30" y1="30" x2="270" y2="30" stroke="#000" />
+  <line x1="30" y1="212" x2="270" y2="212" stroke="#000" />
+  <line x1="30" y1="30" x2="270" y2="364" stroke="#000" />
+</svg>

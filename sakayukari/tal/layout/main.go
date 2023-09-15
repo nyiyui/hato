@@ -41,6 +41,7 @@ func (p PortI) String() string {
 }
 
 const (
+	PortDNC PortI = -1
 	// use non 0-3 numbers to error out on legacy code
 	PortA PortI = 0
 	PortB PortI = 1
@@ -559,7 +560,7 @@ func (p PathToSelfError) Error() string {
 
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	if from.LineI == goal.LineI {
-		if from.PortI == goal.PortI {
+		if from.PortI != PortDNC && from.PortI == goal.PortI {
 			return FullPath{}, PathToSelfError{}
 		}
 		return FullPath{
@@ -569,7 +570,7 @@ func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	}
 	lps := y.PathTo(from.LineI, goal.LineI)
 	start := lps[0]
-	if from.PortI != start.PortI && from.PortI != PortA && start.PortI != PortA {
+	if from.PortI != start.PortI && from.PortI != PortA && from.PortI != PortDNC && start.PortI != PortA {
 		return FullPath{}, fmt.Errorf("switchback necessary (from → start is %s → %s)", from, start)
 	}
 	_, p := y.GetLinePort(lps[len(lps)-1])

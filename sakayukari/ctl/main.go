@@ -59,21 +59,26 @@ func Main() error {
 	}
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
-	g.Actors = append(g.Actors, tal.NewGuide(tal.GuideConf{
-		//Virtual: true,
-		Layout: y,
-		Actors: map[layout.LineID]ActorRef{
-			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "A"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "B"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "C"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "D"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "A"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "B"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "C"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "D"}:     ActorRef{Index: 3},
-		},
-		Cars: carsData,
-	}))
+	var g2 *tal.Guide
+	{
+		var actor Actor
+		g2, actor = tal.NewGuide(tal.GuideConf{
+			//Virtual: true,
+			Layout: y,
+			Actors: map[layout.LineID]ActorRef{
+				layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "A"}: ActorRef{Index: 2},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "B"}: ActorRef{Index: 2},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "C"}: ActorRef{Index: 2},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "D"}: ActorRef{Index: 2},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "A"}:     ActorRef{Index: 3},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "B"}:     ActorRef{Index: 3},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "C"}:     ActorRef{Index: 3},
+				layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "D"}:     ActorRef{Index: 3},
+			},
+			Cars: carsData,
+		})
+		g.Actors = append(g.Actors, actor)
+	}
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, tal.GuideRender(guide))
 	g.Actors = append(g.Actors, *tal.Model(tal.ModelConf{
@@ -112,7 +117,7 @@ func Main() error {
 	//		},
 	//	},
 	//}))
-	g.Actors = append(g.Actors, WaypointControl(ActorRef{Index: 0}, guide))
+	g.Actors = append(g.Actors, WaypointControl(ActorRef{Index: 0}, guide, g2))
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

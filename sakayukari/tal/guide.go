@@ -101,6 +101,9 @@ type Train struct {
 	Power           int
 	noPowerSupplied bool
 
+	// RunOnLock allows the train to run, regardless of locking status. This is useful if a more precise (and reliable, I hope!) method of ensuring safety is in use.
+	// This is a dynamic field.
+	RunOnLock bool
 	// Mode is which mode this train is in. See TrainMode for details.
 	// This is a dynamic field.
 	Mode TrainMode
@@ -181,7 +184,7 @@ type LineStates struct {
 	nextSwitchState SwitchState
 }
 
-func NewGuide(conf GuideConf) Actor {
+func NewGuide(conf GuideConf) (*Guide, Actor) {
 	if conf.Cars.Forms == nil {
 		panic("conf.Cars required")
 	}
@@ -225,29 +228,29 @@ func NewGuide(conf GuideConf) Actor {
 			//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
 			Orient: FormOrientA,
 		}
-		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("nC"), layout.PortB})
+		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("B"), layout.PortB})
 		//path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("D"), layout.PortB})
 		t1.Path = &path
 		log.Printf("t1.Path %#v", path)
 		g.trains = append(g.trains, t1)
 	}
-	//{
-	//	t2 := Train{
-	//		Power:        70,
-	//		CurrentBack:  0,
-	//		CurrentFront: 0,
-	//		State:        TrainStateNextAvail,
-	//		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-	//		Orient:       FormOrientA,
-	//	}
-	//	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
-	//	t2.Path = &path
-	//	log.Printf("t2.Path %#v", path)
-	//	g.trains = append(g.trains, t2)
-	//}
+	{
+		t2 := Train{
+			Power:        70,
+			CurrentBack:  0,
+			CurrentFront: 0,
+			State:        TrainStateNextAvail,
+			FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+			Orient:       FormOrientA,
+		}
+		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
+		t2.Path = &path
+		log.Printf("t2.Path %#v", path)
+		g.trains = append(g.trains, t2)
+	}
 
 	go g.loop()
-	return a
+	return &g, a
 }
 
 func (g *Guide) calculateTrailers(t *Train) {
@@ -514,18 +517,30 @@ func (g *Guide) loop() {
 			if val.PowerFilled {
 				t.Power = val.Power
 			}
+			if val.SetRunOnLock {
+				t.RunOnLock = val.RunOnLock
+			}
 			if val.Target != nil {
 				var sameDir bool
 				func() {
 					y := g.conf.Layout
 					log.Printf("### t %#v", t)
-					lpsBack, err := y.FullPathTo(t.Path.Follows[t.TrailerBack], *val.Target)
+					// TODO: In the below scenario, where TrailerBack is A and TrailerFront is B,
+					//       lpsBack can be A-C, while lpsFront can be A-B. (This can cause problems with using len(lpsBack) and len(lpsFront) to determine which to use.)
+					//       Include all of t.Path in the new path
+					// A---B
+					//   \-C
+					backLP := t.Path.Follows[t.TrailerBack]
+					backLP.PortI = layout.PortDNC
+					lpsBack, err := y.FullPathTo(backLP, *val.Target)
 					if errors.Is(err, layout.PathToSelfError{}) {
 						return
 					} else if err != nil {
 						panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
 					}
-					lpsFront, err := y.FullPathTo(t.Path.Follows[t.TrailerFront], *val.Target)
+					frontLP := t.Path.Follows[t.TrailerFront]
+					frontLP.PortI = layout.PortDNC
+					lpsFront, err := y.FullPathTo(frontLP, *val.Target)
 					if errors.Is(err, layout.PathToSelfError{}) {
 						return
 					} else if err != nil {
@@ -560,6 +575,15 @@ func (g *Guide) loop() {
 						// TODO: when train flips, CurrentBack and CurrentFront needs to be flipped too!
 						t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
 						t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
+						if t.CurrentBack == -1 || t.CurrentFront == -1 {
+							log.Printf("lpsBack %#v", lpsBack)
+							log.Printf("lpsFront %#v", lpsFront)
+							log.Printf("t %#v", t)
+							log.Printf("t.Path %#v", t.Path)
+							log.Printf("oldT %#v", oldT)
+							log.Printf("oldT.Path %#v", oldT.Path)
+							panic("new CurrentBack/CurrentFront is -1")
+						}
 						if t.CurrentBack > t.CurrentFront {
 							t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
 							sameDir = false
@@ -659,9 +683,14 @@ func (g *Guide) reify(ti int, t *Train) {
 		}
 	}
 	if t.State == TrainStateNextLocked {
-		log.Printf("=== TrainStateNextLocked")
-		log.Printf("t %#v", t)
-		stop = true
+		if t.RunOnLock {
+			log.Printf("=== TrainStateNextLocked (RunOnLock)")
+			log.Printf("t %#v", t)
+		} else {
+			log.Printf("=== TrainStateNextLocked")
+			log.Printf("t %#v", t)
+			stop = true
+		}
 	}
 	if stop {
 		power = g.idlePower(ti)
@@ -848,6 +877,9 @@ type GuideTrainUpdate struct {
 	// PowerFilled must be true for Power to have any meaning.
 	// If PowerFilled is false, Power must be 0.
 	PowerFilled bool
+	// RunOnLock is the new value of RunOnLock, is SetRunOnLock is true.
+	RunOnLock    bool
+	SetRunOnLock bool
 }
 
 func (gtu GuideTrainUpdate) String() string {
@@ -889,7 +921,7 @@ func (g *Guide) publishSnapshot() {
 }
 
 func (g *Guide) LatestSnapshot() GuideSnapshot {
-	panic("TODO: lock snapshot access")
+	//panic("TODO: lock snapshot access")
 	return g.snapshot()
 }
 
