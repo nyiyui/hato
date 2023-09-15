@@ -1,3 +1,20 @@
+two things:
+- modeled velocity over time
+- average velocity in an interval (multiple)
+
+for each avg velocity:
+  let vm = avg modeled velocity
+  let va = actual avg velocity
+  let delta = va-vm
+  save the delta in this interval
+  TODO: how does this work if the velocty changes
+
+example:
+  0.5*10m/s + 0.5*20m/s
+  recorded avg is 17m/s
+  delta = 2m/s
+  hmm try this out ig
+
 - record power changes in time
   - e.g. `[(0s, 0), (1s, 0→100), (2s, 100→0)]`
 - measurement section = section between two measurements of train

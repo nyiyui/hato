@@ -2,9 +2,9 @@ package layout
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"nyiyui.ca/hato/sakayukari/conn"
@@ -26,6 +26,19 @@ const BlankLineI = -123
 
 // PortI is a port index, representing ports A, B, and C.
 type PortI int
+
+func (p PortI) String() string {
+	switch p {
+	case 0:
+		return "A"
+	case 1:
+		return "B"
+	case 2:
+		return "C"
+	default:
+		return strconv.FormatInt(int64(p), 10)
+	}
+}
 
 const (
 	// use non 0-3 numbers to error out on legacy code
@@ -123,7 +136,7 @@ type LinePort struct {
 }
 
 func (lp LinePort) String() string {
-	return fmt.Sprintf("l%dp%d", lp.LineI, lp.PortI)
+	return fmt.Sprintf("%d%s", lp.LineI, lp.PortI)
 }
 
 type Line struct {
@@ -523,6 +536,13 @@ type FullPath struct {
 	Follows []LinePort
 }
 
+func (f FullPath) AtIndex(i int) LinePort {
+	if i == -1 {
+		return f.Start
+	}
+	return f.Follows[i]
+}
+
 func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {
 	fp, err := y.FullPathTo(from, goal)
 	if err != nil {
@@ -550,13 +570,13 @@ func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	lps := y.PathTo(from.LineI, goal.LineI)
 	start := lps[0]
 	if from.PortI != start.PortI && from.PortI != PortA && start.PortI != PortA {
-		return FullPath{}, errors.New("switchback necessary (from)")
+		return FullPath{}, fmt.Errorf("switchback necessary (from → start is %s → %s)", from, start)
 	}
 	_, p := y.GetLinePort(lps[len(lps)-1])
 	end := p.Conn()
 	if goal.PortI != end.PortI && goal.PortI != PortA && end.PortI != PortA {
 		log.Printf("end %#v", end)
-		return FullPath{}, errors.New("switchback necessary (goal)")
+		return FullPath{}, fmt.Errorf("switchback necessary (goal → end is %s → %s)", goal, end)
 	}
 	lps = append(lps, goal)
 	return FullPath{

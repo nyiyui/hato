@@ -163,7 +163,7 @@ func (t *Train) String() string {
 	return b.String()
 }
 
-type guide struct {
+type Guide struct {
 	actor      Actor
 	conf       GuideConf
 	trains     []Train
@@ -181,7 +181,7 @@ type LineStates struct {
 	nextSwitchState SwitchState
 }
 
-func Guide(conf GuideConf) Actor {
+func NewGuide(conf GuideConf) Actor {
 	if conf.Cars.Forms == nil {
 		panic("conf.Cars required")
 	}
@@ -207,33 +207,50 @@ func Guide(conf GuideConf) Actor {
 	for li, ar := range conf.Actors {
 		conf.actorsReverse[ar] = li.Conn
 	}
-	g := guide{
+	g := Guide{
 		conf:       conf,
 		actor:      a,
 		trains:     make([]Train, 0),
 		lineStates: make([]LineStates, len(conf.Layout.Lines)),
 		y:          conf.Layout,
 	}
-	t1 := Train{
-		Power:        70,
-		CurrentBack:  0,
-		CurrentFront: 0,
-		State:        TrainStateNextAvail,
-		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-		//FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
-		//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-		Orient: FormOrientA,
+	{
+		t1 := Train{
+			Power:        70,
+			CurrentBack:  0,
+			CurrentFront: 0,
+			State:        TrainStateNextAvail,
+			FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+			//FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+			//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+			Orient: FormOrientA,
+		}
+		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("nC"), layout.PortB})
+		//path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("D"), layout.PortB})
+		t1.Path = &path
+		log.Printf("t1.Path %#v", path)
+		g.trains = append(g.trains, t1)
 	}
-	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("nC"), layout.PortA})
-	t1.Path = &path
-	log.Printf("t1.Path %#v", path)
-	g.trains = append(g.trains, t1)
+	//{
+	//	t2 := Train{
+	//		Power:        70,
+	//		CurrentBack:  0,
+	//		CurrentFront: 0,
+	//		State:        TrainStateNextAvail,
+	//		FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+	//		Orient:       FormOrientA,
+	//	}
+	//	path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
+	//	t2.Path = &path
+	//	log.Printf("t2.Path %#v", path)
+	//	g.trains = append(g.trains, t2)
+	//}
 
 	go g.loop()
 	return a
 }
 
-func (g *guide) calculateTrailers(t *Train) {
+func (g *Guide) calculateTrailers(t *Train) {
 	sideA, sideB := g.conf.Cars.Forms[t.FormI].TrailerLength()
 	if sideA == 0 && sideB == 0 {
 		t.TrailerBack = t.CurrentBack
@@ -360,7 +377,7 @@ func (g *guide) calculateTrailers(t *Train) {
 	t.TrailerFront = trailerFront
 }
 
-func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
+func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 	ci, ok := g.conf.actorsReverse[diffuse.Origin]
 	if !ok {
 		log.Printf("unknown conn for actor %s", diffuse.Origin)
@@ -437,7 +454,7 @@ func (g *guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 	g.publishSnapshot()
 }
 
-func (g *guide) handleAttitude(att Attitude) {
+func (g *Guide) handleAttitude(att Attitude) {
 	t := &g.trains[att.TrainI]
 	if att.TrainGeneration < t.Generation {
 		return
@@ -455,7 +472,7 @@ func (g *guide) handleAttitude(att Attitude) {
 }
 
 // reason is only for debugging.
-func (g *guide) wakeup(ti int, reason string) {
+func (g *Guide) wakeup(ti int, reason string) {
 	log.Printf("wakeup %d", ti)
 	log.Printf("wakeup %#v", g.trains[ti])
 	log.Printf("wakeup %#v", g.trains[ti].Path)
@@ -466,14 +483,14 @@ func (g *guide) wakeup(ti int, reason string) {
 	g.trains[ti] = t
 }
 
-func (g *guide) check(ti int) {
+func (g *Guide) check(ti int) {
 	t := g.trains[ti]
 	if t.Power < 0 {
 		panic(fmt.Sprintf("TrainI %d: negative power: %#v", ti, t))
 	}
 }
 
-func (g *guide) loop() {
+func (g *Guide) loop() {
 	time.Sleep(1 * time.Second)
 	for ti := range g.trains {
 		g.wakeup(ti, "init")
@@ -612,7 +629,7 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
-func (g *guide) idlePower(ti int) int {
+func (g *Guide) idlePower(ti int) int {
 	t := g.trains[ti]
 	f, ok := g.conf.Cars.Forms[t.FormI]
 	if !ok {
@@ -626,7 +643,7 @@ func (g *guide) idlePower(ti int) int {
 	return int(conn.AbsClampPower(int(-b / m)))
 }
 
-func (g *guide) reify(ti int, t *Train) {
+func (g *Guide) reify(ti int, t *Train) {
 	power := t.Power
 	stop := false
 	max := t.TrailerFront
@@ -661,7 +678,7 @@ func (g *guide) reify(ti int, t *Train) {
 	}
 }
 
-func (g *guide) applySwitch(ti int, t *Train, pathI int) {
+func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path.Follows[pathI].LineI
 	pi := t.Path.Follows[pathI].PortI
 	//log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
@@ -735,7 +752,7 @@ func (g *guide) applySwitch(ti int, t *Train, pathI int) {
 	g.actor.OutputCh <- d
 }
 
-func (g *guide) apply(t *Train, pathI int, power int) {
+func (g *Guide) apply(t *Train, pathI int, power int) {
 	pi := t.Path.Follows[pathI].PortI
 	li := t.Path.Follows[pathI].LineI
 	l := g.y.Lines[li]
@@ -761,7 +778,7 @@ func (g *guide) apply(t *Train, pathI int, power int) {
 }
 
 // syncLocks verifies locking of all currents and next (if next is available) of a train.
-func (g *guide) syncLocks(ti int) {
+func (g *Guide) syncLocks(ti int) {
 	t := g.trains[ti]
 	defer func() { g.trains[ti] = t }()
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
@@ -785,7 +802,7 @@ func (g *guide) syncLocks(ti int) {
 }
 
 // lockSync tries to lock all LineIs in lis. If any fails, it returns ok = false.
-func (g *guide) lockSync(lis []layout.LineI, ti int) (ok bool) {
+func (g *Guide) lockSync(lis []layout.LineI, ti int) (ok bool) {
 	for _, li := range lis {
 		if g.lineStates[li].Taken {
 			if g.lineStates[li].TakenBy != ti {
@@ -801,7 +818,7 @@ func (g *guide) lockSync(lis []layout.LineI, ti int) (ok bool) {
 	return true
 }
 
-func (g *guide) lock(li layout.LineI, ti int) (ok bool) {
+func (g *Guide) lock(li layout.LineI, ti int) (ok bool) {
 	if g.lineStates[li].Taken {
 		if g.lineStates[li].TakenBy != ti {
 			return false
@@ -815,7 +832,7 @@ func (g *guide) lock(li layout.LineI, ti int) (ok bool) {
 	return true
 }
 
-func (g *guide) unlock(li layout.LineI) {
+func (g *Guide) unlock(li layout.LineI) {
 	//log.Printf("UNLOCK %d(%s) by %d", li, g.y.Lines[li].Comment, g.lineStates[li].TakenBy)
 	g.lineStates[li].Taken = false
 	g.lineStates[li].TakenBy = -1
@@ -852,7 +869,7 @@ func (gs GuideSnapshot) String() string {
 	return b.String()
 }
 
-func (g *guide) snapshot() GuideSnapshot {
+func (g *Guide) snapshot() GuideSnapshot {
 	gs := GuideSnapshot{Trains: g.trains, Layout: g.conf.Layout, LineStates: g.lineStates}
 	buf := new(bytes.Buffer)
 	err := gob.NewEncoder(buf).Encode(gs)
@@ -867,8 +884,13 @@ func (g *guide) snapshot() GuideSnapshot {
 	return res
 }
 
-func (g *guide) publishSnapshot() {
+func (g *Guide) publishSnapshot() {
 	g.actor.OutputCh <- Diffuse1{Value: g.snapshot()}
+}
+
+func (g *Guide) LatestSnapshot() GuideSnapshot {
+	panic("TODO: lock snapshot access")
+	return g.snapshot()
 }
 
 type GuideChange struct {
@@ -888,7 +910,7 @@ const (
 	ChangeTypeCurrentFront
 )
 
-func (g *guide) publishChange(ti int, ct ChangeType) {
+func (g *Guide) publishChange(ti int, ct ChangeType) {
 	//log.Printf("=== publishChange %d %#v", ti, ct)
 	g.actor.OutputCh <- Diffuse1{Value: GuideChange{
 		TrainI:   ti,

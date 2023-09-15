@@ -6,7 +6,7 @@ import (
 	. "nyiyui.ca/hato/sakayukari"
 )
 
-func (g *guide) View(model ActorRef) Actor {
+func (g *Guide) View(model ActorRef) Actor {
 	a := Actor{
 		Comment: "tal-view",
 		InputCh: make(chan Diffuse1),

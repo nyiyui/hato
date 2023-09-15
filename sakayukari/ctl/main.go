@@ -31,16 +31,16 @@ func Main() error {
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
 		conn.Id{"soyuu-line", "v2", "deepgreen"},
-		//conn.Id{"soyuu-line", "v2", "white"},
-		conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
-		conn.Id{"soyuu-rfid", "v2", "2"},
+		conn.Id{"soyuu-line", "v2", "grey2"},
+		//conn.Id{"soyuu-rfid", "adafruit:samd:adafruit_feather_m4", "0"},
+		//conn.Id{"soyuu-rfid", "v2", "2"},
 	})
 	err = connState.Find()
 	if err != nil {
 		return fmt.Errorf("conn find: %w", err)
 	}
-	rfid0 := ActorRef{Index: 3}
-	rfid1 := ActorRef{Index: 4}
+	//rfid0 := ActorRef{Index: 4}
+	//rfid1 := ActorRef{Index: 5}
 	g.Actors = append(g.Actors, connActors...)
 	y, err := layout.InitTestbench4()
 	if err != nil {
@@ -59,7 +59,7 @@ func Main() error {
 	}
 	data, _ := json.MarshalIndent(y, "", "  ")
 	log.Printf("layout: %s", data)
-	g.Actors = append(g.Actors, tal.Guide(tal.GuideConf{
+	g.Actors = append(g.Actors, tal.NewGuide(tal.GuideConf{
 		//Virtual: true,
 		Layout: y,
 		Actors: map[layout.LineID]ActorRef{
@@ -67,10 +67,10 @@ func Main() error {
 			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "B"}: ActorRef{Index: 2},
 			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "C"}: ActorRef{Index: 2},
 			layout.LineID{conn.Id{"soyuu-line", "v2", "deepgreen"}, "D"}: ActorRef{Index: 2},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "A"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "B"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "C"}:     ActorRef{Index: 3},
-			layout.LineID{conn.Id{"soyuu-line", "v2", "white"}, "D"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "A"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "B"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "C"}:     ActorRef{Index: 3},
+			layout.LineID{conn.Id{"soyuu-line", "v2", "grey2"}, "D"}:     ActorRef{Index: 3},
 		},
 		Cars: carsData,
 	}))
@@ -80,16 +80,16 @@ func Main() error {
 		Guide: guide,
 		Cars:  carsData,
 		RFIDs: []tal.RFID{
-			{rfid0, layout.Position{
-				LineI:   y.MustLookupIndex("B"),
-				Precise: 0,
-				Port:    layout.PortB,
-			}},
-			{rfid1, layout.Position{
-				LineI:   y.MustLookupIndex("C"),
-				Precise: 0,
-				Port:    layout.PortB,
-			}},
+			//{rfid0, layout.Position{
+			//	LineI:   y.MustLookupIndex("B"),
+			//	Precise: 0,
+			//	Port:    layout.PortB,
+			//}},
+			//{rfid1, layout.Position{
+			//	LineI:   y.MustLookupIndex("C"),
+			//	Precise: 0,
+			//	Port:    layout.PortB,
+			//}},
 		},
 	}))
 	model := ActorRef{Index: len(g.Actors) - 1}

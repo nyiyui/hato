@@ -159,7 +159,7 @@ func InitTestbench4() (*Layout, error) {
 	}
 	swBoard := func(line string) LineID {
 		return LineID{
-			Conn: conn.Id{"soyuu-line", "v2", "gold"},
+			Conn: conn.Id{"soyuu-line", "v2", "grey2"},
 			Line: line,
 		}
 	}
@@ -182,7 +182,7 @@ func InitTestbench4() (*Layout, error) {
 				},
 			}},
 			PowerConn:  board("C"),
-			SwitchConn: swBoard("C"),
+			SwitchConn: swBoard("B"),
 		},
 		Line{
 			Comment:   "B",
@@ -192,10 +192,10 @@ func InitTestbench4() (*Layout, error) {
 		},
 		Line{
 			Comment:    "C",
-			PortA:      Port{Direction: false},
-			PortB:      Port{Length: uint32(r183 / 2), Direction: true},
+			PortA:      Port{Direction: true},
+			PortB:      Port{Length: uint32(r183 / 2), Direction: false},
 			PowerConn:  board("B"),
-			SwitchConn: swBoard("C"),
+			SwitchConn: swBoard("A"),
 		},
 		Line{
 			Comment: "nC",
@@ -208,8 +208,15 @@ func InitTestbench4() (*Layout, error) {
 	y.Lines[y.MustLookupIndex("C")].PortB.ConnI = y.MustLookupIndex("B")
 	y.Lines[y.MustLookupIndex("C")].PortB.ConnP = PortB
 	y.Lines[y.MustLookupIndex("C")].PortB.ConnFilled = true
+	y.Lines[y.MustLookupIndex("B")].PortB.ConnI = y.MustLookupIndex("C")
+	y.Lines[y.MustLookupIndex("B")].PortB.ConnP = PortB
+	y.Lines[y.MustLookupIndex("B")].PortB.ConnFilled = true
 	y.Lines[y.MustLookupIndex("C")].PortC.ConnI = y.MustLookupIndex("D")
-	y.Lines[y.MustLookupIndex("C")].PortC.ConnP = PortC
+	y.Lines[y.MustLookupIndex("C")].PortC.ConnP = PortB
 	y.Lines[y.MustLookupIndex("C")].PortC.ConnFilled = true
+	y.Lines[y.MustLookupIndex("C")].PortC.Direction = y.MustLookup("C").PortB.Direction
+	y.Lines[y.MustLookupIndex("D")].PortB.ConnI = y.MustLookupIndex("C")
+	y.Lines[y.MustLookupIndex("D")].PortB.ConnP = PortC
+	y.Lines[y.MustLookupIndex("D")].PortB.ConnFilled = true
 	return &y, err
 }
