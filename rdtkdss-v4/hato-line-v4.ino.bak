@@ -1,0 +1,49 @@
+//#define PWM 5
+//#define DIR 4
+//#define SENSOR A6
+#define PWM 6
+#define DIR 7
+#define SENSOR A7
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(PWM, OUTPUT);
+  pinMode(DIR, OUTPUT);
+  pinMode(SENSOR, INPUT);
+}
+
+int pwm = 0;
+bool dir = false;
+unsigned long prev = millis();
+int hys_val = 0;
+unsigned long hys_until = millis();
+
+void loop() {
+  if (millis()-prev > 500) {
+    pwm ++;
+    if (pwm == 120) pwm = 0;
+    prev = millis();
+    dir = !dir;
+  }
+  Serial.print("pwm:");
+  Serial.print(dir ? pwm : -pwm);
+  if (dir) {
+    analogWrite(PWM, pwm);
+    digitalWrite(DIR, dir ? HIGH : LOW);
+  } else {
+    analogWrite(PWM, 0);
+  }
+  int val = analogRead(SENSOR);
+  if (millis() > hys_until || val >= hys_val) {
+    hys_val = val;
+    hys_until = millis() + 50;
+  }
+  //Serial.print(",hys_until:");
+  //Serial.print(millis()-hys_until);
+  Serial.print(",hys_val:");
+  Serial.print(hys_val);
+  Serial.print(",hys:");
+  Serial.print(millis() > hys_until ? val : hys_val);
+  Serial.print(",val:");
+  Serial.println(val);
+}
