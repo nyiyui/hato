@@ -14,6 +14,7 @@ func New(g *Guide, pl *poslim.PositionLimit) *Fit {
 	}
 	return f
 }
+
 func (f *Fit) Start() error {
 	ch := make(chan []poslim.Assertion)
 	f.pl.AddNotifiee(ch)

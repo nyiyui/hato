@@ -112,14 +112,16 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 					RunOnLock:    true,
 				},
 			}
+			_ = waitUntilTrainOn
 			setPower(1, 60)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				waitUntilTrainOn(0, "B")
-				setPower(0, 30)
-				waitUntilTrainIn(0, "B", 4000*time.Millisecond)
+				//waitUntilTrainOn(0, "B")
+				//setPower(0, 30)
+				//waitUntilTrainIn(0, "B", 4000*time.Millisecond)
+				waitUntilTrainIn(0, "B", 0)
 				for i := 0; i < 10; i++ {
 					log.Printf("=== 0REACHED")
 				}
@@ -128,9 +130,10 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				waitUntilTrainOn(1, "D")
-				setPower(1, 30)
-				waitUntilTrainIn(1, "D", 4000*time.Millisecond)
+				//waitUntilTrainOn(1, "D")
+				//setPower(1, 30)
+				//waitUntilTrainIn(1, "D", 4000*time.Millisecond)
+				waitUntilTrainIn(1, "D", 0)
 				for i := 0; i < 10; i++ {
 					log.Printf("=== 1REACHED")
 				}
