@@ -92,12 +92,12 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 		_ = smoothSpeed
 		for len(gs.Trains) == 0 {
 		}
-		for {
+		for i := 0; true; i++ {
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
 					TrainI:       0,
-					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("B"), layout.PortB},
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("B"), layout.PortI((i + 1) % 2)},
 					SetRunOnLock: true,
 					RunOnLock:    true,
 				},
@@ -107,12 +107,12 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
 					TrainI:       1,
-					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("D"), layout.PortA},
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("D"), layout.PortI(i % 2)},
 					SetRunOnLock: true,
 					RunOnLock:    true,
 				},
 			}
-			// TODO: switches don't...switch on second loop
+			// TODO: shorts on 3+ loop
 			_ = waitUntilTrainOn
 			setPower(1, 60)
 			var wg sync.WaitGroup
