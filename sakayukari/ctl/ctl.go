@@ -112,6 +112,7 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 					RunOnLock:    true,
 				},
 			}
+			// TODO: switches don't...switch on second loop
 			_ = waitUntilTrainOn
 			setPower(1, 60)
 			var wg sync.WaitGroup
@@ -125,6 +126,7 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 				for i := 0; i < 10; i++ {
 					log.Printf("=== 0REACHED")
 				}
+				time.Sleep(500 * time.Millisecond)
 				setPower(0, 0)
 			}()
 			wg.Add(1)
@@ -137,6 +139,7 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 				for i := 0; i < 10; i++ {
 					log.Printf("=== 1REACHED")
 				}
+				time.Sleep(500 * time.Millisecond)
 				setPower(1, 0)
 			}()
 			wg.Wait()
@@ -163,17 +166,18 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 				go func() {
 					defer wg.Done()
 					waitUntilTrainIn(0, "C", 0)
+					time.Sleep(7 * time.Second)
 					setPower(0, 0)
 				}()
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
 					waitUntilTrainIn(1, "A", 0)
+					time.Sleep(7 * time.Second)
 					setPower(1, 0)
 				}()
 				wg.Wait()
 			}
-			panic("OK")
 		}
 	}()
 	/*
