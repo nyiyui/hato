@@ -35,6 +35,20 @@ int signum(int x) {
 }
 
 void channel_write(struct channel *c, int power) {
+  //Serial.print("name ");
+  //Serial.println(c->name);
+  //Serial.print("power ");
+  //Serial.println(power);
+  //Serial.print("abs(power) ");
+  //Serial.println(abs(power));
+  //Serial.print("signum(power) ");
+  //Serial.println(signum(power));
+  //Serial.print("signum(c->_prev_power) ");
+  //Serial.println(signum(c->_prev_power));
+  //Serial.print("digitalWrite ");
+  //Serial.println(power > 0 ? "HIGH" : "LOW");
+  //Serial.print("analogWrite ");
+  //Serial.println(abs(power));
   if (power != 0 && signum(power) != signum(c->_prev_power))
     digitalWrite(c->dir_pin, power > 0 ? HIGH : LOW);
   if (abs(c->_prev_power) != abs(power))
@@ -73,7 +87,7 @@ void channel_updateSensor(struct channel *c) {
 
 #define channels_len 8
 struct channel channels[channels_len] = {
-  { .name = 'A', .pwm_pin = 2,  .dir_pin = 21, .sensor_pin = A0, },
+  { .name = 'A', .pwm_pin = 2,  .dir_pin = 18, .sensor_pin = A0, },
   { .name = 'B', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A1, },
   { .name = 'C', .pwm_pin = 7,  .dir_pin = 23, .sensor_pin = A2, },
   { .name = 'D', .pwm_pin = 8,  .dir_pin = 24, .sensor_pin = A3, },
@@ -85,11 +99,6 @@ struct channel channels[channels_len] = {
 
 void channels_setup() {
   for (int i = 0; i < channels_len; i ++) {
-    Serial.print("channels: setting up ");
-    Serial.print(i+1);
-    Serial.print("/");
-    Serial.print(channels_len);
-    Serial.println("...");
     channel_setup(&channels[i]);
   }
   Serial.println("channels: setup done.");
@@ -107,10 +116,11 @@ void channels_sendDelta() {
     struct channel c = channels[i];
     if (c.tf_now != c.tf_prev) changed = true;
   }
+  if (!changed) return;
   Serial.print(" DC");
   for (int i = 0; i < channels_len; i ++) {
     struct channel c = channels[i];
-    Serial.print('A'+i);
+    Serial.print((char) ('A'+i));
     Serial.print(c.tf_now);
   }
   Serial.print("T");
@@ -124,7 +134,7 @@ void channels_stop_update() {
     if (0 != c->stop_ms && now > c->stop_ms) {
       channel_write(c, 0);
       Serial.print(" DSL");
-      Serial.print('A'+i);
+      Serial.print((char) ('A'+i));
       Serial.print("T");
       Serial.println(now);
       c->stop_ms = 0;

@@ -44,53 +44,45 @@ void loop() {
   handleSLCP();
 }
 
-void handleShort(bool isShort) {
-  // TODO: error checking
-  size_t i = Serial.read()-'A';
-  struct channel *c = &channels[i];
-  if (i < 0 || i >= channels_len) {
-    Serial.print(" Einvalid line ");
-    Serial.println('A'+i);
+void handleChangeSwitch(bool isSwitch) {
+  // CAAN000
+  // SAAN000T00000N
+  char buf[6+7+1+1] = {0};
+  int length = isSwitch ? 6+7+1 : 6+1;
+  if (length != Serial.readBytes(buf, length)) {
+    Serial.println(" Eserial timeout");
     return;
   }
-  int direction = Serial.read();
-  Serial.read(); // read and dispose brake (not supported on kdss/v4)
-  int power;
-  {
-    static char buffer[4];
-    size_t read = Serial.readBytes(buffer, 3);
-    if (read != 3) {
-      Serial.println(" Eread power: not enough chars");
-      return;
-    }
-    power = atoi(buffer);
+  if (buf[length-1] != '\n') {
+    Serial.println(" Eexpected EOL at end");
   }
+  int i = buf[0] - 'A';
+  if (i < 0 || i >= channels_len) {
+    Serial.print(" Einvalid line ");
+    Serial.println(buf[1]);
+    return;
+  }
+  struct channel *c = &channels[i];
+  int direction = buf[1];
+  char tmp = buf[3+3];
+  buf[3+3] = '\0';
+  Serial.print("debug");
+  Serial.println(buf+3);
+  int power = atoi(buf+3);
+  buf[3+3] = tmp;
   if (power < 0 || power > 255) {
     Serial.println(" Eout of range");
     return;
   };
-  if (isShort) {
-    char t_ = Serial.read();
-    if (t_ != 'T') {
+  if (isSwitch) {
+    if (buf[6] != 'T') {
       Serial.print(" Eread short: literal 'T' expected, got ");
-      Serial.println(t_, HEX);
+      Serial.println(buf[6], HEX);
       return;
     }
-    char buffer[6];
-    size_t read = Serial.readBytes(buffer, 5);
-    if (read != 5) {
-      Serial.println(" Eread duration: not enough chars");
-      return;
-    }
-    buffer[5] = '\0';
-    int duration = atoi(buffer);
+    buf[7+5] = '\0';
+    int duration = atoi(buf+7);
     c->stop_ms = millis() + duration;
-    Serial.read(); // read and dispose brake (not supported on kdss/v4)
-  }
-  int eol = Serial.read();
-  if (eol != '\n') {
-    Serial.println(" Eexpected eol");
-    return;
   }
 
   if (direction == 'B')
@@ -118,9 +110,9 @@ void handleSLCP() {
       Serial.println(" Eexpected eol");
     }
   } else if (kind == 'S') {
-    handleShort(true);
+    handleChangeSwitch(true);
   } else if (kind == 'C') {
-    handleShort(false);
+    handleChangeSwitch(false);
   } else if (kind == 'L') {
     buffer[0] = Serial.read();
     buffer[1] = Serial.read();
