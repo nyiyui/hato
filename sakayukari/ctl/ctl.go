@@ -107,7 +107,7 @@ func WaypointControl(uiEvents, guide ActorRef, g *tal.Guide) Actor {
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
 					TrainI:       1,
-					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("D"), layout.PortB},
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("D"), layout.PortA},
 					SetRunOnLock: true,
 					RunOnLock:    true,
 				},

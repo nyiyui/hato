@@ -176,8 +176,8 @@ func InitTestbench4() (*Layout, error) {
 			PortC: Port{Length: 2 * 248000, Direction: false, ConnInline: []Line{
 				Line{
 					Comment:   "D",
-					PortA:     Port{Direction: false},
-					PortB:     Port{Length: 64000 + uint32(r183/2), Direction: true},
+					PortA:     Port{Direction: true},
+					PortB:     Port{Length: 64000 + uint32(r183/2), Direction: false},
 					PowerConn: board("D"),
 				},
 			}},
