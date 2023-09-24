@@ -16,10 +16,14 @@ sets:
         length: 131000 # µm
         mifare-id: 003b3712000003 # RFIDタグの4/7バイトID
         mifare-pos: 73000 # µm 車両A側からB側に向かってRFIDタグアンテナ中央
-        // -snip-
-      - comment: "モハE233-3616 13号車"
+      - comment: "サハE233-3016 (14号車)"
+        large-current: false
+        length: 131000 # µm
+        # RFIDタグなし
+      - comment: "モハE233-3616 (13号車)"
         large-current: true # (平均)0.7Vでは約200µA
         length: 131000 # µm
         mifare-id: 002d7912000003
         mifare-pos: 61000
+        // ...
 ```
