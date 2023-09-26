@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 func (s *State) find() error {
@@ -17,18 +19,27 @@ func (s *State) find() error {
 	}
 	s.connsLock.Lock()
 	defer s.connsLock.Unlock()
+	var wg sync.WaitGroup
 	for _, match := range matches {
 		if _, ok := s.conns[match]; ok {
 			continue
 		}
-		go s.connect(match)
+		wg.Add(1)
+		go s.connect(&wg, match)
 	}
+	wg.Wait()
 	return nil
 }
 
 // connect connects to a serial port on specified path and creates a new Conn for it.
 // State.connsLock must be locked at call site.
-func (s *State) connect(path string) {
+func (s *State) connect(wg *sync.WaitGroup, path string) {
+	doneSent := false
+	defer func() {
+		if !doneSent {
+			wg.Done()
+		}
+	}()
 	log.Printf("connecting to %s", path)
 	cmd := exec.Command("./serial-proxy", path)
 	stdin, err := cmd.StdinPipe()
@@ -50,6 +61,7 @@ func (s *State) connect(path string) {
 		return
 	}
 	defer cmd.Process.Signal(os.Interrupt)
+	time.Sleep(1 * time.Second)
 	_, err = stdin.Write([]byte("I\n"))
 	if err != nil {
 		log.Printf("connect %s: %s", path, err)
@@ -79,6 +91,8 @@ func (s *State) connect(path string) {
 	}
 	// TODO: flush stdin on write
 	s.conns[path] = c
+	wg.Done()
+	doneSent = true
 	s.handleConn(c)
 }
 

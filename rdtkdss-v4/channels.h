@@ -1,5 +1,5 @@
 bool ina240_debug = false;
-int ina240_hysteresis_delay_ms = 50;
+int ina240_hysteresis_delay_ms = 10;
 int ina240_offset = -511;
 int ina240_threshold = 8;
 
@@ -13,11 +13,9 @@ struct channel {
   unsigned long stop_ms;
 
   int val;
-  int _hys_val;
-  unsigned long _hys_until;
 
   bool tf_now;
-  bool tf_prev;
+  unsigned long _hys_until;
 
   int _prev_power;
 };
@@ -60,28 +58,31 @@ void channel_updateSensor(struct channel *c) {
   unsigned long now = millis();
   int val;
   if (c->_prev_power == 0)
-    val = 0;
+    val = -ina240_offset;
   else
     val = analogRead(c->sensor_pin);
   val = abs(val);
-  if (now > c->_hys_until || val >= c->_hys_val) {
-    c->_hys_val = val;
+  c->val = val;
+  c->tf_now = abs(c->val + ina240_offset) > ina240_threshold;
+  bool actual = c->tf_now;
+  if (now <= c->_hys_until) {
+    c->tf_now = true;
+  }
+  if (c->tf_now) {
     c->_hys_until = now + ina240_hysteresis_delay_ms;
   }
-  if (now > c->_hys_until)
-    c->val = val;
-  else
-    c->val = c->_hys_val;
-  c->tf_prev = c->tf_now;
-  c->tf_now = abs(c->val) + ina240_offset > ina240_threshold;
   if (ina240_debug) {
     Serial.print(c->name);
+    Serial.print("actual:");
+    Serial.print(actual);
+    Serial.print(",");
     Serial.print("val:");
     Serial.print(c->val);
     Serial.print(",");
     Serial.print(c->name);
     Serial.print("tf:");
-    Serial.print(c->tf_now * 1000);
+    Serial.print(c->tf_now);
+    Serial.print(",");
   }
 }
 
@@ -111,12 +112,21 @@ void channels_updateSensors() {
 }
 
 void channels_sendDelta() {
+  static bool values[channels_len] = {0};
   bool changed = false;
   for (int i = 0; i < channels_len; i ++) {
-    struct channel c = channels[i];
-    if (c.tf_now != c.tf_prev) changed = true;
+    struct channel *c = &channels[i];
+    if (c->tf_now != values[i]) changed = true;
+    values[i] = c->tf_now;
   }
-  if (!changed) return;
+  if (ina240_debug) {
+    Serial.print("values ");
+    for (int i = 0; i < channels_len; i ++) {
+      Serial.print(values[i]);
+    }
+    Serial.println();
+  }
+  if (!changed && !ina240_debug) return;
   Serial.print(" DC");
   for (int i = 0; i < channels_len; i ++) {
     struct channel c = channels[i];

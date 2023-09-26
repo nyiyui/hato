@@ -559,6 +559,9 @@ func (p PathToSelfError) Error() string {
 }
 
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
+	if from.PortI == PortDNC {
+		from.PortI = PortA // choose an arbitrary port (it's a bad idea to have PortDNC as the Start, as then offset calculations cannot be made)
+	}
 	if from.LineI == goal.LineI {
 		if from.PortI != PortDNC && from.PortI == goal.PortI {
 			return FullPath{}, PathToSelfError{}
@@ -719,4 +722,13 @@ func SameDirection(a, b FullPath) (same, ok bool) {
 		}
 	}
 	return false, false
+}
+
+func (y *Layout) LinePortToPosition(lp LinePort) Position {
+	_, p := y.GetLinePort(lp)
+	return Position{
+		LineI:   lp.LineI,
+		Precise: p.Length,
+		Port:    lp.PortI,
+	}
 }

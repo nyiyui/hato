@@ -23,15 +23,19 @@ func (_ handlerLine) String() string {
 
 func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	reader := bufio.NewReader(c.F)
-	_, err := fmt.Fprint(c.F, "f090gD087")
-	if err != nil {
-		log.Printf("%s: f090gD087: write line: %s", c.Path, err)
-		return
+	if c.Id.Type != "soyuu-kdss" {
+		_, err := fmt.Fprint(c.F, "f090gD087")
+		if err != nil {
+			log.Printf("%s: f090gD087: write line: %s", c.Path, err)
+			return
+		}
 	}
 	state := new(lineState)
 	state.latestLines = map[LineName]ReqLine{}
 	go func() {
+		log.Printf("waiting")
 		for v := range a.InputCh {
+			//log.Printf("InputCh %#v", v)
 			switch req := v.Value.(type) {
 			case ReqLine:
 				{
@@ -56,6 +60,10 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 				} else {
 					state.latestLines[req.Line] = req
 				}
+				//log.Printf("latestLines")
+				//for line, req := range state.latestLines {
+				//	log.Printf("%s\t%#v", line, req)
+				//}
 			case ReqSwitch:
 				log.Printf("ReqSwitch %s %s", c.Id, req)
 				var err error

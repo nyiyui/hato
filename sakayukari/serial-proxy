@@ -10,13 +10,13 @@ with serial.Serial(path, timeout=1) as f:
         if f.in_waiting:
             l = f.readline()
             if not l.startswith((b'1 ', b' S1')):
-                #print(f'{path}: recv {len(l)} {l}', file=sys.stderr)
+                print(f'{path}: recv {len(l)} {l}', file=sys.stderr)
                 pass
             print(l.decode('utf-8'))
             sys.stdout.flush()
         if select.select([sys.stdin], [], [], 0)[0]:
             l = input()
-            #print(f'{path}: send {len(l)} {l}', file=sys.stderr)
+            print(f'{path}: send {len(l)} {l}', file=sys.stderr)
             if '_' in l:
                 l = l.split('_', 1)[0]
             f.write(l.encode('ascii') + b'\n')

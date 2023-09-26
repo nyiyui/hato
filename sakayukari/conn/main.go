@@ -18,7 +18,11 @@ func ConnActors(expected []Id) (*State, []Actor) {
 
 	as := make([]Actor, 0, len(expected))
 	for _, id := range expected {
-		a := handlers[id.Type].NewBlankActor()
+		handler, ok := handlers[id.Type]
+		if !ok {
+			panic(fmt.Sprintf("no handler for type %s (%s)", id.Type, id))
+		}
+		a := handler.NewBlankActor()
 		as = append(as, a)
 		s.actors[id] = a
 	}
@@ -33,6 +37,7 @@ type Handler interface {
 
 var handlers = map[string]Handler{
 	"soyuu-line":      handlerLine{},
+	"soyuu-kdss":      handlerLine{},
 	"soyuu-breakbeam": handlerBreakbeam{},
 	"soyuu-rfid":      handlerRFID{},
 }

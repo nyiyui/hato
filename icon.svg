@@ -1,9 +1,19 @@
 <svg version="1.1"
-     width="1500" height="424"
+     width="216" height="216"
      xmlns="http://www.w3.org/2000/svg">
-  <!--
-  <path d="M30 30 l240 0 l0 364 l-240 0 l0 -364" fill="#000" />
-  -->
+  <circle cx="27" cy="27" fill="#000" r="4" />
+  <circle cx="27" cy="189" fill="#000" r="4" />
+  <circle cx="189" cy="27" fill="#000" r="4" />
+  <circle cx="189" cy="189" fill="#000" r="4" />
+  <circle cx="72" cy="108" fill="#000" r="4" />
+  <circle cx="144" cy="108" fill="#000" r="4" />
+  <line x1="27" y1="27" x2="189" y2="27" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="189" x2="189" y2="189" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="27" x2="189" y2="189" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="189" x2="72" y2="108" stroke="#000" stroke-width="8" />
+  <line x1="189" y1="27" x2="144" y2="108" stroke="#000" stroke-width="8" />
+  <line x1="72" y1="108" x2="144" y2="108" stroke="#000" stroke-width="8" />
+     <!--
   <line x1="30" y1="30" x2="270" y2="30" stroke="#000" stroke-width="10" />
   <line x1="30" y1="212" x2="270" y2="212" stroke="#000" stroke-width="5" />
   <line x1="30" y1="30" x2="270" y2="364" stroke="#000" stroke-width="10" />
@@ -16,4 +26,5 @@
   <line x1="30" y1="364" x2="270" y2="364" stroke="#000" stroke-width="10" />
   <text x="300" y="270" style="font-size: 334px;">HATO</text>
   <line x1="100" y1="212" x2="200" y2="212" stroke="#000" stroke-width="10" />
+  -->
 </svg>

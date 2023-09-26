@@ -110,7 +110,7 @@ func (i *Instance) Diffuse() error {
 			var caseI int
 			caseI = caseIs[chosen]
 			d := recv.Interface().(Diffuse1)
-			// log.Printf("got: %s", d)
+			//log.Printf("got: %s", d)
 			if d.Origin == (ActorRef{}) || d.Origin == Publish {
 				// self if blank
 				d.Origin = ActorRef{Index: caseI}
@@ -147,6 +147,7 @@ func (i *Instance) Diffuse() error {
 }
 
 func (i *Instance) send(actorI int, d *Diffuse1) {
+	//i.g.Actors[actorI].InputCh <- *d
 	select {
 	case i.g.Actors[actorI].InputCh <- *d:
 	case <-time.After(200 * time.Millisecond):

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,7 +31,8 @@ type GuideConf struct {
 	actorsReverse map[ActorRef]conn.Id
 	Cars          cars.Data
 	// Virtual disables serial commands to lines.
-	Virtual bool
+	Virtual  bool
+	DontDemo bool
 }
 
 type TrainState int
@@ -133,6 +135,16 @@ type Train struct {
 	FormI uuid.UUID
 	// Orient shows which side (side A or B) the front of the train (c.f. CurrentFront etc).
 	Orient FormOrient
+
+	History History
+}
+
+func (t *Train) form(g *Guide) cars.Form {
+	f, ok := g.conf.Cars.Forms[t.FormI]
+	if !ok {
+		panic("form not found")
+	}
+	return f
 }
 
 // nextUnsafe returns the path index of the next LinePort.
@@ -170,6 +182,7 @@ type Guide struct {
 	actor      Actor
 	conf       GuideConf
 	trains     []Train
+	trainsLock sync.Mutex
 	lineStates []LineStates
 	y          *layout.Layout
 }
@@ -217,40 +230,46 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 		lineStates: make([]LineStates, len(conf.Layout.Lines)),
 		y:          conf.Layout,
 	}
-	{
-		t1 := Train{
-			Power:        70,
-			CurrentBack:  0,
-			CurrentFront: 0,
-			State:        TrainStateNextAvail,
-			FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-			//FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
-			//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-			Orient: FormOrientA,
+	if !conf.DontDemo {
+		{
+			t1 := Train{
+				Power:        70,
+				CurrentBack:  0,
+				CurrentFront: 0,
+				State:        TrainStateNextAvail,
+				FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+				//FormI: uuid.MustParse("2fe1cbb0-b584-45f5-96ec-a9bfd55b1e91"),
+				//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+				Orient: FormOrientA,
+			}
+			path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("B"), layout.PortB})
+			//path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("D"), layout.PortB})
+			t1.Path = &path
+			log.Printf("t1.Path %#v", path)
+			g.trains = append(g.trains, t1)
 		}
-		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("B"), layout.PortB})
-		//path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("D"), layout.PortB})
-		t1.Path = &path
-		log.Printf("t1.Path %#v", path)
-		g.trains = append(g.trains, t1)
-	}
-	{
-		t2 := Train{
-			Power:        70,
-			CurrentBack:  0,
-			CurrentFront: 0,
-			State:        TrainStateNextAvail,
-			FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
-			Orient:       FormOrientA,
+		{
+			t2 := Train{
+				Power:        70,
+				CurrentBack:  0,
+				CurrentFront: 0,
+				State:        TrainStateNextAvail,
+				FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+				Orient:       FormOrientA,
+			}
+			path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
+			t2.Path = &path
+			log.Printf("t2.Path %#v", path)
+			g.trains = append(g.trains, t2)
 		}
-		path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
-		t2.Path = &path
-		log.Printf("t2.Path %#v", path)
-		g.trains = append(g.trains, t2)
 	}
 
 	go g.loop()
 	return &g, a
+}
+
+func (g *Guide) InternalSetTrains(trains []Train) {
+	g.trains = trains
 }
 
 func (g *Guide) calculateTrailers(t *Train) {
@@ -389,13 +408,12 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 	//log.Printf("=== diffuse from %s: %s", ci, cur)
 	for ti := range g.trains {
 		for _, inner := range cur.Values {
-			t := g.trains[ti]
+			t := &g.trains[ti]
 			if t.noPowerSupplied {
 				continue
 			}
 			// sync t.state etc
 			g.syncLocks(ti)
-			t = g.trains[ti]
 
 			cb := g.y.Lines[t.Path.Follows[t.CurrentBack].LineI]
 			if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
@@ -405,9 +423,9 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				}
 				nextI := t.Path.Follows[t.CurrentBack].LineI
 				g.unlock(nextI)
-				g.apply(&t, t.CurrentBack, 0)
+				g.apply(t, t.CurrentBack, 0)
 				t.CurrentBack++
-				g.calculateTrailers(&t)
+				g.calculateTrailers(t)
 				//log.Printf("=== currentBack succession: %d", t.CurrentBack)
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
@@ -425,9 +443,9 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				}
 				nextI := t.Path.Follows[t.CurrentFront].LineI
 				g.unlock(nextI)
-				g.apply(&t, t.CurrentFront, 0)
+				g.apply(t, t.CurrentFront, 0)
 				t.CurrentFront--
-				g.calculateTrailers(&t)
+				g.calculateTrailers(t)
 				g.publishChange(ti, ChangeTypeCurrentFront)
 				//log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
@@ -437,12 +455,12 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				cf := g.y.Lines[t.Path.Follows[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
-					g.calculateTrailers(&t)
+					g.calculateTrailers(t)
 					g.publishChange(ti, ChangeTypeCurrentFront)
 					//log.Printf("=== next succession: %d", t.CurrentFront)
 				}
 			}
-			g.trains[ti] = t
+			g.trains[ti] = *t
 		}
 		// TODO: check if the train derailed, was removed, etc (come up with a heuristic)
 		// TODO: check for regressions
@@ -622,6 +640,17 @@ func (g *Guide) loop() {
 			t.Generation = oldT.Generation + 1
 			log.Printf("GuideTrainUpdate %#v", t)
 			log.Printf("GuideTrainUpdate.Path %#v", t.Path)
+			if val.Target != nil {
+				t.History = History{}
+				t.History.AddSpan(Span{
+					Power: t.Power,
+				})
+			} else {
+				span := Span{
+					Power: t.Power,
+				}
+				t.History.AddSpan(span)
+			}
 			g.calculateTrailers(t)
 			g.trains[val.TrainI] = *t
 			g.wakeup(val.TrainI, "GuideTrainUpdate")
@@ -794,7 +823,7 @@ func (g *Guide) apply(t *Train, pathI int, power int) {
 	g.lineStates[li].Power = rl.Power
 	rl.Direction = l.GetPort(pi).Direction
 	// TODO: fix direction to follow layout.Layout rules
-	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	if g.conf.Virtual {
 		log.Printf("apply2 virtual %s", rl)
 		return
@@ -943,7 +972,49 @@ const (
 )
 
 func (g *Guide) publishChange(ti int, ct ChangeType) {
-	//log.Printf("=== publishChange %d %#v", ti, ct)
+	func() {
+		t := &g.trains[ti]
+		span := Span{
+			Power: t.Power,
+		}
+		switch ct {
+		case ChangeTypeCurrentBack:
+			back := g.y.PositionToOffset(*t.Path, g.y.LinePortToPosition(t.Path.Follows[t.TrailerBack-1]))
+			var sideA int64
+			switch t.Orient {
+			case FormOrientA:
+				f := t.form(g)
+				sideA = back + int64(f.Length)
+			case FormOrientB:
+				sideA = back
+			default:
+				panic("unreachable")
+			}
+			span.Position = sideA
+			span.PositionKnown = true
+		case ChangeTypeCurrentFront:
+			log.Printf("newT: %#v", t)
+			if t.TrailerFront == 0 {
+				return
+			}
+			front := g.y.PositionToOffset(*t.Path, g.y.LinePortToPosition(t.Path.Follows[t.TrailerFront-1]))
+			var sideA int64
+			switch t.Orient {
+			case FormOrientA:
+				sideA = front
+			case FormOrientB:
+				f := t.form(g)
+				sideA = front - int64(f.Length)
+			default:
+				panic("unreachable")
+			}
+			span.Position = sideA
+			span.PositionKnown = true
+		default:
+			panic("unreachable")
+		}
+		t.History.AddSpan(span)
+	}()
 	g.actor.OutputCh <- Diffuse1{Value: GuideChange{
 		TrainI:   ti,
 		Type:     ct,

@@ -13,6 +13,8 @@ example:
   0.5*10m/s + 0.5*20m/s
   recorded avg is 17m/s
   delta = 2m/s
+  (0.5*10m/s + 0.5*20m/s)+2
+  0.5*12m/s + 0.5*22m/s
   hmm try this out ig
 
 - record power changes in time

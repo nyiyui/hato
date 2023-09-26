@@ -30,8 +30,9 @@ func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
 			}
 			_, p := y.GetLinePort(fp.Start)
 			return int64(p.Length) - int64(pos.Precise)
+		default:
+			panic(fmt.Sprintf("invalid port %s (path: %#v)", fp.Start.PortI, fp))
 		}
-		panic("unreachable")
 	}
 	var cum int64
 	if i := slices.IndexFunc(fp.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI }); i == -1 {

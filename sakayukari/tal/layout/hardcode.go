@@ -220,3 +220,32 @@ func InitTestbench4() (*Layout, error) {
 	y.Lines[y.MustLookupIndex("D")].PortB.ConnFilled = true
 	return &y, err
 }
+
+func InitTestbench5() (*Layout, error) {
+	kdss := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-kdss", "v4", "1"},
+			Line: line,
+		}
+	}
+	y, err := Connect([]Line{
+		Line{
+			Comment:   "A",
+			PortA:     Port{Direction: true},
+			PortB:     Port{Length: 248000},
+			PowerConn: kdss("E"),
+		},
+		Line{
+			Comment:   "B",
+			PortA:     Port{Direction: true},
+			PortB:     Port{Length: 248000},
+			PowerConn: kdss("B"),
+		},
+		Line{
+			Comment:   "C",
+			PortB:     Port{Length: 248000, Direction: true},
+			PowerConn: kdss("C"),
+		},
+	})
+	return &y, err
+}

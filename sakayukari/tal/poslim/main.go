@@ -54,7 +54,7 @@ type PositionLimit struct {
 	cars           cars.Data  // safe to replace
 	assertions     []Assertion
 	assertionsLock sync.Mutex
-	notifiees      []chan Report
+	notifiees      []chan []Assertion
 	notifieesLock  sync.Mutex
 }
 
@@ -93,7 +93,7 @@ func (pl *PositionLimit) NewRFIDWitness(pos layout.Position) *RFIDWitness {
 }
 
 func (pl *PositionLimit) report(r Report) {
-	for _, rt := range r {
+	for _, rt := range r.Trains {
 		pl.reportTrain(rt)
 	}
 }
