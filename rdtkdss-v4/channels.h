@@ -1,5 +1,5 @@
 bool ina240_debug = false;
-int ina240_hysteresis_delay_ms = 10;
+int ina240_hysteresis_delay_ms = 100;
 int ina240_offset = -511;
 int ina240_threshold = 8;
 
@@ -54,42 +54,10 @@ void channel_write(struct channel *c, int power) {
   c->_prev_power = power;
 }
 
-void channel_updateSensor(struct channel *c) {
-  unsigned long now = millis();
-  int val;
-  if (c->_prev_power == 0)
-    val = -ina240_offset;
-  else
-    val = analogRead(c->sensor_pin);
-  val = abs(val);
-  c->val = val;
-  c->tf_now = abs(c->val + ina240_offset) > ina240_threshold;
-  bool actual = c->tf_now;
-  if (now <= c->_hys_until) {
-    c->tf_now = true;
-  }
-  if (c->tf_now) {
-    c->_hys_until = now + ina240_hysteresis_delay_ms;
-  }
-  if (ina240_debug) {
-    Serial.print(c->name);
-    Serial.print("actual:");
-    Serial.print(actual);
-    Serial.print(",");
-    Serial.print("val:");
-    Serial.print(c->val);
-    Serial.print(",");
-    Serial.print(c->name);
-    Serial.print("tf:");
-    Serial.print(c->tf_now);
-    Serial.print(",");
-  }
-}
-
 #define channels_len 8
 struct channel channels[channels_len] = {
-  { .name = 'A', .pwm_pin = 2,  .dir_pin = 18, .sensor_pin = A0, },
-  { .name = 'B', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A1, },
+  { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8, },
+  { .name = 'B', .pwm_pin = 2,  .dir_pin = 18, .sensor_pin = A1, },
   { .name = 'C', .pwm_pin = 7,  .dir_pin = 23, .sensor_pin = A2, },
   { .name = 'D', .pwm_pin = 8,  .dir_pin = 24, .sensor_pin = A3, },
   { .name = 'E', .pwm_pin = 9,  .dir_pin = 25, .sensor_pin = A4, },
@@ -107,7 +75,24 @@ void channels_setup() {
 
 void channels_updateSensors() {
   for (int i = 0; i < channels_len; i ++) {
-    channel_updateSensor(&channels[i]);
+    struct channel *c = &channels[i];
+    unsigned long now = millis();
+    int val;
+    if (c->_prev_power == 0)
+      val = -ina240_offset;
+    else
+      val = analogRead(c->sensor_pin);
+    val = abs(val);
+    //Serial.print(val);
+    bool tf_now = abs(val + ina240_offset) > ina240_threshold;
+    if (tf_now) {
+      c->_hys_until = now + ina240_hysteresis_delay_ms;
+    }
+    if (now <= c->_hys_until) {
+      tf_now = true;
+    }
+    c->val = val;
+    c->tf_now = tf_now;
   }
 }
 
@@ -119,22 +104,29 @@ void channels_sendDelta() {
     if (c->tf_now != values[i]) changed = true;
     values[i] = c->tf_now;
   }
+
   if (ina240_debug) {
+    Serial.print(changed);
+    /*
     Serial.print("values ");
     for (int i = 0; i < channels_len; i ++) {
       Serial.print(values[i]);
     }
     Serial.println();
+    */
   }
-  if (!changed && !ina240_debug) return;
-  Serial.print(" DC");
-  for (int i = 0; i < channels_len; i ++) {
-    struct channel c = channels[i];
-    Serial.print((char) ('A'+i));
-    Serial.print(c.tf_now);
+
+  //if (!changed && !ina240_debug) return;
+  if (changed) {
+    Serial.print(" DC");
+    for (int i = 0; i < channels_len; i ++) {
+      struct channel c = channels[i];
+      Serial.print((char) ('A'+i));
+      Serial.print(c.tf_now);
+    }
+    Serial.print("T");
+    Serial.println(millis());
   }
-  Serial.print("T");
-  Serial.println(millis());
 }
 
 void channels_stop_update() {
