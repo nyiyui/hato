@@ -47,8 +47,10 @@ void channel_write(struct channel *c, int power) {
   //Serial.println(power > 0 ? "HIGH" : "LOW");
   //Serial.print("analogWrite ");
   //Serial.println(abs(power));
-  if (power != 0 && signum(power) != signum(c->_prev_power))
+  if (power != 0 && signum(power) != signum(c->_prev_power)) {
+    digitalWrite(c->pwm_pin, 0); // prevent a possible moment of power in the wrong direction here
     digitalWrite(c->dir_pin, power > 0 ? HIGH : LOW);
+  }
   if (abs(c->_prev_power) != abs(power))
     analogWrite(c->pwm_pin, abs(power));
   c->_prev_power = power;
