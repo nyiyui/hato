@@ -160,7 +160,7 @@ type Line struct {
 
 func (l Line) IsSwitch() bool {
 	if l.SwitchConn != (LineID{}) != l.PortC.notZero() {
-		panic("SwitchConn and PortC initialisation mismatch")
+		panic("SwitchConn and PortC initialisation mismatch - SwitchConn should be defined if PortC is defined!")
 	}
 	return l.SwitchConn != (LineID{})
 }
@@ -618,7 +618,7 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 		l := y.Lines[current.LineI]
 		for pi := PortI(0); pi <= 2; pi++ {
 			if debug {
-				log.Printf("port %d", pi)
+				log.Printf("port %s", pi)
 			}
 			p := l.GetPort(pi)
 			if !p.ConnFilled {
@@ -646,6 +646,11 @@ func (y *Layout) PathTo(from, goal LineI) []LinePort {
 		visited[current.LineI] = true
 		if distance[goal] != infinity {
 			break
+		}
+	}
+	if debug {
+		for i := range distance {
+			log.Printf("distance[%d] = %d", i, distance[i])
 		}
 	}
 	lps := make([]LinePort, distance[goal])

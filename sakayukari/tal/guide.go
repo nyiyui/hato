@@ -22,7 +22,8 @@ type LineID = layout.LineID
 type LinePort = layout.LinePort
 
 const idlePower = 15
-const switchPower = 192
+const switchPower = 255
+const switchDuration = 100
 
 type GuideConf struct {
 	Layout        *layout.Layout
@@ -500,6 +501,7 @@ func (g *Guide) wakeup(ti int, reason string) {
 	g.check(ti)
 	g.syncLocks(ti)
 	t := g.trains[ti]
+	g.mustCheckPath(&t)
 	g.reify(ti, &t)
 	g.trains[ti] = t
 }
@@ -652,6 +654,7 @@ func (g *Guide) loop() {
 				t.History.AddSpan(span)
 			}
 			g.calculateTrailers(t)
+			g.mustCheckPath(t)
 			g.trains[val.TrainI] = *t
 			g.wakeup(val.TrainI, "GuideTrainUpdate")
 		case conn.ValCurrent:
@@ -736,6 +739,46 @@ func (g *Guide) reify(ti int, t *Train) {
 	}
 }
 
+func (g *Guide) mustCheckPath(t *Train) {
+	errs := g.checkPath(t)
+	if len(errs) == 0 {
+		return
+	}
+	b := new(strings.Builder)
+	fmt.Fprintf(b, "%d errors:\n", len(errs))
+	for i, err := range errs {
+		fmt.Fprintf(b, "%d. %s\n", i+1, err)
+	}
+	panic(b.String())
+}
+
+func (g *Guide) checkPath(t *Train) []error {
+	// === Check if this LinePort is against the previous LinePort
+	// If it is, then the power for going back will be supplied, which is probably not what you want™!
+	//   >-1->|>-2-> (true makes the train go to the right for both lines 1 and 2)
+	//   ^     ^     ports A
+	//       ^     ^ ports B
+	// This path: start: 1A; follows: 1B 2A
+	// will result in this power being applied:
+	//   >>>>>|<<<<<
+	//        ^ a short waiting to happen!
+	//
+	// To check for this situation, we need to make sure no two LinePorts in Path.Follows are the same (1B and 2A are the same)
+	errs := make([]error, 0)
+	for i := range t.Path.Follows {
+		if i == 0 {
+			continue
+		}
+		aLP := t.Path.Follows[i-1]
+		bLP := t.Path.Follows[i]
+		_, a := g.y.GetLinePort(aLP)
+		if a.Conn() == bLP {
+			errs = append(errs, fmt.Errorf("Path.Follows[%d] (%s or %s) and [%d] (%s) are equal (i.e. they point towards each other)", i-1, aLP, a.Conn(), i, bLP))
+		}
+	}
+	return errs
+}
+
 func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path.Follows[pathI].LineI
 	pi := t.Path.Follows[pathI].PortI
@@ -800,7 +843,7 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 			// true  when targetState is B
 			// false when targetState is C
 			Power:    switchPower,
-			Duration: 1000,
+			Duration: switchDuration,
 		},
 	}
 	//log.Printf("diffuse %#v", d)
@@ -822,7 +865,6 @@ func (g *Guide) apply(t *Train, pathI int, power int) {
 	}
 	g.lineStates[li].Power = rl.Power
 	rl.Direction = l.GetPort(pi).Direction
-	// TODO: fix direction to follow layout.Layout rules
 	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	if g.conf.Virtual {
 		log.Printf("apply2 virtual %s", rl)

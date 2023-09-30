@@ -2,6 +2,7 @@ package ctl2
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
@@ -67,34 +68,87 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 		}
 		for len(gs.Trains) == 0 {
 		}
-		time.Sleep(3 * time.Second)
+		aPower := 80
+		bPower := 90
+		j, k := 0, 1
 		for i := 0; true; i++ {
 			log.Printf("loop %d", i)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
-					TrainI:       0,
-					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("C"), layout.PortB},
-					Power:        60,
+					TrainI:       j,
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("mitouc2"), layout.PortB},
+					Power:        80,
 					PowerFilled:  true,
 					SetRunOnLock: true,
 					RunOnLock:    true,
 				},
 			}
-			setPower(0, 60)
-			waitUntilTrainIn(0, "C", 0)
-			setPower(0, 0)
-			time.Sleep(1000 * time.Millisecond)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
-					TrainI: 0,
-					Target: &layout.LinePort{gs.Layout.MustLookupIndex("A"), layout.PortA},
+					TrainI:       k,
+					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("mitouc3"), layout.PortA},
+					Power:        80,
+					PowerFilled:  true,
+					SetRunOnLock: true,
+					RunOnLock:    true,
 				},
 			}
-			setPower(0, 60)
-			waitUntilTrainIn(0, "A", 0)
-			setPower(0, 0)
+			setPower(j, aPower)
+			setPower(k, bPower)
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				waitUntilTrainIn(j, "mitouc2", 0)
+				//setPower(j, 0)
+			}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				waitUntilTrainIn(k, "mitouc3", 0)
+				//setPower(k, 0)
+			}()
+			wg.Wait()
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI: j,
+					Target: &layout.LinePort{gs.Layout.MustLookupIndex("snb4"), layout.PortA},
+				},
+			}
+			a.OutputCh <- Diffuse1{
+				Origin: guide,
+				Value: tal.GuideTrainUpdate{
+					TrainI: k,
+					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nagase1"), layout.PortA},
+				},
+			}
+			//setPower(j, aPower)
+			//setPower(k, bPower)
+			{
+				var wg sync.WaitGroup
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					waitUntilTrainIn(j, "snb4", 0)
+					time.Sleep(4 * time.Second)
+					setPower(j, 12)
+				}()
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					waitUntilTrainIn(k, "nagase1", 0)
+					time.Sleep(4 * time.Second)
+					setPower(k, 12)
+				}()
+				wg.Wait()
+			}
+			time.Sleep(5 * time.Second)
+			//panic("TODO: save Train.History")
+			j, k = k, j
+			aPower, bPower = bPower, aPower
 		}
 	}()
 	return a

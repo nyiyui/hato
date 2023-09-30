@@ -33,9 +33,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	state := new(lineState)
 	state.latestLines = map[LineName]ReqLine{}
 	go func() {
-		log.Printf("waiting")
 		for v := range a.InputCh {
-			//log.Printf("InputCh %#v", v)
 			switch req := v.Value.(type) {
 			case ReqLine:
 				{
@@ -111,7 +109,7 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 					Flow: flow,
 				})
 			}
-			// log.Printf("diffuse %s", v)
+			log.Printf("diffuse %s", v)
 			a.OutputCh <- Diffuse1{Value: v}
 			// log.Printf("diffuse DONE %s", v)
 		case 'S':

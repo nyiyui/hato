@@ -33,7 +33,7 @@ func Main() error {
 		return fmt.Errorf("conn find: %w", err)
 	}
 	g.Actors = append(g.Actors, connActors...)
-	y, err := layout.InitTestbench5()
+	y, err := layout.InitTestbench6()
 	if err != nil {
 		panic(err)
 	}
@@ -71,8 +71,12 @@ func Main() error {
 		})
 		g.Actors = append(g.Actors, actor)
 		path := y.MustFullPathTo(
-			layout.LinePort{y.MustLookupIndex("A"), layout.PortA},
-			layout.LinePort{y.MustLookupIndex("C"), layout.PortB},
+			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
+			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},
+		)
+		path2 := y.MustFullPathTo(
+			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},
+			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
 		)
 		g2.InternalSetTrains([]tal.Train{
 			tal.Train{
@@ -83,6 +87,15 @@ func Main() error {
 				FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
 				Orient:       tal.FormOrientA,
 				Path:         &path,
+			},
+			tal.Train{
+				Power:        0,
+				CurrentBack:  0,
+				CurrentFront: 0,
+				State:        tal.TrainStateNextAvail,
+				FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+				Orient:       tal.FormOrientA,
+				Path:         &path2,
 			},
 		})
 	}
