@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/google/uuid"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
+	"nyiyui.ca/hato/sakayukari/kujo"
 	"nyiyui.ca/hato/sakayukari/runtime"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
@@ -101,6 +103,9 @@ func Main() error {
 	}
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, WaypointControl(guide, g2))
+
+	kujo := kujo.NewServer(g2)
+	http.ListenAndServe("0.0.0.0:8001", kujo)
 
 	i := runtime.NewInstance(&g)
 	err = i.Check()

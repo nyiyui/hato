@@ -14,6 +14,7 @@ import (
 	"golang.org/x/exp/slices"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
+	"nyiyui.ca/hato/sakayukari/notify"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
@@ -23,7 +24,7 @@ type LinePort = layout.LinePort
 
 const idlePower = 15
 const switchPower = 255
-const switchDuration = 100
+const switchDuration = 50
 
 type GuideConf struct {
 	Layout        *layout.Layout
@@ -180,12 +181,16 @@ func (t *Train) String() string {
 }
 
 type Guide struct {
-	actor      Actor
-	conf       GuideConf
-	trains     []Train
-	trainsLock sync.Mutex
-	lineStates []LineStates
-	y          *layout.Layout
+	actor        Actor
+	conf         GuideConf
+	trains       []Train
+	trainsLock   sync.Mutex
+	lineStates   []LineStates
+	y            *layout.Layout
+	snapshotMuxS *notify.MultiplexerSender[GuideSnapshot]
+	SnapshotMux  *notify.Multiplexer[GuideSnapshot]
+	changeMuxS   *notify.MultiplexerSender[GuideChange]
+	ChangeMux    *notify.Multiplexer[GuideChange]
 }
 
 type LineStates struct {
@@ -231,6 +236,8 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 		lineStates: make([]LineStates, len(conf.Layout.Lines)),
 		y:          conf.Layout,
 	}
+	g.snapshotMuxS, g.SnapshotMux = notify.NewMultiplexerSender[GuideSnapshot]("tal-guide snapshot")
+	g.changeMuxS, g.ChangeMux = notify.NewMultiplexerSender[GuideChange]("tal-guide change")
 	if !conf.DontDemo {
 		{
 			t1 := Train{
@@ -707,7 +714,7 @@ func (g *Guide) reify(ti int, t *Train) {
 		max += 1
 	}
 	for i := t.TrailerBack; i <= max; i++ {
-		if g.lineStates[t.Path.Follows[i].LineI].SwitchState == SwitchStateUnsafe {
+		if g.lineStates[t.Path.Follows[i].LineI].SwitchState == SwitchStateUnsafe && !t.RunOnLock {
 			log.Printf("=== STOP UNSAFE")
 			stop = true
 			power = g.idlePower(ti)
@@ -988,7 +995,9 @@ func (g *Guide) snapshot() GuideSnapshot {
 }
 
 func (g *Guide) publishSnapshot() {
-	g.actor.OutputCh <- Diffuse1{Value: g.snapshot()}
+	gs := g.snapshot()
+	//g.snapshotMuxS.Send(gs)
+	g.actor.OutputCh <- Diffuse1{Value: gs}
 }
 
 func (g *Guide) LatestSnapshot() GuideSnapshot {
@@ -1057,9 +1066,11 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 		}
 		t.History.AddSpan(span)
 	}()
-	g.actor.OutputCh <- Diffuse1{Value: GuideChange{
+	gc := GuideChange{
 		TrainI:   ti,
 		Type:     ct,
 		Snapshot: g.snapshot(),
-	}}
+	}
+	//g.changeMuxS.Send(gc)
+	g.actor.OutputCh <- Diffuse1{Value: gc}
 }

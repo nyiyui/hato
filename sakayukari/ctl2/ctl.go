@@ -68,17 +68,18 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 		}
 		for len(gs.Trains) == 0 {
 		}
-		aPower := 80
-		bPower := 90
+		aPower := 70
+		bPower := 70
 		j, k := 0, 1
 		for i := 0; true; i++ {
 			log.Printf("loop %d", i)
+			time.Sleep(500 * time.Millisecond)
 			a.OutputCh <- Diffuse1{
 				Origin: guide,
 				Value: tal.GuideTrainUpdate{
 					TrainI:       j,
 					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("mitouc2"), layout.PortB},
-					Power:        80,
+					Power:        12,
 					PowerFilled:  true,
 					SetRunOnLock: true,
 					RunOnLock:    true,
@@ -89,7 +90,7 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 				Value: tal.GuideTrainUpdate{
 					TrainI:       k,
 					Target:       &layout.LinePort{gs.Layout.MustLookupIndex("mitouc3"), layout.PortA},
-					Power:        80,
+					Power:        12,
 					PowerFilled:  true,
 					SetRunOnLock: true,
 					RunOnLock:    true,
@@ -102,31 +103,27 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 			go func() {
 				defer wg.Done()
 				waitUntilTrainIn(j, "mitouc2", 0)
-				//setPower(j, 0)
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI: j,
+						Target: &layout.LinePort{gs.Layout.MustLookupIndex("snb4"), layout.PortA},
+					},
+				}
 			}()
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				waitUntilTrainIn(k, "mitouc3", 0)
-				//setPower(k, 0)
+				a.OutputCh <- Diffuse1{
+					Origin: guide,
+					Value: tal.GuideTrainUpdate{
+						TrainI: k,
+						Target: &layout.LinePort{gs.Layout.MustLookupIndex("nagase1"), layout.PortA},
+					},
+				}
 			}()
 			wg.Wait()
-			a.OutputCh <- Diffuse1{
-				Origin: guide,
-				Value: tal.GuideTrainUpdate{
-					TrainI: j,
-					Target: &layout.LinePort{gs.Layout.MustLookupIndex("snb4"), layout.PortA},
-				},
-			}
-			a.OutputCh <- Diffuse1{
-				Origin: guide,
-				Value: tal.GuideTrainUpdate{
-					TrainI: k,
-					Target: &layout.LinePort{gs.Layout.MustLookupIndex("nagase1"), layout.PortA},
-				},
-			}
-			//setPower(j, aPower)
-			//setPower(k, bPower)
 			{
 				var wg sync.WaitGroup
 				wg.Add(1)
@@ -145,7 +142,7 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 				}()
 				wg.Wait()
 			}
-			time.Sleep(5 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 			//panic("TODO: save Train.History")
 			j, k = k, j
 			aPower, bPower = bPower, aPower
