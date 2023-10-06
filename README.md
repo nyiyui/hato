@@ -14,10 +14,10 @@ HATOは[GitHub](https://nyiyui/hato)にて公開しているopen sourceなプロ
 ![Nゲージの線路と車両](/assets/9mm.png)
 
 ## 鉄道模型の楽しみ方
-オリジナルの鉄道が走る箱庭を作るホビー
+オリジナルの鉄道が走る箱庭を作るホビーです。
 
 ## HATOのシステム
-
+![HATOのシステム](/assets/system.png)
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/rcGFUpEQFpU?si=cXUUK7CVFKUmiYCf&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## 今後の目標
