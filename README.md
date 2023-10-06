@@ -14,13 +14,18 @@ HATOは[GitHub](https://nyiyui/hato)にて公開しているopen sourceなプロ
 
 ## Nゲージとは？
 日本で一番よく売れている鉄道模型シリーズで、Nゲージの線路幅は9mm (NゲージのNはNineのNです) 、車両は本物の1/150の大きさです。
+
 ![Nゲージの線路と車両](/assets/9mm.png)
 
 ## 鉄道模型の楽しみ方
-オリジナルの鉄道が走る箱庭を作るホビーです。
+自分で好きなように鉄道が走る箱庭を作り、それを眺めて楽しむホビーです。
 
 ## HATOのシステム
+
 ![HATOのシステム](/assets/system.png)
+
+## デモ動画
+
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/rcGFUpEQFpU?si=cXUUK7CVFKUmiYCf&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## 今後の目標
