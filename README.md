@@ -22,7 +22,7 @@ HATOは[GitHub](https://nyiyui/hato)にて公開しているopen sourceなプロ
 
 ## HATOのシステム
 
-Nゲージのシステムは、レールに電流を流すことで車両を動かします。HATOのメインプログラムは、そのレールに流れる電流の極性から車両の向きを、平均電流値から車両のスピードを検知し、入力されたダイヤに沿いつつ事故を起こさないように、電流の極性や平均値を常時制御して車両を自動運行させます。
+Nゲージのシステムは、レールに電流を流すことで車両を動かします。HATOのメインプログラムは、そのレールに流れる電流の極性から車両の向きを、平均供給電圧値から車両のスピードを検知します。その他、車両の底面につけたRFIDタグを認識するセンサや、IR（赤外線）センサ、電流検出センサなどのセンサ群もモニターし、入力されたダイヤに沿いつつ事故を起こさないように、列車動力制御ドライバと通信して電流の極性や平均値を常時制御して車両を自動運行させます。
 
 ![HATOのシステム](/assets/system.png)
 
@@ -30,8 +30,9 @@ Nゲージのシステムは、レールに電流を流すことで車両を動�
 
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/rcGFUpEQFpU?si=cXUUK7CVFKUmiYCf&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
+<!--
 ## 今後の目標
-
+-->
 <!--
 詳細は、こちらのスライドを参照してください。初めてのお披露は、11月3日の成果報告会になります。よろしければ、ぜひご参加ください。
 -->
