@@ -1,3 +1,6 @@
+---
+title: ホーム
+---
 # Hopefully Automatic Train Operation (HATO): 没入感を高める!? Nゲージ列車 全自動走行システム
 
 ![Hero](/assets/hero.png)
