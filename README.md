@@ -1,5 +1,7 @@
 # Hopefully Automatic Train Operation (HATO): 没入感を高める!? Nゲージ列車 全自動走行システム
 
+![Hero](/assets/hero.png)
+
 HATOは鉄道模型の世界に没入するためのNゲージ列車全自動運行システムです。
 センサ群と電源装置からなる分散システムを独自プロトコル HLCP (Hato Line Control Protocol) を介して制御し、
 複数の車両の位置や速度を管理することで事故を未然に防ぎ、車両を自動運行します。
