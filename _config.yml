@@ -2,3 +2,8 @@ remote_theme: nyiyui/hato-just-the-docs
 
 title: HATO
 author: Ken Shibata
+
+exclude:
+  - sakayukari
+  - sakayukari2
+  - rdtkdss-v4
