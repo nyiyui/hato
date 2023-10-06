@@ -14,7 +14,7 @@ HATO is an open source project available on [GitHub](https://nyiyui/hato). This 
 ## What is N gauge?
 It is the best-selling model railroad series in Japan. The track width of N gauge is 9 mm (9 = Nine = N gauge), and the scale is 1/150 (for most Japanese models).
 
-![N-Gage Tracks and Cars](/assets/9mm.png)
+![N-Gage Tracks and Cars](/assets/9mm_en.png)
 
 ## How to enjoy model trains
 This is a hobby in which you can create a box garden in which trains run as you like and enjoy looking at them.
