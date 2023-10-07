@@ -3,7 +3,7 @@ title: Home (English)
 ---
 # Hopefully Automatic Train Operation (HATO): Immersive Automatic Model Train Control System
 
-![Hero](/assets/hero.png)
+![Hero](/assets/hero_en.png)
 
 HATO is a fully automatic operation system for N gauge trains that aims to immerse users in the world of model railroading.
 HATO controls a distributed system consisting of a group of sensors and power supply units via a custom protocol, HLCP (Hato Line Control Protocol), which is run over USB.
@@ -22,7 +22,7 @@ This is a hobby in which you can create a box garden in which trains run as you 
 ## HATO system overview
 HATO's main program detects the direction of the train based on the polarity of the current flowing on the rails, and the speed of the train based on the average supply voltage value. It also monitors other sensors such as RFID tags attached to the bottom of the car, IR sensors, and current detection sensors, and communicates with the train power control driver ("kdss") to control the polarity and average value of the current at all times to keep the car running automatically according to a set schedule while avoiding accidents.
 
-![HATO system overview](/assets/system.png)
+![HATO system overview](/assets/system_en.png)
 
 ## Demo Video
 
