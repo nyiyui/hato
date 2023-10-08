@@ -10,7 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
@@ -24,7 +27,7 @@ type LinePort = layout.LinePort
 
 const idlePower = 15
 const switchPower = 255
-const switchDuration = 50
+const switchDuration = 250
 
 type GuideConf struct {
 	Layout        *layout.Layout
@@ -166,16 +169,24 @@ func (t *Train) nextUnsafe() int {
 
 func (t *Train) String() string {
 	b := new(strings.Builder)
-	fmt.Fprintf(b, "power%d %d-%d", t.Power, t.CurrentBack, t.CurrentFront)
+	if t.noPowerSupplied {
+		fmt.Fprint(b, "powerX ")
+	} else {
+		fmt.Fprintf(b, "power%d ", t.Power)
+	}
+	fmt.Fprintf(b, "%d-%d", t.CurrentBack, t.CurrentFront)
 	switch t.State {
 	case TrainStateNextAvail:
-		fmt.Fprintf(b, "→%d", t.next())
+		fmt.Fprintf(b, "->%d", t.next())
 	case TrainStateNextLocked:
 		fmt.Fprintf(b, "L")
 	}
 	fmt.Fprintf(b, " S%sF", t.Path.Start)
 	for _, lp := range t.Path.Follows {
 		fmt.Fprintf(b, " %s", lp)
+	}
+	for i, s := range t.History.Spans {
+		fmt.Fprintf(b, "\n%d %#v", i, s)
 	}
 	return b.String()
 }
@@ -630,14 +641,20 @@ func (g *Guide) loop() {
 						}
 					}
 				}()
-				log.Printf("t %#v", t)
-				log.Printf("t.Path %#v", t.Path)
-				log.Printf("oldT %#v", oldT)
-				log.Printf("oldT.Path %#v", oldT.Path)
+				zap.L().Info("updated train",
+					zap.Any("oldT", oldT),
+					zap.Any("new", t),
+					zap.Any("sameDir", sameDir),
+				)
+				//log.Printf("t %#v", t)
+				//log.Printf("t.Path %#v", t.Path)
+				//log.Printf("oldT %#v", oldT)
+				//log.Printf("oldT.Path %#v", oldT.Path)
 				if sameDir {
 					t.Orient = oldT.Orient
 				} else {
 					t.Orient = oldT.Orient.Flip()
+					t.History = History{}
 				}
 				if t.CurrentBack > t.CurrentFront {
 					log.Printf("t %#v", t)
@@ -649,17 +666,9 @@ func (g *Guide) loop() {
 			t.Generation = oldT.Generation + 1
 			log.Printf("GuideTrainUpdate %#v", t)
 			log.Printf("GuideTrainUpdate.Path %#v", t.Path)
-			if val.Target != nil {
-				t.History = History{}
-				t.History.AddSpan(Span{
-					Power: t.Power,
-				})
-			} else {
-				span := Span{
-					Power: t.Power,
-				}
-				t.History.AddSpan(span)
-			}
+			t.History.AddSpan(Span{
+				Power: t.Power,
+			})
 			g.calculateTrailers(t)
 			g.mustCheckPath(t)
 			g.trains[val.TrainI] = *t
@@ -737,6 +746,7 @@ func (g *Guide) reify(ti int, t *Train) {
 	log.Printf("REIFY: %d %s", power, t)
 	t.noPowerSupplied = power < 20
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
+		log.Printf("apply for %d", i)
 		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
 	}
@@ -752,6 +762,7 @@ func (g *Guide) mustCheckPath(t *Train) {
 		return
 	}
 	b := new(strings.Builder)
+	fmt.Fprintf(b, "while checking path of %s:\n", t)
 	fmt.Fprintf(b, "%d errors:\n", len(errs))
 	for i, err := range errs {
 		fmt.Fprintf(b, "%d. %s\n", i+1, err)
@@ -789,7 +800,7 @@ func (g *Guide) checkPath(t *Train) []error {
 func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path.Follows[pathI].LineI
 	pi := t.Path.Follows[pathI].PortI
-	//log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
+	log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
 	if g.y.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
 		return
@@ -996,7 +1007,7 @@ func (g *Guide) snapshot() GuideSnapshot {
 
 func (g *Guide) publishSnapshot() {
 	gs := g.snapshot()
-	//g.snapshotMuxS.Send(gs)
+	g.snapshotMuxS.Send(gs)
 	g.actor.OutputCh <- Diffuse1{Value: gs}
 }
 
@@ -1071,6 +1082,6 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 		Type:     ct,
 		Snapshot: g.snapshot(),
 	}
-	//g.changeMuxS.Send(gc)
+	g.changeMuxS.Send(gc)
 	g.actor.OutputCh <- Diffuse1{Value: gc}
 }

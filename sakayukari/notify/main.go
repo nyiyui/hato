@@ -22,7 +22,7 @@ type MultiplexerSender[E any] struct {
 }
 
 func (ms *MultiplexerSender[E]) Send(e E) {
-	ms.m.send(e)
+	go ms.m.send(e)
 }
 
 func NewMultiplexerSender[E any](comment string) (*MultiplexerSender[E], *Multiplexer[E]) {
@@ -40,7 +40,7 @@ type Multiplexer[E any] struct {
 
 // subscribersLock must be taken!
 func (m *Multiplexer[E]) cleanup() {
-	last := len(m.subscribers)
+	last := len(m.subscribers) - 1
 	if m.subscribers[last].ch == nil {
 		return
 	}

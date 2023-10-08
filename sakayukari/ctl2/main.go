@@ -12,6 +12,7 @@ import (
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/kujo"
 	"nyiyui.ca/hato/sakayukari/runtime"
+	"nyiyui.ca/hato/sakayukari/senri"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
@@ -30,6 +31,7 @@ func Main() error {
 	connState, connActors := conn.ConnActors([]conn.Id{
 		conn.Id{"soyuu-kdss", "v4", "1"},
 	})
+	log.Printf("finding devices…")
 	err := connState.Find()
 	if err != nil {
 		return fmt.Errorf("conn find: %w", err)
@@ -104,17 +106,29 @@ func Main() error {
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, WaypointControl(guide, g2))
 
+	log.Printf("starting kujo…")
 	kujo := kujo.NewServer(g2)
-	http.ListenAndServe("0.0.0.0:8001", kujo)
+	go func() {
+		http.ListenAndServe("0.0.0.0:8001", kujo)
+	}()
 
-	i := runtime.NewInstance(&g)
-	err = i.Check()
+	go func() {
+		log.Printf("starting runtime…")
+		i := runtime.NewInstance(&g)
+		err = i.Check()
+		if err != nil {
+			log.Fatalf("check: %s", err)
+		}
+		err = i.Diffuse()
+		if err != nil {
+			log.Fatalf("diffuse: %s", err)
+		}
+	}()
+
+	log.Printf("starting senri…")
+	err = senri.Main(g2)
 	if err != nil {
-		return fmt.Errorf("check: %s", err)
-	}
-	err = i.Diffuse()
-	if err != nil {
-		return fmt.Errorf("diffuse: %s", err)
+		return fmt.Errorf("senri: %s", err)
 	}
 	return nil
 }

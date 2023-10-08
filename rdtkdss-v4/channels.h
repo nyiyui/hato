@@ -95,6 +95,13 @@ void channels_updateSensors() {
     }
     c->val = val;
     c->tf_now = tf_now;
+    if (ina240_debug) {
+      Serial.print(i);
+      Serial.print(" val");
+      Serial.print(val);
+      Serial.print(" tf_now");
+      Serial.println(tf_now);
+    }
   }
 }
 
@@ -108,14 +115,11 @@ void channels_sendDelta() {
   }
 
   if (ina240_debug) {
-    Serial.print(changed);
-    /*
     Serial.print("values ");
     for (int i = 0; i < channels_len; i ++) {
       Serial.print(values[i]);
     }
     Serial.println();
-    */
   }
 
   //if (!changed && !ina240_debug) return;

@@ -2,6 +2,7 @@ package tal
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"golang.org/x/exp/slices"
@@ -16,8 +17,23 @@ func (h *History) AddSpan(s Span) {
 	h.Spans = append(h.Spans, s)
 }
 
+func (h *History) TimeRange() (start, end time.Time, duration time.Duration) {
+	last := len(h.Spans) - 1
+	start = h.Spans[0].Time
+	end = h.Spans[last].Time
+	return start, end, end.Sub(start)
+}
+
+func (h *History) Clone() *History {
+	spans := make([]Span, len(h.Spans))
+	for i := range h.Spans {
+		spans[i] = h.Spans[i]
+	}
+	return &History{Spans: spans}
+}
+
 type Span struct {
-	Time  time.Time
+	Time  time.Time // NOTE: non-monotonic-ness of ISO8601-formatted time shouldn't matter much here, as we're dealing with milliseconds, not nanoseconds
 	Power int
 	// Velocity in µm/s.
 	Velocity      int64
@@ -82,9 +98,71 @@ func (h *History) Interspan(from, to time.Time) (Span, []spanUsage) {
 	return cum, sus
 }
 
+type Character struct {
+	// Recorded is the start and end time when this data was taken.
+	Recorded [2]time.Time
+	// Points is the list of (speed, velocity) points
+	Points [][2]int64
+}
+
+func (h *History) Points() Character {
+	// History (h) must have known velocities only
+	// use spanUsages (sus) to generate a list of (power, velocity) points
+	// [(100, 123), (100, 456)] is ok (duplicate entries per power are ok)
+	// return that data
+
+	points := make([][2]int64, 0)
+	prev := -1
+	for i, span := range h.Spans {
+		log.Printf("%d %#v", i, span)
+		if !span.PositionKnown {
+			continue
+		}
+		if prev != -1 && span.PositionKnown {
+			// get weighted average of power
+			var cum int64
+			for j := prev; j < i; j++ {
+				span2 := h.Spans[j]
+				span3 := h.Spans[j+1]
+				cum += int64(span2.Power) * span3.Time.Sub(span2.Time).Microseconds()
+			}
+			prevSpan := h.Spans[prev]
+			total := span.Time.Sub(prevSpan.Time)
+			power := cum / total.Microseconds()
+			speed := (span.Position - prevSpan.Position) * 1000 / total.Milliseconds()
+			if speed < 0 {
+				panic(fmt.Sprintf("current span %d is behind previous span %d", i, prev))
+			}
+			points = append(points, [2]int64{power, speed})
+			log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
+			for j := prev; j < i; j++ {
+				span2 := h.Spans[j]
+				span3 := h.Spans[j+1]
+				log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
+			}
+			log.Printf("total = %s", total)
+			log.Printf("power = %d", power)
+			log.Printf("speed = %d", speed)
+		}
+		if span.PositionKnown {
+			prev = i
+		}
+	}
+	start, end, _ := h.TimeRange()
+	return Character{
+		Recorded: [2]time.Time{start, end},
+		Points:   points,
+	}
+}
+
+func ModelFromPoints(chars []Character) {
+	// polyfit over that data (power, velocity)
+	// return
+}
+
 func (h *History) Correct(from, to time.Time, actual Span) []int64 {
 	cum, sus := h.Interspan(from, to)
-	speeds := make([]int64, MaxPower) // speed[100] = how much time was used with this speed during from-to in permille
+	speeds := make([]int64, MaxPower) // speed[100] = how much time was used with speed 100 during from-to in permille
 	cumDelta := to.Sub(from)
 	for _, su := range sus {
 		speeds[su.Power] = su.Duration.Microseconds() / cumDelta.Milliseconds()

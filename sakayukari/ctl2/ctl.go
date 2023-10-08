@@ -68,8 +68,8 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 		}
 		for len(gs.Trains) == 0 {
 		}
-		aPower := 70
-		bPower := 70
+		aPower := 90
+		bPower := 90
 		j, k := 0, 1
 		for i := 0; true; i++ {
 			log.Printf("loop %d", i)

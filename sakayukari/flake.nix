@@ -27,6 +27,16 @@
             (python3.withPackages (p: with p; [ pyserial ]))
             yq
             gnumake
+
+            # reqs for fyne
+            pkg-config
+            libGL
+            xorg.libX11.dev
+            xorg.libXcursor
+            xorg.libXrandr
+            xorg.libXinerama
+            xorg.libXi
+            xorg.libXxf86vm
           ];
       }; };
   });
