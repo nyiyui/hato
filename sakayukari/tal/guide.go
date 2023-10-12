@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
@@ -26,8 +25,8 @@ type LineID = layout.LineID
 type LinePort = layout.LinePort
 
 const idlePower = 15
-const switchPower = 255
-const switchDuration = 250
+const switchPower = 230
+const switchDuration = 400
 
 type GuideConf struct {
 	Layout        *layout.Layout
@@ -141,7 +140,8 @@ type Train struct {
 	// Orient shows which side (side A or B) the front of the train (c.f. CurrentFront etc).
 	Orient FormOrient
 
-	History History
+	History             History
+	historyPositionBase int64
 }
 
 func (t *Train) form(g *Guide) cars.Form {
@@ -185,9 +185,9 @@ func (t *Train) String() string {
 	for _, lp := range t.Path.Follows {
 		fmt.Fprintf(b, " %s", lp)
 	}
-	for i, s := range t.History.Spans {
-		fmt.Fprintf(b, "\n%d %#v", i, s)
-	}
+	//for i, s := range t.History.Spans {
+	//	fmt.Fprintf(b, "\n%d %#v", i, s)
+	//}
 	return b.String()
 }
 
@@ -197,11 +197,12 @@ type Guide struct {
 	trains       []Train
 	trainsLock   sync.Mutex
 	lineStates   []LineStates
-	y            *layout.Layout
+	Layout       *layout.Layout
 	snapshotMuxS *notify.MultiplexerSender[GuideSnapshot]
 	SnapshotMux  *notify.Multiplexer[GuideSnapshot]
 	changeMuxS   *notify.MultiplexerSender[GuideChange]
 	ChangeMux    *notify.Multiplexer[GuideChange]
+	Model2       *Model2
 }
 
 type LineStates struct {
@@ -245,7 +246,12 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 		actor:      a,
 		trains:     make([]Train, 0),
 		lineStates: make([]LineStates, len(conf.Layout.Lines)),
-		y:          conf.Layout,
+		Layout:     conf.Layout,
+	}
+	var err error
+	g.Model2, err = NewModel2("model2.test.db")
+	if err != nil {
+		panic(err)
 	}
 	g.snapshotMuxS, g.SnapshotMux = notify.NewMultiplexerSender[GuideSnapshot]("tal-guide snapshot")
 	g.changeMuxS, g.ChangeMux = notify.NewMultiplexerSender[GuideChange]("tal-guide change")
@@ -261,7 +267,7 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 				//FormI:  uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
 				Orient: FormOrientA,
 			}
-			path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortA}, LinePort{g.y.MustLookupIndex("B"), layout.PortB})
+			path := g.Layout.MustFullPathTo(LinePort{g.Layout.MustLookupIndex("A"), layout.PortA}, LinePort{g.Layout.MustLookupIndex("B"), layout.PortB})
 			//path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("A"), layout.PortB}, LinePort{g.y.MustLookupIndex("D"), layout.PortB})
 			t1.Path = &path
 			log.Printf("t1.Path %#v", path)
@@ -276,7 +282,7 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 				FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
 				Orient:       FormOrientA,
 			}
-			path := g.y.MustFullPathTo(LinePort{g.y.MustLookupIndex("C"), layout.PortA}, LinePort{g.y.MustLookupIndex("D"), layout.PortA})
+			path := g.Layout.MustFullPathTo(LinePort{g.Layout.MustLookupIndex("C"), layout.PortA}, LinePort{g.Layout.MustLookupIndex("D"), layout.PortA})
 			t2.Path = &path
 			log.Printf("t2.Path %#v", path)
 			g.trains = append(g.trains, t2)
@@ -312,7 +318,7 @@ func (g *Guide) calculateTrailers(t *Train) {
 		switch t.Orient {
 		case FormOrientA:
 			// traverse front → back
-			reversed := g.y.ReverseFullPath(*t.Path).Follows
+			reversed := g.Layout.ReverseFullPath(*t.Path).Follows
 			i := slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == att.Position.LineI })
 			path = reversed[i:]
 			trailerFront = i
@@ -323,7 +329,7 @@ func (g *Guide) calculateTrailers(t *Train) {
 			trailerBack = i
 		}
 		form := g.conf.Cars.Forms[t.FormI]
-		side2, ok := g.y.Traverse(path, int64(form.Length))
+		side2, ok := g.Layout.Traverse(path, int64(form.Length))
 		if !ok {
 			// Take the longest possible place, as overflow means we went over the former.
 			switch t.Orient {
@@ -371,17 +377,17 @@ func (g *Guide) calculateTrailers(t *Train) {
 		} else {
 			behindBack := t.Path.Follows[t.CurrentBack-1]
 			// backside is the backmost port of CurrentBack.
-			backside := g.y.GetPort(behindBack).Conn()
+			backside := g.Layout.GetPort(behindBack).Conn()
 			if backside.PortI == -1 {
 				// I guess there's not much of a point now…
 			} else if backside.PortI != layout.PortA {
-				back += int64(g.y.GetPort(backside).Length)
+				back += int64(g.Layout.GetPort(backside).Length)
 			}
 		}
 		if t.CurrentFront == len(t.Path.Follows)-1 {
 			frontPossible = false
 		} else if lp := t.Path.Follows[t.CurrentFront]; lp.PortI != layout.PortA {
-			_, p := g.y.GetLinePort(lp)
+			_, p := g.Layout.GetLinePort(lp)
 			front += int64(p.Length)
 		}
 		log.Printf("back %d", back)
@@ -389,7 +395,7 @@ func (g *Guide) calculateTrailers(t *Train) {
 		_ = backPossible
 		if frontPossible {
 			follows := t.Path.Follows[t.CurrentFront:]
-			pos, ok := g.y.Traverse(follows, front)
+			pos, ok := g.Layout.Traverse(follows, front)
 			if !ok {
 				log.Printf("train: trailer overrun (front)")
 				trailerFront = len(t.Path.Follows) - 1
@@ -399,12 +405,12 @@ func (g *Guide) calculateTrailers(t *Train) {
 			}
 		}
 		if backPossible {
-			follows := g.y.ReverseFullPath(*t.Path).Follows
+			follows := g.Layout.ReverseFullPath(*t.Path).Follows
 			log.Printf("t.Path %#v", t.Path)
 			log.Printf("follows1 %#v", follows)
 			follows = follows[slices.IndexFunc(follows, func(lp LinePort) bool { return lp.LineI == t.Path.Follows[t.CurrentBack].LineI }):]
 			log.Printf("follows2 %#v", follows)
-			pos, ok := g.y.Traverse(follows, back)
+			pos, ok := g.Layout.Traverse(follows, back)
 			if !ok {
 				log.Printf("train: trailer overrun (back)")
 				trailerBack = 0
@@ -434,7 +440,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 			// sync t.state etc
 			g.syncLocks(ti)
 
-			cb := g.y.Lines[t.Path.Follows[t.CurrentBack].LineI]
+			cb := g.Layout.Lines[t.Path.Follows[t.CurrentBack].LineI]
 			if ci == cb.PowerConn.Conn && inner.Line == cb.PowerConn.Line && !inner.Flow {
 				if t.CurrentBack >= t.CurrentFront {
 					// this can happen e.g. when the train is at 0-0→1 and then the 0th line becomes 0 (e.g. A0, B0)
@@ -449,7 +455,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
-			cf := g.y.Lines[t.Path.Follows[t.CurrentFront].LineI]
+			cf := g.Layout.Lines[t.Path.Follows[t.CurrentFront].LineI]
 			if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && !inner.Flow {
 				if t.CurrentFront == 0 {
 					//log.Printf("=== currentFront regression (ignore): %d", t.CurrentFront)
@@ -471,7 +477,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 		NoCurrentFront:
 			if t.State == TrainStateNextAvail {
 				// if t.state ≠ trainStateNextAvail, t.next could be out of range
-				cf := g.y.Lines[t.Path.Follows[t.next()].LineI]
+				cf := g.Layout.Lines[t.Path.Follows[t.next()].LineI]
 				if ci == cf.PowerConn.Conn && inner.Line == cf.PowerConn.Line && inner.Flow {
 					t.CurrentFront++
 					g.calculateTrailers(t)
@@ -513,9 +519,9 @@ func (g *Guide) handleAttitude(att Attitude) {
 
 // reason is only for debugging.
 func (g *Guide) wakeup(ti int, reason string) {
-	log.Printf("wakeup %d", ti)
-	log.Printf("wakeup %#v", g.trains[ti])
-	log.Printf("wakeup %#v", g.trains[ti].Path)
+	//log.Printf("wakeup %d", ti)
+	//log.Printf("wakeup %#v", g.trains[ti])
+	//log.Printf("wakeup %#v", g.trains[ti].Path)
 	g.check(ti)
 	g.syncLocks(ti)
 	t := g.trains[ti]
@@ -532,6 +538,7 @@ func (g *Guide) check(ti int) {
 }
 
 func (g *Guide) loop() {
+	y := g.conf.Layout
 	time.Sleep(1 * time.Second)
 	for ti := range g.trains {
 		g.wakeup(ti, "init")
@@ -561,8 +568,7 @@ func (g *Guide) loop() {
 			if val.Target != nil {
 				var sameDir bool
 				func() {
-					y := g.conf.Layout
-					log.Printf("### t %#v", t)
+					//log.Printf("### t %#v", t)
 					// TODO: In the below scenario, where TrailerBack is A and TrailerFront is B,
 					//       lpsBack can be A-C, while lpsFront can be A-B. (This can cause problems with using len(lpsBack) and len(lpsFront) to determine which to use.)
 					//       Include all of t.Path in the new path
@@ -584,12 +590,12 @@ func (g *Guide) loop() {
 					} else if err != nil {
 						panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
 					}
-					log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
-					log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
+					//log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
+					//log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
 					// We have to include all currents in the new path.
 					// The longer one will include both TrailerBack and TrailerFront regardless of direction.
 					if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
-						log.Printf("### ALREADY THERE")
+						//log.Printf("### ALREADY THERE")
 					} else {
 						if len(lpsBack.Follows) > len(lpsFront.Follows) {
 							t.Path = &lpsBack
@@ -641,10 +647,10 @@ func (g *Guide) loop() {
 						}
 					}
 				}()
-				zap.L().Info("updated train",
-					zap.Any("oldT", oldT),
-					zap.Any("new", t),
-					zap.Any("sameDir", sameDir),
+				zap.S().Infow("updated train",
+					"oldT", oldT,
+					"new", t,
+					"sameDir", sameDir,
 				)
 				//log.Printf("t %#v", t)
 				//log.Printf("t.Path %#v", t.Path)
@@ -652,10 +658,20 @@ func (g *Guide) loop() {
 				//log.Printf("oldT.Path %#v", oldT.Path)
 				if sameDir {
 					t.Orient = oldT.Orient
+					// TODO: historyPositionBase is buggy
+					//t.historyPositionBase = y.PositionToOffset(*oldT.Path, y.LinePortToPosition(t.Path.Start))
 				} else {
 					t.Orient = oldT.Orient.Flip()
-					t.History = History{}
 				}
+				err := g.Model2.RecordTrainCharacter(t)
+				if err != nil {
+					zap.S().Errorw("RecordTrainCharacter failed",
+						"train", val.TrainI,
+						"error", err,
+					)
+				}
+				t.History = History{}
+				t.historyPositionBase = 0
 				if t.CurrentBack > t.CurrentFront {
 					log.Printf("t %#v", t)
 					log.Printf("t.Path %#v", t.Path)
@@ -677,7 +693,7 @@ func (g *Guide) loop() {
 			g.handleValCurrent(diffuse, val)
 		case conn.ValShortNotify:
 			c := g.conf.actorsReverse[diffuse.Origin]
-			li := slices.IndexFunc(g.y.Lines, func(l layout.Line) bool { return l.SwitchConn == (LineID{Conn: c, Line: val.Line}) })
+			li := slices.IndexFunc(g.Layout.Lines, func(l layout.Line) bool { return l.SwitchConn == (LineID{Conn: c, Line: val.Line}) })
 			if li == -1 {
 				panic(fmt.Sprintf("no line found for ValShortNotify %#v", diffuse))
 			}
@@ -746,7 +762,6 @@ func (g *Guide) reify(ti int, t *Train) {
 	log.Printf("REIFY: %d %s", power, t)
 	t.noPowerSupplied = power < 20
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
-		log.Printf("apply for %d", i)
 		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
 	}
@@ -789,7 +804,7 @@ func (g *Guide) checkPath(t *Train) []error {
 		}
 		aLP := t.Path.Follows[i-1]
 		bLP := t.Path.Follows[i]
-		_, a := g.y.GetLinePort(aLP)
+		_, a := g.Layout.GetLinePort(aLP)
 		if a.Conn() == bLP {
 			errs = append(errs, fmt.Errorf("Path.Follows[%d] (%s or %s) and [%d] (%s) are equal (i.e. they point towards each other)", i-1, aLP, a.Conn(), i, bLP))
 		}
@@ -800,8 +815,7 @@ func (g *Guide) checkPath(t *Train) []error {
 func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 	li := t.Path.Follows[pathI].LineI
 	pi := t.Path.Follows[pathI].PortI
-	log.Printf("=== applySwitch path%d %s", pathI, g.y.Lines[li].Comment)
-	if g.y.Lines[li].SwitchConn == (LineID{}) {
+	if g.Layout.Lines[li].SwitchConn == (LineID{}) {
 		// no switch here
 		return
 	}
@@ -814,7 +828,7 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 		} else {
 			lp = t.Path.Follows[pathI-1]
 		}
-		p := g.y.Lines[lp.LineI].GetPort(lp.PortI)
+		p := g.Layout.Lines[lp.LineI].GetPort(lp.PortI)
 		switch p.ConnP { // p.ConnP is what the line connecting to the merging switch connects to
 		case layout.PortA:
 			panic("merging from port A to port A! Cannot change direction suddenly")
@@ -842,11 +856,14 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 			panic(fmt.Sprintf("invalid pi %d", pi))
 		}
 	}
+	log.Printf("=== applySwitch path%d %s - target is %s, current is %s", pathI, g.Layout.Lines[li].Comment, targetState, g.lineStates[li].SwitchState)
 	if g.lineStates[li].SwitchState == targetState {
 		return
 	}
 	if g.lineStates[li].SwitchState == SwitchStateUnsafe {
 		// already switching
+		// TODO: maybe we're waiting on SwitchStateUnsafe but the job changing switch state was already done??
+		//panic("aiya")
 		return
 	}
 	g.lineStates[li].SwitchState = SwitchStateUnsafe
@@ -854,9 +871,9 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 
 	//log.Printf("applySwitch")
 	d := Diffuse1{
-		Origin: g.conf.Actors[g.y.Lines[li].SwitchConn],
+		Origin: g.conf.Actors[g.Layout.Lines[li].SwitchConn],
 		Value: conn.ReqSwitch{
-			Line:      g.y.Lines[li].SwitchConn.Line,
+			Line:      g.Layout.Lines[li].SwitchConn.Line,
 			Direction: targetState == SwitchStateB,
 			// true  when targetState is B
 			// false when targetState is C
@@ -864,7 +881,7 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 			Duration: switchDuration,
 		},
 	}
-	//log.Printf("diffuse %#v", d)
+	log.Printf("applySwitch diffuse %#v", d)
 	if g.conf.Virtual {
 		return
 	}
@@ -874,7 +891,7 @@ func (g *Guide) applySwitch(ti int, t *Train, pathI int) {
 func (g *Guide) apply(t *Train, pathI int, power int) {
 	pi := t.Path.Follows[pathI].PortI
 	li := t.Path.Follows[pathI].LineI
-	l := g.y.Lines[li]
+	l := g.Layout.Lines[li]
 	rl := conn.ReqLine{
 		Line: l.PowerConn.Line,
 		// NOTE: reversed for now as the layout is reversed (bodge)
@@ -883,7 +900,7 @@ func (g *Guide) apply(t *Train, pathI int, power int) {
 	}
 	g.lineStates[li].Power = rl.Power
 	rl.Direction = l.GetPort(pi).Direction
-	log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
+	//log.Printf("apply %s %s to %s", t, rl, g.conf.Actors[l.PowerConn])
 	if g.conf.Virtual {
 		log.Printf("apply2 virtual %s", rl)
 		return
@@ -1041,7 +1058,7 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 		}
 		switch ct {
 		case ChangeTypeCurrentBack:
-			back := g.y.PositionToOffset(*t.Path, g.y.LinePortToPosition(t.Path.Follows[t.TrailerBack-1]))
+			back := g.Layout.PositionToOffset(*t.Path, g.Layout.LinePortToPosition(t.Path.Follows[t.TrailerBack-1]))
 			var sideA int64
 			switch t.Orient {
 			case FormOrientA:
@@ -1059,7 +1076,7 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 			if t.TrailerFront == 0 {
 				return
 			}
-			front := g.y.PositionToOffset(*t.Path, g.y.LinePortToPosition(t.Path.Follows[t.TrailerFront-1]))
+			front := g.Layout.PositionToOffset(*t.Path, g.Layout.LinePortToPosition(t.Path.Follows[t.TrailerFront-1]))
 			var sideA int64
 			switch t.Orient {
 			case FormOrientA:
@@ -1074,6 +1091,9 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 			span.PositionKnown = true
 		default:
 			panic("unreachable")
+		}
+		if span.PositionKnown {
+			span.Position += t.historyPositionBase
 		}
 		t.History.AddSpan(span)
 	}()

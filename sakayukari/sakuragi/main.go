@@ -7,16 +7,19 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/tal"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 //go:embed index.html
 var templates embed.FS
 
 type Conf struct {
-	Guide ActorRef
-	Model ActorRef
+	Guide  ActorRef
+	Model  ActorRef
+	Guide2 *tal.Guide
 }
 
 type sakuragi struct {
@@ -27,6 +30,7 @@ type sakuragi struct {
 	latestMessage  string
 	latestGS       tal.GuideSnapshot
 	latestAttitude tal.Attitude
+	g              *tal.Guide
 }
 
 func Sakuragi(conf Conf) *Actor {
@@ -45,26 +49,59 @@ func Sakuragi(conf Conf) *Actor {
 		conf:  conf,
 		actor: a,
 		sm:    http.NewServeMux(),
-		t: template.Must(template.New("index").Funcs(template.FuncMap{
-			"div_int64": func(a, b int64) int64 {
-				return a / b
-			},
-			"div": func(a, b uint32) uint32 {
-				return a / b
-			},
-			"add": func(a, b uint32) uint32 {
-				return a + b
-			},
-			"contains": func(t tal.Train, lineI int) bool {
+		g:     conf.Guide2,
+	}
+	s.t = template.Must(template.New("index").Funcs(template.FuncMap{
+		"div_int64": func(a, b int64) int64 {
+			return a / b
+		},
+		"div": func(a, b uint32) uint32 {
+			return a / b
+		},
+		"add": func(a, b uint32) uint32 {
+			return a + b
+		},
+		"subtract_int64": func(a, b int64) int64 {
+		},
+		"map": func(vs ...any) map[string]any {
+			if len(vs)%2 != 0 {
+				panic("# of args is not even")
+			}
+			res := map[string]any{}
+			for i, v := range vs {
+				if i%2 == 0 {
+					continue
+				}
+				name := vs[i-1].(string)
+				res[name] = v
+			}
+			return res
+		},
+		"oneContains": func(ts []tal.Train, lineI int) bool {
+			for _, t := range ts {
 				for i := t.CurrentBack; i <= t.CurrentFront; i++ {
 					if int(t.Path.Follows[i].LineI) == lineI {
 						return true
 					}
 				}
-				return false
-			},
-		}).ParseFS(templates, "*.html")),
-	}
+			}
+			return false
+		},
+		"contains": func(t tal.Train, lineI int) bool {
+			for i := t.CurrentBack; i <= t.CurrentFront; i++ {
+				if int(t.Path.Follows[i].LineI) == lineI {
+					return true
+				}
+			}
+			return false
+		},
+		"hasValidFormI": func(t tal.Train) bool {
+			return t.FormI != (uuid.UUID{})
+		},
+		"offsetToPos": func(t tal.Train, offset int64) layout.Position {
+			return s.g.Layout.OffsetToPosition(*t.Path, offset)
+		},
+	}).ParseFS(templates, "*.html"))
 	s.setup()
 	go s.loop()
 	return a
@@ -77,6 +114,7 @@ func (s *sakuragi) handleIndex(w http.ResponseWriter, r *http.Request) {
 		"gs":  s.latestGS,
 		"att": s.latestAttitude,
 		"now": time.Now().Format("15:04:05"),
+		"g":   s.g,
 	})
 	if err != nil {
 		panic(err)

@@ -268,28 +268,28 @@ func InitTestbench6() (*Layout, error) {
 		PortA:      Port{Direction: true},
 		PortB:      Port{Length: (248 + 248 + 62 + 186) * 1000, Direction: false, ConnI: mitouc2, ConnP: PortA, ConnFilled: true},
 		PortC:      Port{Length: (248 + 248 + 62 + uint32(r718_15)) * 1000, Direction: false, ConnI: mitouc3, ConnP: PortA, ConnFilled: true},
-		PowerConn:  kdss("H"),
-		SwitchConn: kdss("E"),
+		PowerConn:  kdss("E"),
+		SwitchConn: kdss("G"),
 	}
 	y.Lines[mitouc2] = Line{
 		Comment:   "mitouc2",
 		PortA:     Port{Direction: true, ConnI: nagase1, ConnP: PortB, ConnFilled: true},
 		PortB:     Port{Length: (248 + 248 + uint32(r718_15)) * 1000, Direction: false, ConnI: snb4, ConnP: PortB, ConnFilled: true},
-		PowerConn: kdss("C"),
+		PowerConn: kdss("F"),
 	}
 	y.Lines[mitouc3] = Line{
 		Comment:   "mitouc3",
 		PortA:     Port{Direction: true, ConnI: nagase1, ConnP: PortC, ConnFilled: true},
 		PortB:     Port{Length: (uint32(r718_15) + 248 + 248) * 1000, Direction: false, ConnI: snb4, ConnP: PortC, ConnFilled: true},
-		PowerConn: kdss("F"),
+		PowerConn: kdss("D"),
 	}
 	y.Lines[snb4] = Line{
 		Comment:    "snb4",
-		PortA:      Port{Direction: false},
-		PortB:      Port{Length: (248 + 248 + 62 + uint32(r718_15)) * 1000, Direction: true, ConnI: mitouc2, ConnP: PortB, ConnFilled: true},
-		PortC:      Port{Length: (248 + 248 + 62 + 183) * 1000, Direction: true, ConnI: mitouc3, ConnP: PortB, ConnFilled: true},
+		PortA:      Port{Direction: true},
+		PortB:      Port{Length: (248 + 248 + 62 + uint32(r718_15)) * 1000, Direction: false, ConnI: mitouc2, ConnP: PortB, ConnFilled: true},
+		PortC:      Port{Length: (248 + 248 + 62 + 183) * 1000, Direction: false, ConnI: mitouc3, ConnP: PortB, ConnFilled: true},
 		PowerConn:  kdss("B"),
-		SwitchConn: kdss("G"),
+		SwitchConn: kdss("C"),
 	}
 	// TODO: when the goal is snb4, port B, then the direction for portA→portB (i.e. Line.PortB.Direction) is used, not Line.PortA, which should be used
 	return y, nil

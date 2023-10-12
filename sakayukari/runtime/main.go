@@ -150,7 +150,7 @@ func (i *Instance) send(actorI int, d *Diffuse1) {
 	//i.g.Actors[actorI].InputCh <- *d
 	select {
 	case i.g.Actors[actorI].InputCh <- *d:
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
 		panic(fmt.Sprintf("actor %s %s timed out: %#v", ActorRef{Index: actorI}, i.g.Actors[actorI].Comment, d))
 	}

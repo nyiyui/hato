@@ -68,7 +68,7 @@ func Main(g *tal.Guide) error {
 		for gs := range c {
 			for i, t := range gs.Trains {
 				img := con.Objects[i*2].(*canvas.Image)
-				chart, err := trainChart(&t)
+				chart, err := trainChart(g, &t)
 				if err != nil {
 					log.Printf("senri: train %d: chart: %s", i, err)
 				} else {

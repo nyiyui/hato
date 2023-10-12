@@ -2,13 +2,20 @@ package tal
 
 import (
 	"fmt"
-	"log"
+	"math"
 	"time"
 
 	"golang.org/x/exp/slices"
 )
 
 type History struct {
+	Spans []Span
+	// TODO: support starting spans from different positions
+	// SpanSets []SpanSet
+}
+
+type SpanSet struct {
+	Base  Position
 	Spans []Span
 }
 
@@ -105,7 +112,7 @@ type Character struct {
 	Points [][2]int64
 }
 
-func (h *History) Points() Character {
+func (h *History) Character() Character {
 	// History (h) must have known velocities only
 	// use spanUsages (sus) to generate a list of (power, velocity) points
 	// [(100, 123), (100, 456)] is ok (duplicate entries per power are ok)
@@ -114,7 +121,6 @@ func (h *History) Points() Character {
 	points := make([][2]int64, 0)
 	prev := -1
 	for i, span := range h.Spans {
-		log.Printf("%d %#v", i, span)
 		if !span.PositionKnown {
 			continue
 		}
@@ -128,21 +134,25 @@ func (h *History) Points() Character {
 			}
 			prevSpan := h.Spans[prev]
 			total := span.Time.Sub(prevSpan.Time)
+			if total.Milliseconds() == 0 {
+				continue // don't set prev = i, so we treat this as a PositionKnown = false
+			}
 			power := cum / total.Microseconds()
 			speed := (span.Position - prevSpan.Position) * 1000 / total.Milliseconds()
 			if speed < 0 {
 				panic(fmt.Sprintf("current span %d is behind previous span %d", i, prev))
 			}
 			points = append(points, [2]int64{power, speed})
-			log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
+			//log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
 			for j := prev; j < i; j++ {
 				span2 := h.Spans[j]
 				span3 := h.Spans[j+1]
-				log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
+				_, _ = span2, span3
+				//log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
 			}
-			log.Printf("total = %s", total)
-			log.Printf("power = %d", power)
-			log.Printf("speed = %d", speed)
+			//log.Printf("total = %s", total)
+			//log.Printf("power = %d", power)
+			//log.Printf("speed = %d", speed)
 		}
 		if span.PositionKnown {
 			prev = i
@@ -174,4 +184,41 @@ func (h *History) Correct(from, to time.Time, actual Span) []int64 {
 		delta[speed] = deltaVelocity * permille / 1000
 	}
 	return delta
+}
+
+func evaluate(coeffs []float64, x float64) float64 {
+	var y float64
+	for i, coeff := range coeffs {
+		y += math.Pow(x, float64(i)) * coeff
+	}
+	return y
+}
+
+// Extrapolate calculates the position at time at.
+// TODO: explain algorithm
+func (h *History) Extrapolate(relation Relation, at time.Time) int64 {
+	// evaluate the spans
+	var pos int64
+	for i, span := range h.Spans {
+		if i == 0 {
+			continue
+		}
+		if span.Time.After(at) {
+			break
+		}
+		prev := h.Spans[i-1]
+		delta := span.Time.Sub(prev.Time)
+		if prev.PositionKnown {
+			pos = prev.Position
+		}
+		pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(prev.Power)) / 1000)
+		if span.PositionKnown {
+			pos = span.Position
+		}
+	}
+	// evaluate until at
+	last := h.Spans[len(h.Spans)-1]
+	delta := at.Sub(last.Time)
+	pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(last.Power)) / 1000)
+	return pos
 }

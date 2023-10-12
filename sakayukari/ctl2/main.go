@@ -8,10 +8,12 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
 	"nyiyui.ca/hato/sakayukari/kujo"
 	"nyiyui.ca/hato/sakayukari/runtime"
+	"nyiyui.ca/hato/sakayukari/sakuragi"
 	"nyiyui.ca/hato/sakayukari/senri"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
@@ -19,6 +21,11 @@ import (
 )
 
 func Main() error {
+	dev, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	zap.ReplaceGlobals(dev)
 	g := Graph{
 		Actors: []Actor{
 			Actor{
@@ -32,7 +39,7 @@ func Main() error {
 		conn.Id{"soyuu-kdss", "v4", "1"},
 	})
 	log.Printf("finding devices…")
-	err := connState.Find()
+	err = connState.Find()
 	if err != nil {
 		return fmt.Errorf("conn find: %w", err)
 	}
@@ -88,7 +95,7 @@ func Main() error {
 				CurrentBack:  0,
 				CurrentFront: 0,
 				State:        tal.TrainStateNextAvail,
-				FormI:        uuid.MustParse("e5f6bb45-0abe-408c-b8e0-e2772f3bbdb0"),
+				FormI:        uuid.MustParse("a7453d82-d52f-43ec-84d2-54dcea72f8c1"),
 				Orient:       tal.FormOrientA,
 				Path:         &path,
 			},
@@ -105,6 +112,12 @@ func Main() error {
 	}
 	guide := ActorRef{Index: len(g.Actors) - 1}
 	g.Actors = append(g.Actors, WaypointControl(guide, g2))
+	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{
+		Guide:  guide,
+		Guide2: g2,
+	}))
+	sakuragi := ActorRef{Index: len(g.Actors) - 1}
+	_ = sakuragi
 
 	log.Printf("starting kujo…")
 	kujo := kujo.NewServer(g2)
