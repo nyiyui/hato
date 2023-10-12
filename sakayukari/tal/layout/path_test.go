@@ -64,12 +64,12 @@ func TestOffsets1(t *testing.T) {
 				panic("either offset or pos must be set")
 			}
 			if !s.posSet {
-				s.pos = s.y.OffsetToPosition(s.path, s.offset)
+				s.pos = s.y.MustOffsetToPosition(s.path, s.offset)
 			}
 			if !s.offsetSet {
 				s.offset = s.y.PositionToOffset(s.path, s.pos)
 			}
-			pos2 := s.y.OffsetToPosition(s.path, s.offset)
+			pos2 := s.y.MustOffsetToPosition(s.path, s.offset)
 			if !cmp.Equal(s.pos, pos2) {
 				t.Logf("s.pos %#v", s.pos)
 				t.Logf("s.offset %#v", s.offset)
@@ -157,12 +157,12 @@ func TestOffsets2(t *testing.T) {
 				panic("either offset or pos must be set")
 			}
 			if !s.posSet {
-				s.pos = s.y.OffsetToPosition(s.path, s.offset)
+				s.pos = s.y.MustOffsetToPosition(s.path, s.offset)
 			}
 			if !s.offsetSet {
 				s.offset = s.y.PositionToOffset(s.path, s.pos)
 			}
-			pos2 := s.y.OffsetToPosition(s.path, s.offset)
+			pos2 := s.y.MustOffsetToPosition(s.path, s.offset)
 			if !cmp.Equal(s.pos, pos2) {
 				t.Logf("s.pos %#v", s.pos)
 				t.Logf("s.offset %#v", s.offset)

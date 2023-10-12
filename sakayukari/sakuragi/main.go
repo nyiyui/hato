@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/google/uuid"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/tal"
@@ -51,18 +52,42 @@ func Sakuragi(conf Conf) *Actor {
 		sm:    http.NewServeMux(),
 		g:     conf.Guide2,
 	}
-	s.t = template.Must(template.New("index").Funcs(template.FuncMap{
-		"div_int64": func(a, b int64) int64 {
-			return a / b
-		},
-		"div": func(a, b uint32) uint32 {
-			return a / b
-		},
-		"add": func(a, b uint32) uint32 {
-			return a + b
-		},
-		"subtract_int64": func(a, b int64) int64 {
-		},
+	s.t = template.Must(template.New("index").Funcs(sprig.FuncMap()).Funcs(template.FuncMap{
+		//"div_int64": func(a, b int64) int64 {
+		//	return a / b
+		//},
+		//"div": func(a, b any) any {
+		//	switch a := a.(type) {
+		//	case int:
+		//		return a / b.(int)
+		//	case uint32:
+		//		switch b := b.(type) {
+		//		case uint32:
+		//			return a / b
+		//		case int:
+		//			return a / uint32(b)
+		//		default:
+		//			panic("what")
+		//		}
+		//	case int64:
+		//		return a / b.(int64)
+		//	default:
+		//		panic(fmt.Sprintf("(add %T %T) not supported (yet)", a, b))
+		//	}
+		//},
+		//"add": func(a, b any) any {
+		//	switch a := a.(type) {
+		//	case int:
+		//		return a + b.(int)
+		//	case uint32:
+		//		return a + b.(uint32)
+		//	default:
+		//		panic(fmt.Sprintf("(add %T %T) not supported (yet)", a, b))
+		//	}
+		//},
+		//"subtract_int64": func(a, b int64) int64 {
+		//	return a - b
+		//},
 		"map": func(vs ...any) map[string]any {
 			if len(vs)%2 != 0 {
 				panic("# of args is not even")
@@ -98,8 +123,12 @@ func Sakuragi(conf Conf) *Actor {
 		"hasValidFormI": func(t tal.Train) bool {
 			return t.FormI != (uuid.UUID{})
 		},
-		"offsetToPos": func(t tal.Train, offset int64) layout.Position {
-			return s.g.Layout.OffsetToPosition(*t.Path, offset)
+		"offsetToPos": func(t tal.Train, offset int64) *layout.Position {
+			pos, overrun := s.g.Layout.OffsetToPosition(*t.Path, offset)
+			if overrun != nil {
+				return nil
+			}
+			return &pos
 		},
 	}).ParseFS(templates, "*.html"))
 	s.setup()

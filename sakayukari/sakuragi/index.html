@@ -2,6 +2,11 @@
   {{ range $i, $t := .gs.Trains }}
   {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
   {{ $pos := offsetToPos $t ($.g.Model2.CurrentPosition $t) }}
+  {{ if not $pos }} 
+  <text x="0" y="{{ $.y }}">train {{ $i }}</text>
+  <text x="0" y="{{ add $.y 20 }}">overrun</text>
+  {{ continue }}
+  {{ end }}
   {{ if ne $pos.LineI $.lineI }}{{ continue }}{{ end }}
   <text x="{{ div $pos.Precise 1000 }}" y="{{ $.y }}">train {{ $i }}</text>
   <text x="{{ div $pos.Precise 1000 }}" y="{{ add $.y 20 }}">line {{ $pos.LineI }} precise {{ $pos.Precise }} µm</text>
@@ -66,7 +71,7 @@
           <line x1="808" y1="20" x2="994" y2="20" stroke="grey" stroke-width="5" />
           <line x1="808" y1="20" x2="994" y2="40" stroke="{{ if oneContains .gs.Trains 0 }}green{{ else }}white{{ end }}" stroke-width="5" />
         {{ end }}
-        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div_int64 .att.Velocity 1000 }}" />
+        <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div .att.Velocity 1000 }}" />
         {{ template "view" (map "gs" .gs "g" .g "lineI" 0 "y" 20) }}
       </g>
       <g id="mitouc" transform="translate(994 0)">
@@ -95,7 +100,7 @@
         {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
         {{ $pos := offsetToPos $t ($.g.Model2.CurrentPosition $t) }}
         {{ if ne $pos.LineI 3 }}{{ continue }}{{ end }}
-        <text x="{{ subtract_int64 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>
+        <text x="{{ sub 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>
         {{ end }}
       </g>
     </svg>

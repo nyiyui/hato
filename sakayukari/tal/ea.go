@@ -76,7 +76,7 @@ func (m *model) clampExpectedAttitudes(ti int, pos layout.Position) layout.Posit
 	} else if offset > frontOffset {
 		offset = frontOffset
 	}
-	return y.OffsetToPosition(*t.Path, offset)
+	return y.MustOffsetToPosition(*t.Path, offset)
 }
 
 func (m *model) updateEAPasses() {

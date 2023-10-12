@@ -93,8 +93,17 @@ func (y *Layout) positionToStep(a, b LinePort, pos Position) int64 {
 	}
 }
 
-// PositionToOffset returns a Position from an Offset, starting at the start of the FullPath.
-func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
+// OffsetToPosition returns a Position from an Offset, starting at the start of the FullPath.
+func (y *Layout) MustOffsetToPosition(fp FullPath, offset Offset) Position {
+	pos, err := y.OffsetToPosition(fp, offset)
+	if err != nil {
+		panic(err)
+	}
+	return pos
+}
+
+// OffsetToPosition returns a Position from an Offset, starting at the start of the FullPath.
+func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err error) {
 	var cum int64
 	for i, cur := range fp.Follows {
 		var prev LinePort
@@ -108,7 +117,7 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
 		if nextCum > offset {
 			move := offset - cum
 			//log.Printf("i %d", i)
-			return y.stepToPosition(prev, cur, move)
+			return y.stepToPosition(prev, cur, move), nil
 		}
 		cum += step
 	}
@@ -130,7 +139,7 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
 		case PortA:
 			switch b.PortI {
 			case PortA:
-				panic("unreachable")
+				panic(fmt.Sprintf("unreachable (a.PortI==b.PortI==PortA) (a=%s b=%s fp=%s)", a, b, fp))
 			case PortB, PortC:
 				// A → B/C
 				_, p := y.GetLinePort(b)
@@ -138,9 +147,9 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
 					LineI:   a.LineI,
 					Precise: p.Length,
 					Port:    b.PortI,
-				}
+				}, nil
 			default:
-				panic("unreachable")
+				panic("unreachable (invalid port)")
 			}
 		case PortB, PortC:
 			if b.PortI != PortA {
@@ -151,12 +160,12 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position) {
 				LineI:   a.LineI,
 				Precise: 0,
 				Port:    a.PortI,
-			}
+			}, nil
 		default:
-			panic("unreachable")
+			panic("unreachable (invalid port)")
 		}
 	}
-	panic(fmt.Sprintf("offset overran path (cum=%d)", cum))
+	return Position{}, fmt.Errorf("offset overran path (cum=%d)", cum)
 }
 
 func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {
