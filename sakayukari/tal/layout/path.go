@@ -17,7 +17,7 @@ func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
 	if pos.LineI == fp.Start.LineI {
 		switch fp.Start.PortI {
 		case PortA:
-			if fp.Follows[0].PortI != pos.Port {
+			if fp.Follows[0].PortI != pos.Port && pos.Precise != 0 {
 				panic("pos not on path (different port on start)")
 			}
 			return int64(pos.Precise)

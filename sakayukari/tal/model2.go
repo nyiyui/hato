@@ -13,9 +13,11 @@ import (
 	"github.com/openacid/slimarray/polyfit"
 	"github.com/tidwall/buntdb"
 	"go.uber.org/zap"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 type Model2 struct {
+	g         *Guide
 	forms     map[uuid.UUID]FormData
 	formsLock sync.RWMutex
 	dbPath    string
@@ -136,15 +138,48 @@ func (m *Model2) GetFormData(formI uuid.UUID) (FormData, bool) {
 	return *fd.Clone(), true
 }
 
-func (m *Model2) CurrentPosition(t *Train) int64 {
+func (m *Model2) SetPosition(t *Train, pos layout.Position) {
+	m.formsLock.Lock()
+	defer m.formsLock.Unlock()
 	if t.FormI == (uuid.UUID{}) {
 		panic("Train has no FormI")
 	}
+	m.formsLock.Lock()
+	defer m.formsLock.Unlock()
+	fd, ok := m.forms[t.FormI]
+	if !ok {
+		panic("FormData not found")
+	}
+	fd.latestPosition = pos
+	m.forms[t.FormI] = fd
+}
+
+func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
+	offset := m.CurrentOffset(t)
+	pos, err := m.g.Layout.OffsetToPosition(*t.Path, offset)
+	if err != nil {
+		// fallback to end of path
+		pos = m.g.Layout.LinePortToPosition(t.Path.Follows[len(t.Path.Follows)-1])
+		overrun = true
+	}
+	c := GuideFence(m.g.Layout, t)
+	pos = FitInConstraint(m.g.Layout, c, pos)
+	return
+}
+
+// CurrentOffset returns the estimated offset. Note that it doesn't account for any constraints.
+func (m *Model2) CurrentOffset(t *Train) int64 {
+	if t.FormI == (uuid.UUID{}) {
+		panic("Train has no FormI")
+	}
+	m.formsLock.Lock()
+	defer m.formsLock.Unlock()
 	fd, ok := m.forms[t.FormI]
 	if !ok {
 		panic("FormData not found")
 	}
 	fd.UpdateRelation()
+	m.forms[t.FormI] = fd
 	return t.History.Extrapolate(fd.Relation, time.Now())
 }
 
@@ -152,6 +187,8 @@ type FormData struct {
 	Points      [][2]int64
 	Relation    Relation
 	relationOld bool
+
+	latestPosition layout.Position
 }
 
 func (fd *FormData) Clone() *FormData {

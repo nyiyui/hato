@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"nyiyui.ca/hato/sakayukari/conn"
 )
 
@@ -538,16 +539,38 @@ func (y *Layout) Traverse(path []LinePort, displacement int64) (pos Position, ok
 	return Position{}, false
 }
 
+// FullPath is a path including the start and intermediate points.
+// The path does not overlap itself.
 type FullPath struct {
 	Start   LinePort
 	Follows []LinePort
 }
 
 func (f FullPath) AtIndex(i int) LinePort {
-	if i == -1 {
+	switch {
+	case i < -1:
+		panic("index less than -1")
+	case i == -1:
 		return f.Start
+	default:
+		return f.Follows[i]
 	}
-	return f.Follows[i]
+}
+
+func (f FullPath) Clone() FullPath {
+	follows := make([]LinePort, len(f.Follows))
+	copy(follows, f.Follows)
+	return FullPath{ // don't use keyed form to prevent missing fields
+		f.Start,
+		follows,
+	}
+}
+
+func (a FullPath) Equal(b FullPath) bool {
+	if a.Start != b.Start {
+		return false
+	}
+	return slices.Equal(a.Follows, b.Follows)
 }
 
 func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {

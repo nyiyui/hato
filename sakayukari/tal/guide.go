@@ -140,8 +140,7 @@ type Train struct {
 	// Orient shows which side (side A or B) the front of the train (c.f. CurrentFront etc).
 	Orient FormOrient
 
-	History             History
-	historyPositionBase int64
+	History History
 }
 
 func (t *Train) form(g *Guide) cars.Form {
@@ -658,8 +657,6 @@ func (g *Guide) loop() {
 				//log.Printf("oldT.Path %#v", oldT.Path)
 				if sameDir {
 					t.Orient = oldT.Orient
-					// TODO: historyPositionBase is buggy
-					//t.historyPositionBase = y.PositionToOffset(*oldT.Path, y.LinePortToPosition(t.Path.Start))
 				} else {
 					t.Orient = oldT.Orient.Flip()
 				}
@@ -670,8 +667,11 @@ func (g *Guide) loop() {
 						"error", err,
 					)
 				}
+				offset, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
+				if err == nil {
+					g.Model2.SetPosition(t, offset)
+				}
 				t.History = History{}
-				t.historyPositionBase = 0
 				if t.CurrentBack > t.CurrentFront {
 					log.Printf("t %#v", t)
 					log.Printf("t.Path %#v", t.Path)
@@ -1091,9 +1091,6 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 			span.PositionKnown = true
 		default:
 			panic("unreachable")
-		}
-		if span.PositionKnown {
-			span.Position += t.historyPositionBase
 		}
 		t.History.AddSpan(span)
 	}()

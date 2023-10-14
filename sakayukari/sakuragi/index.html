@@ -1,7 +1,7 @@
 {{ define "view" }}
   {{ range $i, $t := .gs.Trains }}
   {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
-  {{ $pos := offsetToPos $t ($.g.Model2.CurrentPosition $t) }}
+  {{ $pos := $.g.Model2.CurrentPosition $t }}
   {{ if not $pos }} 
   <text x="0" y="{{ $.y }}">train {{ $i }}</text>
   <text x="0" y="{{ add $.y 20 }}">overrun</text>
@@ -30,15 +30,6 @@
   </head>
   <body style="background: #000;">
     {{ .msg }}
-    <ol>
-      {{ range $i, $t := .gs.Trains }}
-      <li>
-        {{ if hasValidFormI $t }}
-        pos {{ $.g.Model2.CurrentPosition $t }} µm
-        {{ end }}
-      </li>
-      {{ end }}
-    </ol>
     {{ $t0 := index .gs.Trains 0 }}
     {{ $t1 := index .gs.Trains 1 }}
     {{ $nagase1 := index .gs.Layout.Lines 0 }}
@@ -59,7 +50,7 @@
     <svg id="main" width="3000" height="200" style="background: #000; padding-left: 200px; padding-bottom: 200px; padding-right: 200px; fill: #fff;">
       {{ range $i, $t := .gs.Trains }}
       {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
-      {{ $offset := $.g.Model2.CurrentPosition $t }}
+      {{ $offset := $.g.Model2.CurrentOffset $t }}
       <text x="{{ div $offset 1000 }}" y="{{ add 100 (mul $i 40) }}">train {{ $i }}</text>
       <text x="{{ div $offset 1000 }}" y="{{ add 120 (mul $i 40) }}">precise {{ div $offset 1000 }} mm</text>
       {{ end }}
@@ -105,7 +96,7 @@
         {{ end }}
         {{ range $i, $t := .gs.Trains }}
         {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
-        {{ $pos := offsetToPos $t ($.g.Model2.CurrentPosition $t) }}
+        {{ $pos := $.g.Model2.CurrentPosition $t }}
         {{ if ne $pos.LineI 3 }}{{ continue }}{{ end }}
         {{ if not $pos }}{{ continue }}{{ end }}
         <text x="{{ sub 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>

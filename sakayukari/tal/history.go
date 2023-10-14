@@ -147,16 +147,18 @@ func (h *History) Character() Character {
 				panic(fmt.Sprintf("current span %d is behind previous span %d", i, prev))
 			}
 			points = append(points, [2]int64{power, speed})
-			//log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
-			for j := prev; j < i; j++ {
-				span2 := h.Spans[j]
-				span3 := h.Spans[j+1]
-				_, _ = span2, span3
-				//log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
+			if speed < 50_000 { // debug
+				log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
+				for j := prev; j < i; j++ {
+					span2 := h.Spans[j]
+					span3 := h.Spans[j+1]
+					_, _ = span2, span3
+					log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
+				}
+				log.Printf("total = %s", total)
+				log.Printf("power = %d", power)
+				log.Printf("speed = %d", speed)
 			}
-			//log.Printf("total = %s", total)
-			//log.Printf("power = %d", power)
-			//log.Printf("speed = %d", speed)
 		}
 		if span.PositionKnown {
 			prev = i
