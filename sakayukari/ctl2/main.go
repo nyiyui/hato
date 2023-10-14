@@ -44,7 +44,7 @@ func Main() error {
 		return fmt.Errorf("conn find: %w", err)
 	}
 	g.Actors = append(g.Actors, connActors...)
-	y, err := layout.InitTestbench6()
+	y, err := layout.InitTestbench6b()
 	if err != nil {
 		panic(err)
 	}

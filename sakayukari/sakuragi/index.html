@@ -8,8 +8,9 @@
   {{ continue }}
   {{ end }}
   {{ if ne $pos.LineI $.lineI }}{{ continue }}{{ end }}
+  {{ if not $pos }}{{ continue }}{{ end }}
   <text x="{{ div $pos.Precise 1000 }}" y="{{ $.y }}">train {{ $i }}</text>
-  <text x="{{ div $pos.Precise 1000 }}" y="{{ add $.y 20 }}">line {{ $pos.LineI }} precise {{ $pos.Precise }} µm</text>
+  <text x="{{ div $pos.Precise 1000 }}" y="{{ add $.y 20 }}">line {{ $pos.LineI }} precise {{ div $pos.Precise 1000 }} mm</text>
   {{ end }}
 {{ end }}
 {{ define "index" }}
@@ -18,7 +19,7 @@
   <head>
     <title>HATO Sakayukari Sakuragi</title>
     <!-- <meta http-equiv="refresh" content="1"> -->
-    <script src="http://bumbu.me/svg-pan-zoom/dist/svg-pan-zoom.js"></script>
+    <!-- <script src="http://bumbu.me/svg-pan-zoom/dist/svg-pan-zoom.js"></script> -->
     <!-- TODO: replace with downloaded file soon™ -->
     <script>
       var panZoomTiger = svgPanZoom('#main');
@@ -55,7 +56,13 @@
         {{ .now }}
       </text>
     </svg>
-    <svg id="main" width="3000" height="100" style="background: #000; padding-left: 200px; padding-bottom: 200px; padding-right: 200px; fill: #fff;">
+    <svg id="main" width="3000" height="200" style="background: #000; padding-left: 200px; padding-bottom: 200px; padding-right: 200px; fill: #fff;">
+      {{ range $i, $t := .gs.Trains }}
+      {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
+      {{ $offset := $.g.Model2.CurrentPosition $t }}
+      <text x="{{ div $offset 1000 }}" y="{{ add 100 (mul $i 40) }}">train {{ $i }}</text>
+      <text x="{{ div $offset 1000 }}" y="{{ add 120 (mul $i 40) }}">precise {{ div $offset 1000 }} mm</text>
+      {{ end }}
       <g id="nagase">
         <text x="0" y="40">長瀬駅</text>
         <line x1="0" y1="20" x2="808" y2="20" stroke="{{ if oneContains .gs.Trains 0 }}green{{ else }}white{{ end }}" stroke-width="5" />
@@ -100,6 +107,7 @@
         {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
         {{ $pos := offsetToPos $t ($.g.Model2.CurrentPosition $t) }}
         {{ if ne $pos.LineI 3 }}{{ continue }}{{ end }}
+        {{ if not $pos }}{{ continue }}{{ end }}
         <text x="{{ sub 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>
         {{ end }}
       </g>

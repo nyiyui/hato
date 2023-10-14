@@ -1,22 +1,20 @@
 package tal
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"time"
 
 	"golang.org/x/exp/slices"
+	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
 type History struct {
 	Spans []Span
 	// TODO: support starting spans from different positions
 	// SpanSets []SpanSet
-}
-
-type SpanSet struct {
-	Base  Position
-	Spans []Span
 }
 
 func (h *History) AddSpan(s Span) {
@@ -40,7 +38,11 @@ func (h *History) Clone() *History {
 }
 
 type Span struct {
-	Time  time.Time // NOTE: non-monotonic-ness of ISO8601-formatted time shouldn't matter much here, as we're dealing with milliseconds, not nanoseconds
+	Time time.Time // NOTE: non-monotonic-ness of ISO8601-formatted time shouldn't matter much here, as we're dealing with milliseconds, not nanoseconds
+
+	Path    layout.FullPath
+	SetPath bool
+
 	Power int
 	// Velocity in µm/s.
 	Velocity      int64
@@ -113,6 +115,8 @@ type Character struct {
 }
 
 func (h *History) Character() Character {
+	data, _ := json.Marshal(h)
+	log.Printf("Character with %s", data)
 	// History (h) must have known velocities only
 	// use spanUsages (sus) to generate a list of (power, velocity) points
 	// [(100, 123), (100, 456)] is ok (duplicate entries per power are ok)

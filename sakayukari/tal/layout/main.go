@@ -54,6 +54,11 @@ func reverse[S ~[]E, E any](s S) {
 	}
 }
 
+type RFID struct {
+	Conn    conn.Id
+	Precise int64
+}
+
 type LineID struct {
 	Conn conn.Id
 	// Usually A, B, C, or D.
@@ -156,6 +161,7 @@ type Line struct {
 	// One LineID can correspond to one Line's switch.
 	// The A direction sets the switch to the normal position, and the B direction sets the switch to the reverse position.
 	SwitchConn LineID
+	RFIDs      []RFID
 }
 
 func (l Line) IsSwitch() bool {
