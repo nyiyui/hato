@@ -40,16 +40,15 @@ func (h *History) Clone() *History {
 type Span struct {
 	Time time.Time // NOTE: non-monotonic-ness of ISO8601-formatted time shouldn't matter much here, as we're dealing with milliseconds, not nanoseconds
 
-	Path    layout.FullPath
-	SetPath bool
-
 	Power int
 	// Velocity in µm/s.
 	Velocity      int64
 	VelocityKnown bool
 	// Position moved (delta) in µm.
-	Position      int64
-	PositionKnown bool
+	Position         int64
+	PositionKnown    bool
+	AbsPosition      layout.Position
+	AbsPositionKnown bool
 }
 
 type spanUsage struct {
@@ -202,7 +201,7 @@ func evaluate(coeffs []float64, x float64) float64 {
 
 // Extrapolate calculates the position at time at.
 // TODO: explain algorithm
-func (h *History) Extrapolate(relation Relation, at time.Time) int64 {
+func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation Relation, at time.Time) int64 {
 	// evaluate the spans
 	var pos int64
 	for i, span := range h.Spans {
@@ -217,9 +216,15 @@ func (h *History) Extrapolate(relation Relation, at time.Time) int64 {
 		if prev.PositionKnown {
 			pos = prev.Position
 		}
+		if prev.AbsPositionKnown {
+			pos = y.PositionToOffset(path, prev.AbsPosition)
+		}
 		pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(prev.Power)) / 1000)
 		if span.PositionKnown {
 			pos = span.Position
+		}
+		if span.AbsPositionKnown {
+			pos = y.PositionToOffset(path, span.AbsPosition)
 		}
 	}
 	// evaluate until at

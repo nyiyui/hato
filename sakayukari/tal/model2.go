@@ -138,21 +138,21 @@ func (m *Model2) GetFormData(formI uuid.UUID) (FormData, bool) {
 	return *fd.Clone(), true
 }
 
-func (m *Model2) SetPosition(t *Train, pos layout.Position) {
-	m.formsLock.Lock()
-	defer m.formsLock.Unlock()
-	if t.FormI == (uuid.UUID{}) {
-		panic("Train has no FormI")
-	}
-	m.formsLock.Lock()
-	defer m.formsLock.Unlock()
-	fd, ok := m.forms[t.FormI]
-	if !ok {
-		panic("FormData not found")
-	}
-	fd.latestPosition = pos
-	m.forms[t.FormI] = fd
-}
+//func (m *Model2) SetPosition(t *Train, pos layout.Position) {
+//	m.formsLock.Lock()
+//	defer m.formsLock.Unlock()
+//	if t.FormI == (uuid.UUID{}) {
+//		panic("Train has no FormI")
+//	}
+//	m.formsLock.Lock()
+//	defer m.formsLock.Unlock()
+//	fd, ok := m.forms[t.FormI]
+//	if !ok {
+//		panic("FormData not found")
+//	}
+//	fd.latestPosition = pos
+//	m.forms[t.FormI] = fd
+//}
 
 func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
 	offset := m.CurrentOffset(t)
@@ -180,7 +180,7 @@ func (m *Model2) CurrentOffset(t *Train) int64 {
 	}
 	fd.UpdateRelation()
 	m.forms[t.FormI] = fd
-	return t.History.Extrapolate(fd.Relation, time.Now())
+	return t.History.Extrapolate(m.g.Layout, *t.Path, fd.Relation, time.Now())
 }
 
 type FormData struct {
@@ -188,7 +188,7 @@ type FormData struct {
 	Relation    Relation
 	relationOld bool
 
-	latestPosition layout.Position
+	//latestPosition layout.Position
 }
 
 func (fd *FormData) Clone() *FormData {

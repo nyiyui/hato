@@ -667,11 +667,16 @@ func (g *Guide) loop() {
 						"error", err,
 					)
 				}
-				offset, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
+				newHistory := History{}
+				pos, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
 				if err == nil {
-					g.Model2.SetPosition(t, offset)
+					newHistory.AddSpan(Span{
+						Time:             time.Now(),
+						AbsPosition:      pos,
+						AbsPositionKnown: true,
+					})
 				}
-				t.History = History{}
+				t.History = newHistory
 				if t.CurrentBack > t.CurrentFront {
 					log.Printf("t %#v", t)
 					log.Printf("t.Path %#v", t.Path)
