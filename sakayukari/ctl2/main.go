@@ -2,10 +2,12 @@ package ctl2
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -21,11 +23,17 @@ import (
 )
 
 func Main() error {
-	dev, err := zap.NewDevelopment()
+	defer zap.S().Sync()
+	level := zap.LevelFlag("log-level", zap.DebugLevel, "set log level")
+	flag.Parse()
+	cfg := zap.NewDevelopmentConfig()
+	cfg.Level = zap.NewAtomicLevelAt(*level)
+	dev, err := cfg.Build()
 	if err != nil {
 		panic(err)
 	}
 	zap.ReplaceGlobals(dev)
+
 	g := Graph{
 		Actors: []Actor{
 			Actor{
@@ -89,6 +97,7 @@ func Main() error {
 			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},
 			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
 		)
+		_, _ = path, path2
 		g2.InternalSetTrains([]tal.Train{
 			tal.Train{
 				Power:        0,
@@ -99,19 +108,31 @@ func Main() error {
 				Orient:       tal.FormOrientA,
 				Path:         &path,
 			},
-			tal.Train{
-				Power:        0,
-				CurrentBack:  0,
-				CurrentFront: 0,
-				State:        tal.TrainStateNextAvail,
-				FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-				Orient:       tal.FormOrientA,
-				Path:         &path2,
-			},
 		})
+		//g2.InternalSetTrains([]tal.Train{
+		//	tal.Train{
+		//		Power:        0,
+		//		CurrentBack:  0,
+		//		CurrentFront: 0,
+		//		State:        tal.TrainStateNextAvail,
+		//		FormI:        uuid.MustParse("a7453d82-d52f-43ec-84d2-54dcea72f8c1"),
+		//		Orient:       tal.FormOrientA,
+		//		Path:         &path,
+		//	},
+		//	tal.Train{
+		//		Power:        0,
+		//		CurrentBack:  0,
+		//		CurrentFront: 0,
+		//		State:        tal.TrainStateNextAvail,
+		//		FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+		//		Orient:       tal.FormOrientA,
+		//		Path:         &path2,
+		//	},
+		//})
+		g2.PublishSnapshot()
 	}
 	guide := ActorRef{Index: len(g.Actors) - 1}
-	g.Actors = append(g.Actors, WaypointControl(guide, g2))
+	//g.Actors = append(g.Actors, WaypointControl(guide, g2))
 	g.Actors = append(g.Actors, *sakuragi.Sakuragi(sakuragi.Conf{
 		Guide:  guide,
 		Guide2: g2,
@@ -136,6 +157,11 @@ func Main() error {
 		if err != nil {
 			log.Fatalf("diffuse: %s", err)
 		}
+	}()
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		WaypointControl2(g2)
 	}()
 
 	log.Printf("starting senri…")

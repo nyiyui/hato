@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
 
@@ -36,6 +37,8 @@ type Multiplexer[E any] struct {
 	comment         string
 	subscribersLock sync.Mutex
 	subscribers     []subscriber[E]
+	currentLock     sync.RWMutex
+	current         E
 }
 
 // subscribersLock must be taken!
@@ -73,9 +76,10 @@ func (m *Multiplexer[E]) Unsubscribe(c chan E) {
 	defer m.subscribersLock.Unlock()
 	i := slices.IndexFunc(m.subscribers, func(sub subscriber[E]) bool { return sub.ch == c })
 	if i == -1 {
-		panic("already unsubscribed")
+		zap.S().Errorf("already unsubscribed (channel %p)", c)
 	}
 	m.subscribers[i] = subscriber[E]{}
+	close(c)
 	m.cleanup()
 }
 
@@ -89,9 +93,18 @@ func (m *Multiplexer[E]) send(e E) {
 			m.timeout(sub, e)
 		}
 	}
+	m.currentLock.Lock()
+	defer m.currentLock.Unlock()
+	m.current = e
 }
 
 func (m *Multiplexer[E]) timeout(sub subscriber[E], e E) {
 	pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
 	log.Printf("multiplexer %s: subscriber %s timed out: %#v", m.comment, sub.comment, e)
+}
+
+func (m *Multiplexer[E]) Current() E {
+	m.currentLock.RLock()
+	defer m.currentLock.RUnlock()
+	return m.current // TODO: clone
 }

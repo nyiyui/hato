@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -24,8 +25,9 @@ type Model2 struct {
 	syncReq   chan struct{}
 }
 
-func NewModel2(dbPath string) (*Model2, error) {
+func NewModel2(g *Guide, dbPath string) (*Model2, error) {
 	m := &Model2{
+		g:      g,
 		forms:  map[uuid.UUID]FormData{},
 		dbPath: dbPath,
 	} // 8 was randomly chosen
@@ -123,7 +125,7 @@ func (m *Model2) RecordTrainCharacter(t *Train) error {
 	fd := m.forms[t.FormI]
 	added := t.History.Character().Points
 	fd.Points = append(fd.Points, added...)
-	fd.relationOld = fd.relationOld || len(added) > 0
+	fd.latestRelation = fd.latestRelation && len(added) == 0
 	m.forms[t.FormI] = fd
 	log.Printf("=== fd contains %d points", len(fd.Points))
 	m.syncReq <- struct{}{}
@@ -154,6 +156,12 @@ func (m *Model2) GetFormData(formI uuid.UUID) (FormData, bool) {
 //	m.forms[t.FormI] = fd
 //}
 
+// CurrentPosition2 returns CurrentPosition without overrun, so it can be used with text/template.
+func (m *Model2) CurrentPosition2(t *Train) layout.Position {
+	pos, _ := m.CurrentPosition(t)
+	return pos
+}
+
 func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
 	offset := m.CurrentOffset(t)
 	pos, err := m.g.Layout.OffsetToPosition(*t.Path, offset)
@@ -163,7 +171,9 @@ func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
 		overrun = true
 	}
 	c := GuideFence(m.g.Layout, t)
+	//zap.S().Debugf("pos nofit = %#v", pos)
 	pos = FitInConstraint(m.g.Layout, c, pos)
+	//zap.S().Debugf("pos fit = %#v", pos)
 	return
 }
 
@@ -180,13 +190,17 @@ func (m *Model2) CurrentOffset(t *Train) int64 {
 	}
 	fd.UpdateRelation()
 	m.forms[t.FormI] = fd
-	return t.History.Extrapolate(m.g.Layout, *t.Path, fd.Relation, time.Now())
+	offset, ok := t.History.Extrapolate(m.g.Layout, *t.Path, fd.Relation, time.Now())
+	if !ok {
+		return -1
+	}
+	return offset
 }
 
 type FormData struct {
-	Points      [][2]int64
-	Relation    Relation
-	relationOld bool
+	Points         [][2]int64
+	Relation       Relation
+	latestRelation bool
 
 	//latestPosition layout.Position
 }
@@ -208,6 +222,49 @@ type Relation struct {
 	// y : µm/s
 }
 
+// SolveForX solves for x from y in the relation.
+// For quadratic equations: if two distinct solutions are found, choose one that is in range (0-255 inclusive). If both are in range, choose the lower value (this choice is completely arbitrary).
+func (r Relation) SolveForX(y float64) (x float64, ok bool) {
+	const min = 0
+	const max = 255
+	switch len(r.Coeffs) {
+	case 0:
+		panic("cannot solve for literally nothing")
+	case 1:
+		panic("cannot solve for constant")
+	case 2:
+		// x=(y-a)/b
+		x := (y - r.Coeffs[0]) / r.Coeffs[1]
+		return x, x >= min && x <= max
+	case 3:
+		// y=ax^2+bx+c
+		// 0=ax^2+bx+c-y
+		//   -b±sqrt(b^2-4ac)
+		// x=----------------
+		//   2a
+		a := r.Coeffs[2]
+		b := r.Coeffs[1]
+		c := r.Coeffs[0] - y
+		xa := (-b + math.Sqrt(b*b-4*a*c)) / (2 * a)
+		xb := (-b - math.Sqrt(b*b-4*a*c)) / (2 * a)
+		xaInRange := xa >= min && xa <= max
+		xbInRange := xb >= min && xb <= max
+		if xaInRange && !xbInRange {
+			return xa, true
+		} else if !xaInRange && xbInRange {
+			return xb, true
+		} else if !xaInRange && !xbInRange {
+			return 0, false
+		} else if xaInRange && xbInRange {
+			return math.Min(xa, xb), true
+		} else {
+			panic("unreachable")
+		}
+	default:
+		panic(fmt.Sprintf("only linear and quadratic equations supported (%d coeffs given)", len(r.Coeffs)))
+	}
+}
+
 func (fd *FormData) genRelation() Relation {
 	xs := make([]float64, len(fd.Points))
 	ys := make([]float64, len(fd.Points))
@@ -222,8 +279,8 @@ func (fd *FormData) genRelation() Relation {
 }
 
 func (fd *FormData) UpdateRelation() {
-	if fd.relationOld {
+	if !fd.latestRelation {
 		fd.Relation = fd.genRelation()
-		fd.relationOld = false
+		fd.latestRelation = true
 	}
 }

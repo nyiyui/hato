@@ -10,9 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
@@ -248,7 +247,7 @@ func NewGuide(conf GuideConf) (*Guide, Actor) {
 		Layout:     conf.Layout,
 	}
 	var err error
-	g.Model2, err = NewModel2("model2.test.db")
+	g.Model2, err = NewModel2(&g, "model2.test.db")
 	if err != nil {
 		panic(err)
 	}
@@ -450,7 +449,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				g.apply(t, t.CurrentBack, 0)
 				t.CurrentBack++
 				g.calculateTrailers(t)
-				//log.Printf("=== currentBack succession: %d", t.CurrentBack)
+				log.Printf("=== currentBack succession: %d", t.CurrentBack)
 				g.publishChange(ti, ChangeTypeCurrentBack)
 			}
 		NoCurrentBack:
@@ -471,7 +470,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 				t.CurrentFront--
 				g.calculateTrailers(t)
 				g.publishChange(ti, ChangeTypeCurrentFront)
-				//log.Printf("=== currentFront regression: %d", t.CurrentFront)
+				log.Printf("=== currentFront regression: %d", t.CurrentFront)
 			}
 		NoCurrentFront:
 			if t.State == TrainStateNextAvail {
@@ -481,7 +480,7 @@ func (g *Guide) handleValCurrent(diffuse Diffuse1, cur conn.ValCurrent) {
 					t.CurrentFront++
 					g.calculateTrailers(t)
 					g.publishChange(ti, ChangeTypeCurrentFront)
-					//log.Printf("=== next succession: %d", t.CurrentFront)
+					log.Printf("=== next succession: %d", t.CurrentFront)
 				}
 			}
 			g.trains[ti] = *t
@@ -537,7 +536,6 @@ func (g *Guide) check(ti int) {
 }
 
 func (g *Guide) loop() {
-	y := g.conf.Layout
 	time.Sleep(1 * time.Second)
 	for ti := range g.trains {
 		g.wakeup(ti, "init")
@@ -545,155 +543,18 @@ func (g *Guide) loop() {
 	g.publishSnapshot()
 	for diffuse := range g.actor.InputCh {
 		if diffuse.Origin == g.conf.Model {
-			switch val := diffuse.Value.(type) {
-			case Attitude:
-				g.handleAttitude(val)
-			}
+			panic("removed implementation for now")
+			//switch val := diffuse.Value.(type) {
+			//case Attitude:
+			//	g.handleAttitude(val)
+			//}
 		}
 		switch val := diffuse.Value.(type) {
 		case GuideTrainUpdate:
-			log.Printf("diffuse GuideTrainUpdate %d %#v", val.TrainI, val)
-			if !val.PowerFilled && val.Power != 0 {
-				panic("GuideTrainUpdate.Power must be 0 if .PowerFilled is false")
+			err := g.TrainUpdate(val)
+			if err != nil {
+				panic(err)
 			}
-			oldT := g.trains[val.TrainI]
-			t := &g.trains[val.TrainI]
-			if val.PowerFilled {
-				t.Power = val.Power
-			}
-			if val.SetRunOnLock {
-				t.RunOnLock = val.RunOnLock
-			}
-			if val.Target != nil {
-				var sameDir bool
-				func() {
-					//log.Printf("### t %#v", t)
-					// TODO: In the below scenario, where TrailerBack is A and TrailerFront is B,
-					//       lpsBack can be A-C, while lpsFront can be A-B. (This can cause problems with using len(lpsBack) and len(lpsFront) to determine which to use.)
-					//       Include all of t.Path in the new path
-					// A---B
-					//   \-C
-					backLP := t.Path.Follows[t.TrailerBack]
-					backLP.PortI = layout.PortDNC
-					lpsBack, err := y.FullPathTo(backLP, *val.Target)
-					if errors.Is(err, layout.PathToSelfError{}) {
-						return
-					} else if err != nil {
-						panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
-					}
-					frontLP := t.Path.Follows[t.TrailerFront]
-					frontLP.PortI = layout.PortDNC
-					lpsFront, err := y.FullPathTo(frontLP, *val.Target)
-					if errors.Is(err, layout.PathToSelfError{}) {
-						return
-					} else if err != nil {
-						panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
-					}
-					//log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
-					//log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
-					// We have to include all currents in the new path.
-					// The longer one will include both TrailerBack and TrailerFront regardless of direction.
-					if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
-						//log.Printf("### ALREADY THERE")
-					} else {
-						if len(lpsBack.Follows) > len(lpsFront.Follows) {
-							t.Path = &lpsBack
-							t.TrailerBack = 0
-							t.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
-						} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
-							t.Path = &lpsFront
-							t.TrailerBack = 0
-							t.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
-						} else {
-							t.Path = &lpsFront // shouldn't matter
-							t.TrailerBack = 0
-							t.TrailerFront = 0
-							if t.TrailerBack != t.TrailerFront {
-								panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
-							}
-							if t.TrailerBack < 0 || t.TrailerFront < 0 || len(t.Path.Follows) == 0 {
-								panic("assert failed")
-							}
-						}
-						// TODO: when train flips, CurrentBack and CurrentFront needs to be flipped too!
-						t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
-						t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
-						if t.CurrentBack == -1 || t.CurrentFront == -1 {
-							log.Printf("lpsBack %#v", lpsBack)
-							log.Printf("lpsFront %#v", lpsFront)
-							log.Printf("t %#v", t)
-							log.Printf("t.Path %#v", t.Path)
-							log.Printf("oldT %#v", oldT)
-							log.Printf("oldT.Path %#v", oldT.Path)
-							panic("new CurrentBack/CurrentFront is -1")
-						}
-						if t.CurrentBack > t.CurrentFront {
-							t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
-							sameDir = false
-						} else if t.CurrentBack == t.CurrentFront {
-							if oldT.CurrentBack != oldT.CurrentFront {
-								panic("new train CurrentBack/Front is same but old train CurrentBack/Front")
-							}
-							// check if flipped
-							if !layout.SameDir1(t.Path.Follows[t.CurrentBack], oldT.Path.Follows[oldT.CurrentBack]) {
-								t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
-								sameDir = false
-							} else {
-								sameDir = true
-							}
-						} else {
-							sameDir = true
-						}
-					}
-				}()
-				zap.S().Infow("updated train",
-					"oldT", oldT,
-					"new", t,
-					"sameDir", sameDir,
-				)
-				//log.Printf("t %#v", t)
-				//log.Printf("t.Path %#v", t.Path)
-				//log.Printf("oldT %#v", oldT)
-				//log.Printf("oldT.Path %#v", oldT.Path)
-				if sameDir {
-					t.Orient = oldT.Orient
-				} else {
-					t.Orient = oldT.Orient.Flip()
-				}
-				err := g.Model2.RecordTrainCharacter(t)
-				if err != nil {
-					zap.S().Errorw("RecordTrainCharacter failed",
-						"train", val.TrainI,
-						"error", err,
-					)
-				}
-				newHistory := History{}
-				pos, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
-				if err == nil {
-					newHistory.AddSpan(Span{
-						Time:             time.Now(),
-						AbsPosition:      pos,
-						AbsPositionKnown: true,
-					})
-				}
-				t.History = newHistory
-				if t.CurrentBack > t.CurrentFront {
-					log.Printf("t %#v", t)
-					log.Printf("t.Path %#v", t.Path)
-					log.Printf("sameDir %t", sameDir)
-					panic("t.CurrentBack > t.CurrentFront")
-				}
-			}
-			t.Generation = oldT.Generation + 1
-			log.Printf("GuideTrainUpdate %#v", t)
-			log.Printf("GuideTrainUpdate.Path %#v", t.Path)
-			t.History.AddSpan(Span{
-				Power: t.Power,
-			})
-			g.calculateTrailers(t)
-			g.mustCheckPath(t)
-			g.trains[val.TrainI] = *t
-			g.wakeup(val.TrainI, "GuideTrainUpdate")
 		case conn.ValCurrent:
 			g.handleValCurrent(diffuse, val)
 		case conn.ValShortNotify:
@@ -1027,6 +888,11 @@ func (g *Guide) snapshot() GuideSnapshot {
 	return res
 }
 
+func (g *Guide) PublishSnapshot() {
+	gs := g.snapshot()
+	g.snapshotMuxS.Send(gs)
+}
+
 func (g *Guide) publishSnapshot() {
 	gs := g.snapshot()
 	g.snapshotMuxS.Send(gs)
@@ -1106,4 +972,152 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 	}
 	g.changeMuxS.Send(gc)
 	g.actor.OutputCh <- Diffuse1{Value: gc}
+}
+
+// TrainUpdate updates the state of a train.
+func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) error {
+	y := g.conf.Layout
+	zap.S().Debugf("diffuse GuideTrainUpdate %d %#v", gtu.TrainI, gtu)
+	if !gtu.PowerFilled && gtu.Power != 0 {
+		return errors.New("GuideTrainUpdate.Power must be 0 if .PowerFilled is false")
+	}
+	oldT := g.trains[gtu.TrainI]
+	t := &g.trains[gtu.TrainI]
+	if gtu.PowerFilled {
+		t.Power = gtu.Power
+	}
+	if gtu.SetRunOnLock {
+		t.RunOnLock = gtu.RunOnLock
+	}
+	if gtu.Target != nil {
+		var sameDir bool
+		func() {
+			//log.Printf("### t %#v", t)
+			// TODO: In the below scenario, where TrailerBack is A and TrailerFront is B,
+			//       lpsBack can be A-C, while lpsFront can be A-B. (This can cause problems with using len(lpsBack) and len(lpsFront) to determine which to use.)
+			//       Include all of t.Path in the new path
+			// A---B
+			//   \-C
+			backLP := t.Path.Follows[t.TrailerBack]
+			backLP.PortI = layout.PortDNC
+			lpsBack, err := y.FullPathTo(backLP, *gtu.Target)
+			if errors.Is(err, layout.PathToSelfError{}) {
+				return
+			} else if err != nil {
+				panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
+			}
+			frontLP := t.Path.Follows[t.TrailerFront]
+			frontLP.PortI = layout.PortDNC
+			lpsFront, err := y.FullPathTo(frontLP, *gtu.Target)
+			if errors.Is(err, layout.PathToSelfError{}) {
+				return
+			} else if err != nil {
+				panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
+			}
+			//log.Printf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
+			//log.Printf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
+			// We have to include all currents in the new path.
+			// The longer one will include both TrailerBack and TrailerFront regardless of direction.
+			if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
+				//log.Printf("### ALREADY THERE")
+			} else {
+				if len(lpsBack.Follows) > len(lpsFront.Follows) {
+					t.Path = &lpsBack
+					t.TrailerBack = 0
+					t.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
+				} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
+					t.Path = &lpsFront
+					t.TrailerBack = 0
+					t.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
+				} else {
+					t.Path = &lpsFront // shouldn't matter
+					t.TrailerBack = 0
+					t.TrailerFront = 0
+					if t.TrailerBack != t.TrailerFront {
+						panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
+					}
+					if t.TrailerBack < 0 || t.TrailerFront < 0 || len(t.Path.Follows) == 0 {
+						panic("assert failed")
+					}
+				}
+				// TODO: when train flips, CurrentBack and CurrentFront needs to be flipped too!
+				t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
+				t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
+				if t.CurrentBack == -1 || t.CurrentFront == -1 {
+					log.Printf("lpsBack %#v", lpsBack)
+					log.Printf("lpsFront %#v", lpsFront)
+					log.Printf("t %#v", t)
+					log.Printf("t.Path %#v", t.Path)
+					log.Printf("oldT %#v", oldT)
+					log.Printf("oldT.Path %#v", oldT.Path)
+					panic("new CurrentBack/CurrentFront is -1")
+				}
+				if t.CurrentBack > t.CurrentFront {
+					t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
+					sameDir = false
+				} else if t.CurrentBack == t.CurrentFront {
+					if oldT.CurrentBack != oldT.CurrentFront {
+						panic("new train CurrentBack/Front is same but old train CurrentBack/Front")
+					}
+					// check if flipped
+					if !layout.SameDir1(t.Path.Follows[t.CurrentBack], oldT.Path.Follows[oldT.CurrentBack]) {
+						t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
+						sameDir = false
+					} else {
+						sameDir = true
+					}
+				} else {
+					sameDir = true
+				}
+			}
+		}()
+		zap.S().Infow("updated train",
+			"oldT", oldT,
+			"new", t,
+			"sameDir", sameDir,
+		)
+		//log.Printf("t %#v", t)
+		//log.Printf("t.Path %#v", t.Path)
+		//log.Printf("oldT %#v", oldT)
+		//log.Printf("oldT.Path %#v", oldT.Path)
+		if sameDir {
+			t.Orient = oldT.Orient
+		} else {
+			t.Orient = oldT.Orient.Flip()
+		}
+		err := g.Model2.RecordTrainCharacter(t)
+		if err != nil {
+			zap.S().Errorw("RecordTrainCharacter failed",
+				"train", gtu.TrainI,
+				"error", err,
+			)
+		}
+		newHistory := History{}
+		pos, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
+		if err == nil {
+			newHistory.AddSpan(Span{
+				Time:             time.Now(),
+				AbsPosition:      pos,
+				AbsPositionKnown: true,
+			})
+		}
+		t.History = newHistory
+		if t.CurrentBack > t.CurrentFront {
+			log.Printf("t %#v", t)
+			log.Printf("t.Path %#v", t.Path)
+			log.Printf("sameDir %t", sameDir)
+			panic("t.CurrentBack > t.CurrentFront")
+		}
+	}
+	t.Generation = oldT.Generation + 1
+	log.Printf("GuideTrainUpdate %#v", t)
+	log.Printf("GuideTrainUpdate.Path %#v", t.Path)
+	t.History.AddSpan(Span{
+		Power: t.Power,
+	})
+	g.calculateTrailers(t)
+	g.mustCheckPath(t)
+	g.trains[gtu.TrainI] = *t
+	g.wakeup(gtu.TrainI, "GuideTrainUpdate")
+	return nil
 }

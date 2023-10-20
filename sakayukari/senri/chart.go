@@ -28,7 +28,7 @@ func trainChart(g *tal.Guide, t *tal.Train) (image.Image, error) {
 		yValues = append(yValues, float64(span.Position))
 	}
 
-	var pointsChart chart.Series
+	var pointsChart, polyChart chart.Series
 	var nValues int
 	{
 		char := t.History.Character()
@@ -47,7 +47,7 @@ func trainChart(g *tal.Guide, t *tal.Train) (image.Image, error) {
 		}
 		//fit := polyfit.NewFit(xValues, yValues, 2)
 		//log.Printf("solve %#v", fit.Solve())
-		pointsChart = chart.ContinuousSeries{
+		pointsChart2 := chart.ContinuousSeries{
 			Style: chart.Style{
 				StrokeWidth: chart.Disabled,
 				DotWidth:    5,
@@ -56,6 +56,11 @@ func trainChart(g *tal.Guide, t *tal.Train) (image.Image, error) {
 			XValues: xValues,
 			YValues: yValues,
 		}
+		pointsChart = pointsChart2
+		polyChart = &chart.PolynomialRegressionSeries{
+			Degree:      2,
+			InnerSeries: pointsChart2,
+		}
 		nValues = len(xValues)
 	}
 
@@ -63,6 +68,7 @@ func trainChart(g *tal.Guide, t *tal.Train) (image.Image, error) {
 		Title:  fmt.Sprintf("%d values", nValues),
 		Height: 400,
 		Series: []chart.Series{
+			polyChart,
 			//chart.ContinuousSeries{
 			//	Style: chart.Style{
 			//		StrokeWidth:      chart.Disabled,

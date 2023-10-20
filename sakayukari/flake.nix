@@ -37,6 +37,8 @@
             xorg.libXinerama
             xorg.libXi
             xorg.libXxf86vm
+            # reqs for github.com/gopxl/beep
+            alsa-lib
           ];
       }; };
   });

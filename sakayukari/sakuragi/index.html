@@ -1,7 +1,7 @@
 {{ define "view" }}
   {{ range $i, $t := .gs.Trains }}
   {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
-  {{ $pos := $.g.Model2.CurrentPosition $t }}
+  {{ $pos := $.g.Model2.CurrentPosition2 $t }}
   {{ if not $pos }} 
   <text x="0" y="{{ $.y }}">train {{ $i }}</text>
   <text x="0" y="{{ add $.y 20 }}">overrun</text>
@@ -12,6 +12,75 @@
   <text x="{{ div $pos.Precise 1000 }}" y="{{ $.y }}">train {{ $i }}</text>
   <text x="{{ div $pos.Precise 1000 }}" y="{{ add $.y 20 }}">line {{ $pos.LineI }} precise {{ div $pos.Precise 1000 }} mm</text>
   {{ end }}
+{{ end }}
+{{ define "map" }}
+{{ $t0 := index .gs.Trains 0 }}
+{{ $t1 := index .gs.Trains 1 }}
+{{ $nagase1 := index .gs.Layout.Lines 0 }}
+{{ $nagase1s := index .gs.LineStates 0 }}
+{{ $mitouc2 := index .gs.Layout.Lines 1 }}
+{{ $mitouc2s := index .gs.LineStates 1 }}
+{{ $mitouc3 := index .gs.Layout.Lines 2 }}
+{{ $mitouc3s := index .gs.LineStates 2 }}
+{{ $snb4 := index .gs.Layout.Lines 3 }}
+{{ $snb4s := index .gs.LineStates 3 }}
+{{ $tColor := "white" }}
+<svg id="main" width="3000" height="200" style="background: #000; padding-left: 200px; padding-bottom: 200px; padding-right: 200px; fill: #fff;">
+  {{ range $i, $t := .gs.Trains }}
+  {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
+  {{ $offset := $.g.Model2.CurrentOffset $t }}
+  <text x="{{ div $offset 1000 }}" y="{{ add 100 (mul $i 40) }}">train {{ $i }}</text>
+  <text x="{{ div $offset 1000 }}" y="{{ add 120 (mul $i 40) }}">precise {{ div $offset 1000 }} mm</text>
+  {{ end }}
+  <g id="nagase">
+    <text x="0" y="40">長瀬駅</text>
+    <line x1="0" y1="20" x2="808" y2="20" stroke="{{ if oneContains .gs.Trains 0 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ $ss := $nagase1s.SwitchState }}
+    <text x="808" y="40" fill="{{ if eq $ss 1 }}green{{ else }}grey{{ end }}">B</text>
+    <text x="808" y="60" fill="{{ if eq $ss 2 }}blue{{ else }}grey{{ end }}">C</text>
+    <text x="808" y="80" fill="{{ if eq $ss 3 }}red{{ else }}grey{{ end }}">転換中</text>
+    {{ if or (eq $ss 1) (eq $ss 3) }}
+      <line x1="808" y1="20" x2="994" y2="40" stroke="grey" stroke-width="5" />
+      <line x1="808" y1="20" x2="994" y2="20" stroke="{{ if oneContains .gs.Trains 0 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ end }}
+    {{ if or (eq $ss 2) (eq $ss 3) }}
+      <line x1="808" y1="20" x2="994" y2="20" stroke="grey" stroke-width="5" />
+      <line x1="808" y1="20" x2="994" y2="40" stroke="{{ if oneContains .gs.Trains 0 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ end }}
+    <circle cx="{{ (div .att.Position.Precise 1000) }}" cy="20" r="{{ div .att.Velocity 1000 }}" />
+    {{ template "view" (map "gs" .gs "g" .g "lineI" 0 "y" 20) }}
+  </g>
+  <g id="mitouc" transform="translate(994 0)">
+    <text x="0" y="40">未踏中央駅</text>
+    <line x1="0" y1="20" x2="744" y2="20" stroke="{{ if oneContains .gs.Trains 1 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    <line x1="0" y1="40" x2="744" y2="40" stroke="{{ if oneContains .gs.Trains 2 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ template "view" (map "gs" .gs "g" .g "lineI" 1 "y" 20) }}
+    {{ template "view" (map "gs" .gs "g" .g "lineI" 2 "y" 40) }}
+  </g>
+  <g id="snb" transform="translate(1738 0)">
+    <text x="0" y="40">新日本橋</text>
+    <line x1="186" y1="20" x2="994" y2="20" stroke="{{ if oneContains .gs.Trains 3 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ $ss := $snb4s.SwitchState }}
+    <text x="186" y="40" fill="{{ if eq $ss 1 }}green{{ else }}grey{{ end }}">B</text>
+    <text x="186" y="60" fill="{{ if eq $ss 2 }}blue{{ else }}grey{{ end }}">C</text>
+    <text x="186" y="80" fill="{{ if eq $ss 3 }}red{{ else }}grey{{ end }}">転換中</text>
+    {{ if or (eq $ss 1) (eq $ss 3) }}
+      <line x1="0" y1="40" x2="186" y2="20" stroke="grey" stroke-width="5" />
+      <line x1="0" y1="20" x2="186" y2="20" stroke="{{ if oneContains .gs.Trains 3 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ end }}
+    {{ if or (eq $ss 2) (eq $ss 3) }}
+      <line x1="0" y1="20" x2="186" y2="20" stroke="grey" stroke-width="5" />
+      <line x1="0" y1="40" x2="186" y2="20" stroke="{{ if oneContains .gs.Trains 3 }}green{{ else }}white{{ end }}" stroke-width="5" />
+    {{ end }}
+    {{ range $i, $t := .gs.Trains }}
+    {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
+    {{ $pos := $.g.Model2.CurrentPosition2 $t }}
+    {{ if ne $pos.LineI 3 }}{{ continue }}{{ end }}
+    {{ if not $pos }}{{ continue }}{{ end }}
+    <text x="{{ sub 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>
+    {{ end }}
+  </g>
+</svg>
 {{ end }}
 {{ define "index" }}
 <!DOCTYPE html>
@@ -96,7 +165,7 @@
         {{ end }}
         {{ range $i, $t := .gs.Trains }}
         {{ if not (hasValidFormI $t) }}{{ continue }}{{ end }}
-        {{ $pos := $.g.Model2.CurrentPosition $t }}
+        {{ $pos := $.g.Model2.CurrentPosition2 $t }}
         {{ if ne $pos.LineI 3 }}{{ continue }}{{ end }}
         {{ if not $pos }}{{ continue }}{{ end }}
         <text x="{{ sub 994 (div $pos.Precise 1000) }}" y="{{ $.y }}">{{ $i }} {{ $pos.Precise }}</text>

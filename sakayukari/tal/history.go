@@ -1,12 +1,12 @@
 package tal
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
@@ -113,17 +113,68 @@ type Character struct {
 	Points [][2]int64
 }
 
+func removeDuplicateIsh(spans []Span) []Span {
+	spans2 := make([]Span, 0, len(spans))
+	for i, span := range spans {
+		if i != 0 {
+			prev := spans[i-1]
+			if duplicateIsh(prev, span) {
+				continue
+			}
+		}
+		spans2 = append(spans2, span)
+	}
+	return spans2
+}
+
+func duplicateIsh(a, b Span) bool {
+	if a.Power != b.Power {
+		return false
+	}
+	if a.VelocityKnown != b.VelocityKnown {
+		return false
+	}
+	if a.VelocityKnown && a.Velocity != b.Velocity {
+		return false
+	}
+	if a.PositionKnown != b.PositionKnown {
+		return false
+	}
+	if a.PositionKnown && a.Position != b.Position {
+		return false
+	}
+	if a.AbsPositionKnown != b.AbsPositionKnown {
+		return false
+	}
+	if a.AbsPositionKnown && a.AbsPosition != b.AbsPosition {
+		return false
+	}
+	return true
+}
+
 func (h *History) Character() Character {
-	data, _ := json.Marshal(h)
-	log.Printf("Character with %s", data)
 	// History (h) must have known velocities only
 	// use spanUsages (sus) to generate a list of (power, velocity) points
 	// [(100, 123), (100, 456)] is ok (duplicate entries per power are ok)
 	// return that data
 
+	// === Remove duplicate-ish Spans
+	// See more: https://scrapbox.io/mitoujr/Duplicate-ish_Span
+	// Example:
+	//   2023/10/18 03:10:33 span = tal.Span{Time:time.Date(2023, time.October, 18, 3, 10, 31, 80065618, time.Local), Power:34, Velocity:0, VelocityKnown:false, Position:806000, PositionKnown:true, AbsPosition:layout.Position{LineI:0, Precise:0x0, Port:0}, AbsPositionKnown:false}
+	//   2023/10/18 03:10:33 prevSpan = tal.Span{Time:time.Date(2023, time.October, 18, 3, 10, 29, 678844136, time.Local), Power:34, Velocity:0, VelocityKnown:false, Position:806000, PositionKnown:true, AbsPosition:layout.Position{LineI:0, Precise:0x0, Port:0}, AbsPositionKnown:false}
+	// These duplicate-ish (notice Span.Time is different) are caused by tal-guide backtracking:
+	// - front=1 // 1st span added here
+	// - front=0
+	// - front=1 // 2nd span added here
+	// Therefore, use the 1st span.
+	// Criteria for "duplicate-ish"
+	// same power, abs position, position, velocity (pos/vel if known)
+	spans := removeDuplicateIsh(h.Spans)
+
 	points := make([][2]int64, 0)
 	prev := -1
-	for i, span := range h.Spans {
+	for i, span := range spans {
 		if !span.PositionKnown {
 			continue
 		}
@@ -131,11 +182,11 @@ func (h *History) Character() Character {
 			// get weighted average of power
 			var cum int64
 			for j := prev; j < i; j++ {
-				span2 := h.Spans[j]
-				span3 := h.Spans[j+1]
+				span2 := spans[j]
+				span3 := spans[j+1]
 				cum += int64(span2.Power) * span3.Time.Sub(span2.Time).Microseconds()
 			}
-			prevSpan := h.Spans[prev]
+			prevSpan := spans[prev]
 			total := span.Time.Sub(prevSpan.Time)
 			if total.Milliseconds() == 0 {
 				continue // don't set prev = i, so we treat this as a PositionKnown = false
@@ -147,13 +198,16 @@ func (h *History) Character() Character {
 			}
 			points = append(points, [2]int64{power, speed})
 			if speed < 50_000 { // debug
-				log.Printf("point %d→%d: (%d, %d)", prev, i, power, speed)
+				log.Printf("point %d→%d: (prev = %d, speed = %d)", prev, i, power, speed)
 				for j := prev; j < i; j++ {
-					span2 := h.Spans[j]
-					span3 := h.Spans[j+1]
+					span2 := spans[j]
+					span3 := spans[j+1]
 					_, _ = span2, span3
 					log.Printf("cum += %d", int64(span2.Power)*span3.Time.Sub(span2.Time).Microseconds())
 				}
+				log.Printf("span = %#v", span)
+				log.Printf("prevSpan = %#v", prevSpan)
+				log.Printf("cum = %d", cum)
 				log.Printf("total = %s", total)
 				log.Printf("power = %d", power)
 				log.Printf("speed = %d", speed)
@@ -196,12 +250,18 @@ func evaluate(coeffs []float64, x float64) float64 {
 	for i, coeff := range coeffs {
 		y += math.Pow(x, float64(i)) * coeff
 	}
+	if y < 0 {
+		return 0
+	}
 	return y
 }
 
 // Extrapolate calculates the position at time at.
 // TODO: explain algorithm
-func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation Relation, at time.Time) int64 {
+func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation Relation, at time.Time) (offset int64, ok bool) {
+	if len(h.Spans) == 0 {
+		return 0, false
+	}
 	// evaluate the spans
 	var pos int64
 	for i, span := range h.Spans {
@@ -217,19 +277,30 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 			pos = prev.Position
 		}
 		if prev.AbsPositionKnown {
-			pos = y.PositionToOffset(path, prev.AbsPosition)
+			pos2, err := y.PositionToOffset2(path, prev.AbsPosition)
+			if err != nil {
+				pos = pos2
+			}
 		}
+		zap.S().Debugf("prev span = %#v", prev)
+		zap.S().Debugf("span span = %#v", span)
+		zap.S().Debugf("speed evaluated (power = %d) = %d", prev.Power, evaluate(relation.Coeffs, float64(prev.Power)))
 		pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(prev.Power)) / 1000)
 		if span.PositionKnown {
 			pos = span.Position
 		}
 		if span.AbsPositionKnown {
-			pos = y.PositionToOffset(path, span.AbsPosition)
+			pos2, err := y.PositionToOffset2(path, span.AbsPosition)
+			if err != nil {
+				pos = pos2
+			}
 		}
 	}
 	// evaluate until at
 	last := h.Spans[len(h.Spans)-1]
 	delta := at.Sub(last.Time)
+	zap.S().Debugf("last span = %#v", last)
+	zap.S().Debugf("speed evaluated (power = %d) = %d", last.Power, evaluate(relation.Coeffs, float64(last.Power)))
 	pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(last.Power)) / 1000)
-	return pos
+	return pos, true
 }

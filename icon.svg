@@ -3,19 +3,19 @@
      xmlns="http://www.w3.org/2000/svg">
   <style>
     svg {
-      background: rgba(0, 0, 0, 0);
+      /* background: rgba(0, 0, 0, 0); */
     }
   </style>
-  <circle cx="27" cy="27" fill="#fff" r="4" />
-  <circle cx="27" cy="189" fill="#fff" r="4" />
-  <circle cx="189" cy="27" fill="#fff" r="4" />
-  <circle cx="189" cy="189" fill="#fff" r="4" />
-  <circle cx="72" cy="108" fill="#fff" r="4" />
-  <circle cx="144" cy="108" fill="#fff" r="4" />
-  <line x1="27" y1="27" x2="189" y2="27" stroke="#fff" stroke-width="8" />
-  <line x1="27" y1="189" x2="189" y2="189" stroke="#fff" stroke-width="8" />
-  <line x1="27" y1="27" x2="189" y2="189" stroke="#fff" stroke-width="8" />
-  <line x1="27" y1="189" x2="72" y2="108" stroke="#fff" stroke-width="8" />
-  <line x1="189" y1="27" x2="144" y2="108" stroke="#fff" stroke-width="8" />
-  <line x1="72" y1="108" x2="144" y2="108" stroke="#fff" stroke-width="8" />
+  <circle cx="27" cy="27" fill="#000" r="4" />
+  <circle cx="27" cy="189" fill="#000" r="4" />
+  <circle cx="189" cy="27" fill="#000" r="4" />
+  <circle cx="189" cy="189" fill="#000" r="4" />
+  <circle cx="72" cy="108" fill="#000" r="4" />
+  <circle cx="144" cy="108" fill="#000" r="4" />
+  <line x1="27" y1="27" x2="189" y2="27" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="189" x2="189" y2="189" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="27" x2="189" y2="189" stroke="#000" stroke-width="8" />
+  <line x1="27" y1="189" x2="72" y2="108" stroke="#000" stroke-width="8" />
+  <line x1="189" y1="27" x2="144" y2="108" stroke="#000" stroke-width="8" />
+  <line x1="72" y1="108" x2="144" y2="108" stroke="#000" stroke-width="8" />
 </svg>

@@ -3,6 +3,7 @@ package conn
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"sync"
@@ -85,7 +86,9 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 	for {
 		lineRaw, err := reader.ReadString('\n')
 		if err != nil {
-			log.Printf("%s: read line: %s", c.Path, err)
+			if err != io.EOF {
+				log.Printf("%s: read line: %s", c.Path, err)
+			}
 			continue
 		}
 		if !strings.HasPrefix(lineRaw, " D") {

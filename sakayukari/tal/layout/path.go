@@ -11,6 +11,14 @@ type Offset = int64
 
 // PositionToOffset returns an Offset where the first LinePort of path is the starting point.
 func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
+	offset, err := y.PositionToOffset2(fp, pos)
+	if err != nil {
+		panic("offline")
+	}
+	return offset
+}
+
+func (y *Layout) PositionToOffset2(fp FullPath, pos Position) (offset Offset, err error) {
 	if pos.Precise != 0 && pos.Port == 0 {
 		panic("invalid pos")
 	}
@@ -18,25 +26,25 @@ func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
 		switch fp.Start.PortI {
 		case PortA:
 			if fp.Follows[0].PortI != pos.Port && pos.Precise != 0 {
-				panic("pos not on path (different port on start)")
+				return 0, errors.New("pos not on path (different port on start)")
 			}
-			return int64(pos.Precise)
+			return int64(pos.Precise), nil
 		case PortB, PortC:
 			if fp.Follows[0].PortI != PortA {
 				panic("follows[0] is B/C and start is B/C (cannot go between B and C)")
 			}
 			if fp.Start.PortI != pos.Port {
-				panic("pos not on path (different port on start)")
+				return 0, errors.New("pos not on path (different port on start)")
 			}
 			_, p := y.GetLinePort(fp.Start)
-			return int64(p.Length) - int64(pos.Precise)
+			return int64(p.Length) - int64(pos.Precise), nil
 		default:
 			panic(fmt.Sprintf("invalid port %s (path: %#v)", fp.Start.PortI, fp))
 		}
 	}
 	var cum int64
 	if i := slices.IndexFunc(fp.Follows, func(lp LinePort) bool { return lp.LineI == pos.LineI }); i == -1 {
-		panic("pos not on follows")
+		return 0, errors.New("not on follows")
 	}
 	for i, lp := range fp.Follows {
 		var prev LinePort
@@ -50,19 +58,19 @@ func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
 		}
 		if lp.LineI == pos.LineI {
 			// last
-			//panic("TODO")
-			return cum + y.positionToStep(prev, lp, pos)
+			return cum + y.positionToStep(prev, lp, pos, fp), nil
 		} else {
 			cum += y.distanceBetween(prev, lp)
 		}
 	}
-	panic("unreachable")
+	panic("unreachable67")
 }
 
-func (y *Layout) positionToStep(a, b LinePort, pos Position) int64 {
+func (y *Layout) positionToStep(a, b LinePort, pos Position, fullPathForDebug FullPath) int64 {
 	//log.Printf("a %#v", a)
 	//log.Printf("b %#v", b)
 	//log.Printf("pos %d", pos)
+	origA := a
 	if a.LineI != b.LineI {
 		_, p := y.GetLinePort(a)
 		a = p.Conn()
@@ -74,22 +82,22 @@ func (y *Layout) positionToStep(a, b LinePort, pos Position) int64 {
 	case PortA:
 		switch b.PortI {
 		case PortA:
-			panic("unreachable")
+			panic("unreachable85")
 		case PortB, PortC:
 			// A → B/C
 			return int64(pos.Precise)
 		default:
-			panic("unreachable")
+			panic("unreachable90")
 		}
 	case PortB, PortC:
 		if b.PortI != PortA {
-			panic("B/C to B/C")
+			panic(fmt.Sprintf("positionToStep a = %s or %s, b = %s: B/C to B/C, path = %s", a, origA, b, fullPathForDebug))
 		}
 		// B/C → A
 		_, p := y.GetLinePort(a)
 		return int64(p.Length) - int64(pos.Precise)
 	default:
-		panic("unreachable")
+		panic("unreachable100")
 	}
 }
 
@@ -183,7 +191,9 @@ func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {
 	case PortA:
 		switch b.PortI {
 		case PortA:
-			panic("unreachable")
+			panic(fmt.Sprintf("unreachable194 a %#v b %#v move %d",
+				a, b, move,
+			)) // TODO: happens a lot
 		case PortB, PortC:
 			// A → B/C
 			return Position{
@@ -192,7 +202,7 @@ func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {
 				Port:    b.PortI,
 			}
 		default:
-			panic("unreachable")
+			panic("unreachable203")
 		}
 	case PortB, PortC:
 		if b.PortI != PortA {
@@ -206,7 +216,7 @@ func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {
 			Port:    a.PortI,
 		}
 	default:
-		panic("unreachable")
+		panic("unreachable217")
 	}
 }
 
@@ -227,12 +237,12 @@ func (y *Layout) distanceBetween(a, b LinePort) int64 {
 	case PortA:
 		switch b.PortI {
 		case PortA:
-			panic("unreachable")
+			panic("unreachable238")
 		case PortB, PortC:
 			_, p := y.GetLinePort(b)
 			return int64(p.Length)
 		default:
-			panic("unreachable")
+			panic("unreachable243")
 		}
 	case PortB, PortC:
 		if b.PortI != PortA {
@@ -241,7 +251,7 @@ func (y *Layout) distanceBetween(a, b LinePort) int64 {
 		_, p := y.GetLinePort(a)
 		return int64(p.Length)
 	default:
-		panic("unreachable")
+		panic("unreachable252")
 	}
 }
 

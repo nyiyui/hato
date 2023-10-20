@@ -23,7 +23,8 @@ struct channel {
 void channel_setup(struct channel *c) {
   pinMode(c->pwm_pin, OUTPUT);
   pinMode(c->dir_pin, OUTPUT);
-  pinMode(c->sensor_pin, INPUT);
+  if (c->sensor_pin >= 0)
+    pinMode(c->sensor_pin, INPUT);
 }
 
 int signum(int x) {
@@ -56,16 +57,35 @@ void channel_write(struct channel *c, int power) {
   c->_prev_power = power;
 }
 
-#define channels_len 8
+//#define channels_len 8
+//struct channel channels[channels_len] = {
+//  { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8, },
+//  { .name = 'B', .pwm_pin = 2,  .dir_pin = 18, .sensor_pin = A1, },
+//  { .name = 'C', .pwm_pin = 7,  .dir_pin = 23, .sensor_pin = A2, },
+//  { .name = 'D', .pwm_pin = 8,  .dir_pin = 24, .sensor_pin = A3, },
+//  { .name = 'E', .pwm_pin = 9,  .dir_pin = 25, .sensor_pin = A4, },
+//  { .name = 'F', .pwm_pin = 10, .dir_pin = 26, .sensor_pin = A5, },
+//  { .name = 'G', .pwm_pin = 11, .dir_pin = 27, .sensor_pin = A6, },
+//  { .name = 'H', .pwm_pin = 12, .dir_pin = 28, .sensor_pin = A7, },
+//};
+#define channels_len 16
 struct channel channels[channels_len] = {
   { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8, },
-  { .name = 'B', .pwm_pin = 2,  .dir_pin = 18, .sensor_pin = A1, },
-  { .name = 'C', .pwm_pin = 7,  .dir_pin = 23, .sensor_pin = A2, },
-  { .name = 'D', .pwm_pin = 8,  .dir_pin = 24, .sensor_pin = A3, },
-  { .name = 'E', .pwm_pin = 9,  .dir_pin = 25, .sensor_pin = A4, },
-  { .name = 'F', .pwm_pin = 10, .dir_pin = 26, .sensor_pin = A5, },
-  { .name = 'G', .pwm_pin = 11, .dir_pin = 27, .sensor_pin = A6, },
-  { .name = 'H', .pwm_pin = 12, .dir_pin = 28, .sensor_pin = A7, },
+  { .name = 'B', .pwm_pin = 2,  .dir_pin = 23, .sensor_pin = A1, },
+  { .name = 'C', .pwm_pin = 7,  .dir_pin = 24, .sensor_pin = A2, },
+  { .name = 'D', .pwm_pin = 8,  .dir_pin = 25, .sensor_pin = A3, },
+  { .name = 'E', .pwm_pin = 9,  .dir_pin = 26, .sensor_pin = A4, },
+  { .name = 'F', .pwm_pin = 10, .dir_pin = 27, .sensor_pin = A5, },
+  { .name = 'G', .pwm_pin = 11, .dir_pin = 28, .sensor_pin = A6, },
+  { .name = 'H', .pwm_pin = 12, .dir_pin = 29, .sensor_pin = A7, },
+  { .name = 'I', .pwm_pin = 44, .dir_pin = 30, .sensor_pin = A9, },
+  { .name = 'J', .pwm_pin = 45, .dir_pin = 31, .sensor_pin = A10, },
+  { .name = 'K', .pwm_pin = 46, .dir_pin = 32, .sensor_pin = A11, },
+  { .name = 'L', .pwm_pin = 6,  .dir_pin = 33, .sensor_pin = A12, }, // higher-than-expected duty cycles
+  { .name = 'M', .pwm_pin = 5,  .dir_pin = 34, .sensor_pin = A13, }, // higher-than-expected duty cycles
+  { .name = 'N', .pwm_pin = 4,  .dir_pin = 35, .sensor_pin = A14, }, // 980 Hz
+  { .name = 'O', .pwm_pin = 13, .dir_pin = 36, .sensor_pin = A15, }, // 980 Hz
+  { .name = 'P', .pwm_pin = 40, .dir_pin = 37, .sensor_pin = -1,  }, // no PWM
 };
 
 void channels_setup() {
@@ -80,7 +100,7 @@ void channels_updateSensors() {
     struct channel *c = &channels[i];
     unsigned long now = millis();
     int val;
-    if (c->_prev_power == 0)
+    if (c->_prev_power == 0 || c->sensor_pin < 0)
       val = -ina240_offset;
     else
       val = analogRead(c->sensor_pin);

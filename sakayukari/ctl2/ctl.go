@@ -5,9 +5,14 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	. "nyiyui.ca/hato/sakayukari"
+	"nyiyui.ca/hato/sakayukari/audio"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
+	"nyiyui.ca/hato/sakayukari/tal/layout/preset"
+	"nyiyui.ca/hato/sakayukari/tal/layout/preset/kato"
+	"nyiyui.ca/hato/sakayukari/tal/plan"
 )
 
 func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
@@ -68,8 +73,8 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 		}
 		for len(gs.Trains) == 0 {
 		}
-		aPower := 60
-		bPower := 60
+		aPower := 90
+		bPower := 90
 		j, k := 0, 1
 		for i := 0; true; i++ {
 			log.Printf("loop %d", i)
@@ -124,6 +129,27 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 				}
 			}()
 			wg.Wait()
+			go func() {
+				ch := make(chan tal.GuideSnapshot, 0x10)
+				g.SnapshotMux.Subscribe("ctl2", ch)
+				defer g.SnapshotMux.Unsubscribe(ch)
+				targetOffset := int64(2 * kato.S248)
+				trainI := 0
+				for range time.NewTicker(10 * time.Millisecond).C {
+					gs := g.SnapshotMux.Current()
+					t := gs.Trains[trainI]
+					pos, overrun := g.Model2.CurrentPosition(&t)
+					if overrun {
+						break
+					}
+					offset := g.Layout.PositionToOffset(*t.Path, pos)
+					if offset > targetOffset {
+						break
+					}
+				}
+				//audio.Play()
+				zap.S().Infof("reached")
+			}()
 			{
 				var wg sync.WaitGroup
 				wg.Add(1)
@@ -155,4 +181,58 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 		}
 	}()
 	return a
+}
+
+func WaypointControl2(g *tal.Guide) {
+	p := plan.NewPlanner(g)
+	tp0 := p.NewTrainPlanner(0)
+	tp1 := p.NewTrainPlanner(1)
+	_ = tp1
+	y := g.Layout
+	etaCh := make(chan time.Time)
+	go func() {
+		timer := time.NewTimer(24 * time.Hour) // just some arbitraryily large #
+		// TODO: fix (wrong code actually, need to call timer.Stop etc)
+		go func() {
+			var played bool
+			for range timer.C {
+				if !played {
+					audio.Play()
+					played = true
+				}
+			}
+		}()
+		for eta := range etaCh {
+			zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
+			d := eta.Sub(time.Now())
+			d -= 3 * time.Second
+			if d < 0 {
+				d = 0
+			}
+			timer.Reset(d)
+		}
+	}()
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
+		pos.Precise = kato.S248 + kato.S124 + 62_000
+		err := tp0.LinearPlan(plan.LinearPlan{
+			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+			End:   plan.PointPlan{Position: pos, Velocity: 0},
+		}, etaCh)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
+		pos.Precise = kato.S248 + kato.S124
+		err := tp0.LinearPlan(plan.LinearPlan{
+			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+			End:   plan.PointPlan{Position: pos, Velocity: 0},
+		}, etaCh)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+	}
 }
