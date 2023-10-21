@@ -87,6 +87,9 @@ func (m *Multiplexer[E]) send(e E) {
 	m.subscribersLock.Lock()
 	defer m.subscribersLock.Unlock()
 	for _, sub := range m.subscribers {
+		if sub.ch == nil {
+			continue
+		}
 		select {
 		case sub.ch <- e:
 		case <-time.After(multiplexerTimeout):

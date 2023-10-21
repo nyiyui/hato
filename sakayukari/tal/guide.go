@@ -551,7 +551,7 @@ func (g *Guide) loop() {
 		}
 		switch val := diffuse.Value.(type) {
 		case GuideTrainUpdate:
-			err := g.TrainUpdate(val)
+			_, err := g.TrainUpdate(val)
 			if err != nil {
 				panic(err)
 			}
@@ -975,11 +975,12 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 }
 
 // TrainUpdate updates the state of a train.
-func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) error {
+func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) (newGeneration int, err error) {
+	newGeneration = -1
 	y := g.conf.Layout
 	zap.S().Debugf("diffuse GuideTrainUpdate %d %#v", gtu.TrainI, gtu)
 	if !gtu.PowerFilled && gtu.Power != 0 {
-		return errors.New("GuideTrainUpdate.Power must be 0 if .PowerFilled is false")
+		return -1, errors.New("GuideTrainUpdate.Power must be 0 if .PowerFilled is false")
 	}
 	oldT := g.trains[gtu.TrainI]
 	t := &g.trains[gtu.TrainI]
@@ -1119,5 +1120,5 @@ func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) error {
 	g.mustCheckPath(t)
 	g.trains[gtu.TrainI] = *t
 	g.wakeup(gtu.TrainI, "GuideTrainUpdate")
-	return nil
+	return t.Generation, nil
 }

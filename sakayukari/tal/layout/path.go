@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
 
@@ -112,6 +113,10 @@ func (y *Layout) MustOffsetToPosition(fp FullPath, offset Offset) Position {
 
 // OffsetToPosition returns a Position from an Offset, starting at the start of the FullPath.
 func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err error) {
+	zap.S().Infof("OffsetToPosition(%s, %d)", fp, offset)
+	if offset < 0 {
+		return Position{}, errors.New("negative offset")
+	}
 	var cum int64
 	for i, cur := range fp.Follows {
 		var prev LinePort
@@ -122,10 +127,15 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err
 		}
 		step := y.distanceBetween(prev, cur)
 		nextCum := cum + step
+		zap.S().Infof("step %d, nextCum %d", step, nextCum)
 		if nextCum > offset {
 			move := offset - cum
 			//log.Printf("i %d", i)
-			return y.stepToPosition(prev, cur, move), nil
+			// hmm why was distanceBetween > 0 if prev == cur
+			// hmmmmmmmmmm move and offset are both negative hmmmm
+			return y.stepToPosition(prev, cur, move, fp), nil
+			// sometimes (when offset is small enough?) prev (FullPath.Start) == cur (first in FullPath.Follows)
+			// ↑ can cause a bug with unreachable194
 		}
 		cum += step
 	}
@@ -176,23 +186,24 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err
 	return Position{}, fmt.Errorf("offset overran path (cum=%d)", cum)
 }
 
-func (y *Layout) stepToPosition(a, b LinePort, move int64) Position {
+func (y *Layout) stepToPosition(a, b LinePort, move int64, fullPathForDebug FullPath) Position {
 	//log.Printf("a %#v", a)
 	//log.Printf("b %#v", b)
 	//log.Printf("move %d", move)
+	aOrig := a
 	if a.LineI != b.LineI {
 		_, p := y.GetLinePort(a)
 		a = p.Conn()
 		if a.LineI != b.LineI {
-			panic("LinePort A not connected to same line as LinePort B")
+			panic(fmt.Sprintf("LinePort A not connected to same line as LinePort B %s", fullPathForDebug))
 		}
 	}
 	switch a.PortI {
 	case PortA:
 		switch b.PortI {
 		case PortA:
-			panic(fmt.Sprintf("unreachable194 a %#v b %#v move %d",
-				a, b, move,
+			panic(fmt.Sprintf("unreachable194 a %s or %s b %s move %d %s",
+				a, aOrig, b, move, fullPathForDebug,
 			)) // TODO: happens a lot
 		case PortB, PortC:
 			// A → B/C

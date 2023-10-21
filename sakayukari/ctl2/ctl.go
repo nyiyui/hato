@@ -194,12 +194,8 @@ func WaypointControl2(g *tal.Guide) {
 		timer := time.NewTimer(24 * time.Hour) // just some arbitraryily large #
 		// TODO: fix (wrong code actually, need to call timer.Stop etc)
 		go func() {
-			var played bool
 			for range timer.C {
-				if !played {
-					audio.Play()
-					played = true
-				}
+				audio.Play()
 			}
 		}()
 		for eta := range etaCh {
@@ -225,6 +221,7 @@ func WaypointControl2(g *tal.Guide) {
 	}
 	time.Sleep(3 * time.Second)
 	{
+		zap.S().Infof("kmh: %d", preset.ScaleKmH(30))
 		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
 		pos.Precise = kato.S248 + kato.S124
 		err := tp0.LinearPlan(plan.LinearPlan{

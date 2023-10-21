@@ -81,7 +81,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 			port = layout.PortA
 		}
 	}
-	err := tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
+	newGeneration, err := tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
 		TrainI: tp.trainI,
 		Target: &layout.LinePort{
 			LineI: lp.End.Position.LineI,
@@ -124,14 +124,17 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 	for range time.NewTicker(10 * time.Millisecond).C {
 		gs := tp.p.g.SnapshotMux.Current()
 		t := gs.Trains[tp.trainI]
+		if t.Generation < newGeneration {
+			continue
+		}
 		pos, _ := tp.p.g.Model2.CurrentPosition(&t)
 		offset := tp.p.g.Layout.PositionToOffset(*t.Path, pos)
-		//zap.S().Infof("%d / %d | %s / %s (path: %s)", offset, targetOffset, pos, lp.End.Position, t.Path)
+		zap.S().Infof("%d / %d | %s / %s (path: %s)", offset, targetOffset, pos, lp.End.Position, t.Path)
 		if offset >= targetOffset {
 			break
 		}
 	}
-	err = tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
+	_, err = tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
 		TrainI:       tp.trainI,
 		Power:        int(powerEnd),
 		PowerFilled:  true,
