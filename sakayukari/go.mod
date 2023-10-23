@@ -9,8 +9,10 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/gopxl/beep v1.1.0
+	github.com/justinas/alice v1.2.0
 	github.com/openacid/slimarray v0.1.3
 	github.com/r3labs/sse/v2 v2.10.0
+	github.com/rs/cors v1.10.1
 	github.com/tidwall/buntdb v1.3.0
 	github.com/wcharczuk/go-chart/v2 v2.1.1
 	go.uber.org/zap v1.17.0

@@ -8,7 +8,7 @@ srcUrlSubmit.addEventListener("click", updateSource);
 function updateSource() {
   if (src) src.close();
   src = new EventSource(srcUrl.value);
-  src.addEventListener("newAlloc", newAlloc);
+  src.addEventListener("updateAlloc", newAlloc);
   console.log(`new source URL: ${srcUrl.value}`);
 }
 

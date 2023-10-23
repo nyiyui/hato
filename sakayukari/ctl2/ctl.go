@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/audio"
+	"nyiyui.ca/hato/sakayukari/kujo"
 	"nyiyui.ca/hato/sakayukari/tal"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 	"nyiyui.ca/hato/sakayukari/tal/layout/preset"
@@ -183,7 +184,7 @@ func WaypointControl(guide ActorRef, g *tal.Guide) Actor {
 	return a
 }
 
-func WaypointControl2(g *tal.Guide) {
+func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 	p := plan.NewPlanner(g)
 	tp0 := p.NewTrainPlanner(0)
 	tp1 := p.NewTrainPlanner(1)
@@ -199,6 +200,16 @@ func WaypointControl2(g *tal.Guide) {
 			}
 		}()
 		for eta := range etaCh {
+			kujoServer.ETAMuxS.Send(kujo.ETAReport{
+				Station: "nagase",
+				ETA:     eta,
+				Op: kujo.Operation{
+					Type:  "普通",
+					Index: "0",
+					Track: "1",
+					Dir:   "",
+				},
+			})
 			//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
 			d := eta.Sub(time.Now())
 			d -= 3 * time.Second

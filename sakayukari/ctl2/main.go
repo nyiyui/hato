@@ -141,9 +141,9 @@ func Main() error {
 	_ = sakuragi
 
 	log.Printf("starting kujo…")
-	kujo := kujo.NewServer(g2)
+	kujoServer := kujo.NewServer(g2)
 	go func() {
-		http.ListenAndServe("0.0.0.0:8001", kujo)
+		http.ListenAndServe("0.0.0.0:8001", kujoServer.Handler())
 	}()
 
 	go func() {
@@ -161,7 +161,7 @@ func Main() error {
 
 	go func() {
 		time.Sleep(1 * time.Second)
-		WaypointControl2(g2)
+		WaypointControl2(g2, kujoServer)
 	}()
 
 	log.Printf("starting senri…")
