@@ -3,7 +3,6 @@ package plan
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"go.uber.org/zap"
@@ -42,43 +41,45 @@ type LinearPlan struct {
 
 func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error {
 	velocity := lp.Start.Velocity
-	gs := tp.p.g.SnapshotMux.Current()
-	t := gs.Trains[tp.trainI]
-	fd, ok := tp.p.g.Model2.GetFormData(t.FormI)
-	if !ok {
-		return errors.New("FormData not found")
-	}
-	fd.UpdateRelation()
-	if len(fd.Relation.Coeffs) == 0 {
-		panic("panik")
-	}
-	log.Printf("relation: %#v", fd.Relation.Coeffs)
-	powerStart, ok := fd.Relation.SolveForX(float64(velocity))
-	if !ok {
-		return fmt.Errorf("no power can be given to attain start velocity of %d µm/s", velocity)
-	}
-	powerEnd, ok := fd.Relation.SolveForX(float64(lp.End.Velocity))
-	if !ok {
-		return fmt.Errorf("no power can be given to attain end velocity of %d µm/s", lp.End.Velocity)
-	}
+	var powerStart, powerEnd float64
 	var port layout.PortI
-	switch lp.End.Position.Port {
-	case layout.PortA:
-		port = lp.End.Position.Port
-	case layout.PortB, layout.PortC:
-		// path has to contain lp.End.Position
-		start := t.Path.Follows[t.TrailerBack] // back is arbitrary; it can be TrailerFront as well
-		path := tp.p.g.Layout.MustFullPathTo(start, layout.LinePort{
-			LineI: lp.End.Position.LineI,
-			PortI: port,
-		})
-		beforeLast := path.Follows[len(path.Follows)-2]
-		switch tp.p.g.Layout.GetPort(beforeLast).Conn().PortI {
+	{
+		gs := tp.p.g.SnapshotMux.Current()
+		t := gs.Trains[tp.trainI]
+		fd, ok := tp.p.g.Model2.GetFormData(t.FormI)
+		if !ok {
+			return errors.New("FormData not found")
+		}
+		fd.UpdateRelation()
+		if len(fd.Relation.Coeffs) == 0 {
+			panic("panik")
+		}
+		powerStart, ok = fd.Relation.SolveForX(float64(velocity))
+		if !ok {
+			return fmt.Errorf("no power can be given to attain start velocity of %d µm/s (start velocity)", velocity)
+		}
+		powerEnd, ok = fd.Relation.SolveForX(float64(lp.End.Velocity))
+		if !ok {
+			return fmt.Errorf("no power can be given to attain end velocity of %d µm/s (end velocity)", lp.End.Velocity)
+		}
+		switch lp.End.Position.Port {
 		case layout.PortA:
-			// B or C
 			port = lp.End.Position.Port
 		case layout.PortB, layout.PortC:
-			port = layout.PortA
+			// path has to contain lp.End.Position
+			start := t.Path.Follows[t.TrailerBack] // back is arbitrary; it can be TrailerFront as well
+			path := tp.p.g.Layout.MustFullPathTo(start, layout.LinePort{
+				LineI: lp.End.Position.LineI,
+				PortI: port,
+			})
+			beforeLast := path.Follows[len(path.Follows)-2]
+			switch tp.p.g.Layout.GetPort(beforeLast).Conn().PortI {
+			case layout.PortA:
+				// B or C
+				port = lp.End.Position.Port
+			case layout.PortB, layout.PortC:
+				port = layout.PortA
+			}
 		}
 	}
 	newGeneration, err := tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
@@ -100,18 +101,21 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 		ch := make(chan tal.GuideSnapshot, 0x10)
 		tp.p.g.SnapshotMux.Subscribe(fmt.Sprintf("LinearPlan for train %d", tp.trainI), ch)
 		defer tp.p.g.SnapshotMux.Unsubscribe(ch)
-		targetOffset := tp.p.g.Layout.PositionToOffset(*t.Path, lp.End.Position)
 
 		for {
 			select {
 			case gs := <-ch:
 				t := gs.Trains[tp.trainI]
+				if t.Generation < newGeneration {
+					continue
+				}
+				targetOffset := tp.p.g.Layout.PositionToOffset(*t.Path, lp.End.Position)
 				pos, _ := tp.p.g.Model2.CurrentPosition(&t)
 				currentOffset := tp.p.g.Layout.PositionToOffset(*t.Path, pos)
 				distance := targetOffset - currentOffset
 				duration := distance * 1000 / velocity // use velocity from model
 				eta := time.Now().Add(time.Duration(duration) * time.Millisecond)
-				zap.S().Infof("eta: %s", eta)
+				zap.S().Debugf("eta: %s", eta)
 				etaCh <- eta
 			case <-stopCh:
 				return
@@ -120,18 +124,26 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 	}()
 	defer func() { stopCh <- struct{}{} }()
 
-	targetOffset := tp.p.g.Layout.PositionToOffset(*t.Path, lp.End.Position)
-	for range time.NewTicker(10 * time.Millisecond).C {
-		gs := tp.p.g.SnapshotMux.Current()
-		t := gs.Trains[tp.trainI]
-		if t.Generation < newGeneration {
-			continue
-		}
-		pos, _ := tp.p.g.Model2.CurrentPosition(&t)
-		offset := tp.p.g.Layout.PositionToOffset(*t.Path, pos)
-		zap.S().Infof("%d / %d | %s / %s (path: %s)", offset, targetOffset, pos, lp.End.Position, t.Path)
-		if offset >= targetOffset {
-			break
+	{
+		var targetOffset int64
+		var targetOffsetSet bool
+		for range time.NewTicker(10 * time.Millisecond).C {
+			gs := tp.p.g.SnapshotMux.Current()
+			t := gs.Trains[tp.trainI]
+			if t.Generation < newGeneration {
+				continue
+			}
+			if !targetOffsetSet {
+				targetOffset = tp.p.g.Layout.PositionToOffset(*t.Path, lp.End.Position)
+				targetOffsetSet = true
+			}
+
+			pos, _ := tp.p.g.Model2.CurrentPosition(&t)
+			offset := tp.p.g.Layout.PositionToOffset(*t.Path, pos)
+			zap.S().Infof("%d / %d | %s / %s (path: %s)", offset, targetOffset, pos, lp.End.Position, t.Path)
+			if offset >= targetOffset {
+				break
+			}
 		}
 	}
 	_, err = tp.p.g.TrainUpdate(tal.GuideTrainUpdate{

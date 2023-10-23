@@ -199,7 +199,7 @@ func WaypointControl2(g *tal.Guide) {
 			}
 		}()
 		for eta := range etaCh {
-			zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
+			//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
 			d := eta.Sub(time.Now())
 			d -= 3 * time.Second
 			if d < 0 {
@@ -221,9 +221,7 @@ func WaypointControl2(g *tal.Guide) {
 	}
 	time.Sleep(3 * time.Second)
 	{
-		zap.S().Infof("kmh: %d", preset.ScaleKmH(30))
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
-		pos.Precise = kato.S248 + kato.S124
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortA})
 		err := tp0.LinearPlan(plan.LinearPlan{
 			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
 			End:   plan.PointPlan{Position: pos, Velocity: 0},
@@ -232,4 +230,41 @@ func WaypointControl2(g *tal.Guide) {
 			zap.S().Fatal(err)
 		}
 	}
+	//time.Sleep(3 * time.Second)
+	//{
+	//	pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
+	//	pos.Precise = kato.S248 + kato.S124 + 62_000
+	//	err := tp0.LinearPlan(plan.LinearPlan{
+	//		Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+	//		End:   plan.PointPlan{Position: pos, Velocity: 0},
+	//	}, etaCh)
+	//	if err != nil {
+	//		zap.S().Fatal(err)
+	//	}
+	//}
+	//time.Sleep(3 * time.Second)
+	//{
+	//	pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortA})
+	//	err := tp0.LinearPlan(plan.LinearPlan{
+	//		Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+	//		End:   plan.PointPlan{Position: pos, Velocity: 0},
+	//	}, etaCh)
+	//	if err != nil {
+	//		zap.S().Fatal(err)
+	//	}
+	//}
+	/* no worky / weird
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
+		pos.Precise = kato.S248 + kato.S124
+		//pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortA})
+		err := tp0.LinearPlan(plan.LinearPlan{
+			Start: plan.PointPlan{Velocity: preset.ScaleKmH(60)},
+			End:   plan.PointPlan{Position: pos, Velocity: 0},
+		}, etaCh)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+	}
+	*/
 }

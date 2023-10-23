@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="./platformdisplay.js"></script>
+    <meta charset="UTF-8">
+    <title>HATO Sakayukari Kujo</title>
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <platform-display id="platform-display" allocs='[{},{}]'>
+    </platform-display>
+    <form>
+      <label>
+        Source URL
+        <input id="src-url" type="url" />
+      </label>
+      <label>
+        Stop ID
+        <input id="stop-id" type="url" />
+      </label>
+      <input id="src-url-submit" type="button" value="Submit" />
+    </form>
+    <script src="./platformdisplay-live.js"></script>
+  </body>
+</html>
+

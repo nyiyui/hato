@@ -182,6 +182,7 @@ class PlatformDisplay extends HTMLElement {
       elem.textContent = name;
       return elem;
     };
+    header.appendChild(newHeader("番目"));
     header.appendChild(newHeader("種別"));
     header.appendChild(newHeader("運用"));
     header.appendChild(newHeader("到着時刻"));
@@ -195,8 +196,11 @@ class PlatformDisplay extends HTMLElement {
       elem.dataset.value = name;
       return elem;
     };
-    for (let alloc of this.allocsData) {
+    for (let i of this.allocsData.keys()) {
+      const alloc = this.allocsData[i];
       const row = document.createElement("tr");
+      const iNames = ["先発", "次発"];
+      row.appendChild(newCell("i", (i < iNames.length) ? iNames[i] : `${i+1}`));
       row.appendChild(newCell("type", alloc.type));
       row.appendChild(newCell("index", alloc.index));
       row.appendChild(newCell("time", alloc.time));

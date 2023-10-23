@@ -113,7 +113,7 @@ func (y *Layout) MustOffsetToPosition(fp FullPath, offset Offset) Position {
 
 // OffsetToPosition returns a Position from an Offset, starting at the start of the FullPath.
 func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err error) {
-	zap.S().Infof("OffsetToPosition(%s, %d)", fp, offset)
+	zap.S().Debugf("OffsetToPosition(%s, %d)", fp, offset)
 	if offset < 0 {
 		return Position{}, errors.New("negative offset")
 	}
@@ -127,7 +127,7 @@ func (y *Layout) OffsetToPosition(fp FullPath, offset Offset) (pos Position, err
 		}
 		step := y.distanceBetween(prev, cur)
 		nextCum := cum + step
-		zap.S().Infof("step %d, nextCum %d", step, nextCum)
+		zap.S().Debugf("step %d, nextCum %d", step, nextCum)
 		if nextCum > offset {
 			move := offset - cum
 			//log.Printf("i %d", i)
