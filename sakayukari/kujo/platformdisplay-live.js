@@ -5,7 +5,7 @@ let src = null;
 srcUrlSubmit.addEventListener("click", updateSource);
 
 const initialReconnectTimeout = 500;
-const maxReconnectTimeout = 32000;
+const maxReconnectTimeout = 4000;
 let reconnectTimeout = initialReconnectTimeout;
 
 const statusElem = document.getElementById("status");
@@ -30,8 +30,8 @@ function updateSource() {
 }
 
 let allocs = [
-  //{type: "普通", index: "0G39", time: Date.now() + 60000, track: "1", dir: "永瀬"},
-  //{type: "普通", index: "1G42", time: Date.now() + 120000, track: "1", dir: "永瀬"},
+  {type: "普通", index: "0G39", time: Date.now() + 60000, track: "1", dir: "永瀬"},
+  {type: "普通", index: "1G42", time: Date.now() + 120000, track: "1", dir: "永瀬"},
 ];
 
 function newAlloc(e) {
@@ -44,8 +44,9 @@ function updateAllocs() {
   platformDisplay.setAttribute('allocs', JSON.stringify(allocs.map((allocMutable) => {
     let alloc = structuredClone(allocMutable);
     const seconds = Math.floor((allocMutable.time - now)/1000);
+    if (seconds < 3) alloc.near = "yes";
     if (seconds < 0) seconds = 0;
-    alloc.time = `約${Seconds}秒後`;
+    alloc.time = `約${seconds}秒後`;
     return alloc;
   })));
 }

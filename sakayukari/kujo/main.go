@@ -79,6 +79,9 @@ func (s *Server) platformDisplay(w http.ResponseWriter, r *http.Request) {
 	//	w.WriteString("?station is not a UUID")
 	//	return
 	//}
+	fmt.Fprint(w, "event: status\n")
+	fmt.Fprintf(w, "data: ok\n\n")
+	w.(http.Flusher).Flush()
 	reports := map[string]ETAReport{}
 	ch := make(chan ETAReport, 1)
 	s.etaMux.Subscribe(fmt.Sprintf("%s from %s", r.URL, r.RemoteAddr), ch)

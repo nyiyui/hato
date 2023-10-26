@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/tidwall/buntdb"
@@ -41,10 +42,14 @@ func main2() error {
 	if err != nil {
 		return err
 	}
+	db.ReadConfig(&buntdb.Config{
+		SyncPolicy: buntdb.Always,
+	})
+	key := fmt.Sprintf("form:%s:data", form)
 	switch mode {
 	case "read":
 		err = db.View(func(tx *buntdb.Tx) error {
-			value, err := tx.Get(fmt.Sprintf("form:%s:data", form))
+			value, err := tx.Get(key)
 			if err != nil {
 				return err
 			}
@@ -55,6 +60,30 @@ func main2() error {
 			}
 			log.Printf("found %s", form)
 			fmt.Printf("%s", value)
+			return nil
+		})
+		return err
+	case "write":
+		err = db.Update(func(tx *buntdb.Tx) error {
+			var fd tal.FormData
+			err = json.NewDecoder(os.Stdin).Decode(&fd)
+			if err != nil {
+				log.Fatalf("unmarshalling failed: %s", err)
+			}
+			fd.UpdateRelation()
+			data, err := json.Marshal(fd)
+			if err != nil {
+				log.Fatalf("marshalling failed: %s", err)
+			}
+			previousValue, replaced, err := tx.Set(key, string(data), nil)
+			if err != nil {
+				log.Fatalf("writing failed: %s", err)
+			}
+			if replaced {
+				log.Printf("replaced (previous value = %s)", previousValue)
+			} else {
+				log.Print("saved new value")
+			}
 			return nil
 		})
 		return err

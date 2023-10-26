@@ -241,6 +241,28 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 			zap.S().Fatal(err)
 		}
 	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortA})
+		err := tp0.LinearPlan(plan.LinearPlan{
+			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+			End:   plan.PointPlan{Position: pos, Velocity: 0},
+		}, etaCh)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortA})
+		err := tp0.LinearPlan(plan.LinearPlan{
+			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
+			End:   plan.PointPlan{Position: pos, Velocity: 0},
+		}, etaCh)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+	}
 	//time.Sleep(3 * time.Second)
 	//{
 	//	pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
