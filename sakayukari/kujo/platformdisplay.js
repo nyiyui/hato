@@ -69,6 +69,18 @@ const styleText = `
   color: #0f0;
 }
 
+.allocs td.flash {
+  color: #fa0;
+  animation: blink 1.2s step-start infinite;
+}
+
+@keyframes blink {
+  50% {
+    background-color: #fa0;
+    color: #000;
+  }
+}
+
 .scroll {
   color: #fff;
   white-space: nowrap;
@@ -202,8 +214,16 @@ class PlatformDisplay extends HTMLElement {
       const iNames = ["先発", "次発"];
       row.appendChild(newCell("i", (i < iNames.length) ? iNames[i] : `${i+1}`));
       row.appendChild(newCell("type", alloc.type));
-      row.appendChild(newCell("index", alloc.index));
-      row.appendChild(newCell("time", alloc.time));
+      if (alloc.near) {
+        const cell = newCell("near", alloc.index);
+        cell.setAttribute('colspan', '2');
+        cell.classList.add("flash");
+        cell.textContent = "電車がまいります";
+        row.appendChild(cell);
+      } else {
+        row.appendChild(newCell("index", alloc.index));
+        row.appendChild(newCell("time", alloc.time));
+      }
       row.appendChild(newCell("track", alloc.track));
       row.appendChild(newCell("dir", alloc.dir));
       this.allocs.appendChild(row);
