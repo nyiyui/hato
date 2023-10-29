@@ -228,28 +228,31 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 			zap.S().Fatal(err)
 		}
 	}
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
-		pos.Precise = 130000
-		linearPlan(pos)
-	}
-	time.Sleep(3 * time.Second)
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortB})
-		pos.Precise = 0
-		linearPlan(pos)
-	}
-	time.Sleep(3 * time.Second)
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
-		pos.Precise = 130000
-		linearPlan(pos)
-	}
-	time.Sleep(3 * time.Second)
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
-		pos.Precise = 124000
-		linearPlan(pos)
+	for {
+		{
+			pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
+			pos.Precise = 130000
+			linearPlan(pos)
+		}
+		time.Sleep(3 * time.Second)
+		{
+			pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortB})
+			pos.Precise = 0
+			linearPlan(pos)
+		}
+		time.Sleep(3 * time.Second)
+		{
+			pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
+			pos.Precise = 130000
+			linearPlan(pos)
+		}
+		time.Sleep(3 * time.Second)
+		{
+			pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
+			pos.Precise = 124000
+			linearPlan(pos)
+		}
+		time.Sleep(3 * time.Second)
 	}
 	//time.Sleep(3 * time.Second)
 	//{
