@@ -304,15 +304,15 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 		if span.AbsPositionKnown {
 			pos2, err := y.PositionToOffset2(path, span.AbsPosition)
 			if err != nil {
-				zap.S().Infof("index %d: AbsPosition: converting to offset failed: %s", i, err)
+				zap.S().Warnf("index %d: AbsPosition: converting to offset failed: %s", i, err)
 			} else {
 				pos = pos2
 			}
-			zap.S().Infof("index %d: AbsPosition: %d %s (error: %s)", i, pos, span.AbsPosition, err)
+			zap.S().Debugf("index %d: AbsPosition: %d %s (error: %s)", i, pos, span.AbsPosition, err)
 		}
 		if span.PositionKnown {
 			pos = span.Position
-			zap.S().Infof("index %d: PositionKnown %d", i, pos)
+			zap.S().Debugf("index %d: PositionKnown %d", i, pos)
 		}
 
 		var delta time.Duration

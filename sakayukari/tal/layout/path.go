@@ -27,15 +27,15 @@ func (y *Layout) PositionToOffset2(fp FullPath, pos Position) (offset Offset, er
 		switch fp.Start.PortI {
 		case PortA:
 			if fp.Follows[0].PortI != pos.Port && pos.Precise != 0 {
-				return 0, errors.New("pos not on path (different port on start)")
+				return 0, fmt.Errorf("pos not on path (different port on start) (pos = %s ; fp = %s)", pos, fp)
 			}
 			return int64(pos.Precise), nil
 		case PortB, PortC:
 			if fp.Follows[0].PortI != PortA {
 				panic("follows[0] is B/C and start is B/C (cannot go between B and C)")
 			}
-			if fp.Start.PortI != pos.Port {
-				return 0, errors.New("pos not on path (different port on start)")
+			if fp.Start.PortI != pos.Port && !(pos.Port == PortA && pos.Precise == 0) {
+				return 0, fmt.Errorf("pos not on path (different port on start) (pos = %s ; fp = %s)", pos, fp)
 			}
 			_, p := y.GetLinePort(fp.Start)
 			return int64(p.Length) - int64(pos.Precise), nil

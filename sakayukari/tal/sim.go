@@ -247,7 +247,7 @@ func (s *Simulator) step(stepI int) {
 			zap.S().Errorf("step %d: train %d overran (front)", stepI, i)
 		}
 		newPos2 := s.g.Layout.MustOffsetToPosition(*newT.Path, abs(s.g.Layout.PositionToOffset(*newT.Path, newPos)-int64(form.Length)))
-		zap.S().Infof("step %d: train %d: position = %s → %s ; path = %s", stepI, i, newPos2, newPos, *newT.Path)
+		zap.S().Infof("step %d: train %d: power = %d ; position = %s → %s ; path = %s", stepI, i, newT.Power, newPos2, newPos, *newT.Path)
 		// TODO: check if t.Path changed (we don't support changing t.Path)
 		// give up if we moved more than 1 line away (code is too complex D:)
 		events := make([]Event, 0)
@@ -310,7 +310,7 @@ func (s *Simulator) step(stepI int) {
 	for i := range s.g.trains {
 		t := snap.Trains[i]
 		s.trainStates[i].Train = t
-		s.trainStates[i].Position = s.g.Model2.CurrentPosition2(&t)
+		s.trainStates[i].Position, _ = s.g.Model2.CurrentPosition3(&t, false)
 	}
 }
 
@@ -322,7 +322,7 @@ func (s *Simulator) checkTrainPower(i int) {
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
 		section := t.Path.Follows[i]
 		ls := s.lineStates[section.LineI]
-		if len(powers) > 0 && ls.Power != powers[len(powers)-1] {
+		if len(powers) > 0 && ls.Power > 0 && ls.Power != powers[len(powers)-1] {
 			shortCircuit = true
 		}
 		powers = append(powers, ls.Power)
@@ -331,7 +331,7 @@ func (s *Simulator) checkTrainPower(i int) {
 		}
 	}
 	if shortCircuit {
-		zap.S().Warnf("train %d: short-circuit (powers = %s)", i, powers)
+		zap.S().Errorf("train %d: short-circuit (powers = %s)", i, powers)
 	}
 }
 
