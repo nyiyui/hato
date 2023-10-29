@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	. "nyiyui.ca/hato/sakayukari/prelude"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 

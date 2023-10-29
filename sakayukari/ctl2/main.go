@@ -97,7 +97,11 @@ func Main() error {
 			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},
 			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
 		)
-		_, _ = path, path2
+		path3 := y.MustFullPathTo(
+			layout.LinePort{y.MustLookupIndex("mitouc3"), layout.PortA},
+			layout.LinePort{y.MustLookupIndex("mitouc3"), layout.PortB},
+		)
+		_, _, _ = path, path2, path3
 		g2.InternalSetTrains([]tal.Train{
 			tal.Train{
 				Power:        0,
@@ -108,27 +112,16 @@ func Main() error {
 				Orient:       tal.FormOrientA,
 				Path:         &path,
 			},
+			//tal.Train{
+			//	Power:        0,
+			//	CurrentBack:  0,
+			//	CurrentFront: 0,
+			//	State:        tal.TrainStateNextAvail,
+			//	FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+			//	Orient:       tal.FormOrientA,
+			//	Path:         &path3,
+			//},
 		})
-		//g2.InternalSetTrains([]tal.Train{
-		//	tal.Train{
-		//		Power:        0,
-		//		CurrentBack:  0,
-		//		CurrentFront: 0,
-		//		State:        tal.TrainStateNextAvail,
-		//		FormI:        uuid.MustParse("a7453d82-d52f-43ec-84d2-54dcea72f8c1"),
-		//		Orient:       tal.FormOrientA,
-		//		Path:         &path,
-		//	},
-		//	tal.Train{
-		//		Power:        0,
-		//		CurrentBack:  0,
-		//		CurrentFront: 0,
-		//		State:        tal.TrainStateNextAvail,
-		//		FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-		//		Orient:       tal.FormOrientA,
-		//		Path:         &path2,
-		//	},
-		//})
 		g2.PublishSnapshot()
 	}
 	guide := ActorRef{Index: len(g.Actors) - 1}

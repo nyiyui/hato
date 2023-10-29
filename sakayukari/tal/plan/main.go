@@ -94,7 +94,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 		SetRunOnLock: true,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("train update: %w", err)
 	}
 	stopCh := make(chan struct{}, 1)
 	go func() {
@@ -127,7 +127,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 	{
 		var targetOffset int64
 		var targetOffsetSet bool
-		for range time.NewTicker(10 * time.Millisecond).C {
+		for range time.NewTicker(100 * time.Millisecond).C {
 			gs := tp.p.g.SnapshotMux.Current()
 			t := gs.Trains[tp.trainI]
 			if t.Generation < newGeneration {

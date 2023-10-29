@@ -10,6 +10,7 @@ import (
 
 	. "nyiyui.ca/hato/sakayukari"
 	"nyiyui.ca/hato/sakayukari/conn"
+	. "nyiyui.ca/hato/sakayukari/prelude"
 	"nyiyui.ca/hato/sakayukari/tal/cars"
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )

@@ -28,8 +28,6 @@
             yq
             gnumake
 
-            busybox # httpd
-
             # reqs for fyne
             pkg-config
             libGL

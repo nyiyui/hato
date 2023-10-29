@@ -546,6 +546,15 @@ type FullPath struct {
 	Follows []LinePort
 }
 
+func (f FullPath) String() string {
+	b := new(strings.Builder)
+	fmt.Fprintf(b, "S%s", f.Start)
+	for _, lp := range f.Follows {
+		fmt.Fprintf(b, "→%s", lp)
+	}
+	return b.String()
+}
+
 func (f FullPath) AtIndex(i int) LinePort {
 	switch {
 	case i < -1:
@@ -696,6 +705,10 @@ type Position struct {
 	// Port is to where Precise is measuring to. This is needed to handle switches, where there could be two points where Precise is equal to 100000µm, on the normal and reverse sides of the switch.
 	// For example, if Precise is measuring the position form port A to port C, this field would be PortC.
 	Port PortI
+}
+
+func (p Position) String() string {
+	return fmt.Sprintf("%d%s@%d", p.LineI, p.Port, p.Precise)
 }
 
 func (y *Layout) ReversePath(path []LinePort) []LinePort {

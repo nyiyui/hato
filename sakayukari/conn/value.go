@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
 )
 
 // Integral length in micrometres.
@@ -78,6 +80,12 @@ type ValID struct {
 
 type ValCurrent struct {
 	Values []ValCurrentInner
+}
+
+func (v *ValCurrent) Sort() {
+	slices.SortFunc(v.Values, func(a, b ValCurrentInner) bool {
+		return a.Line < b.Line
+	})
 }
 
 func (v ValCurrent) String() string {

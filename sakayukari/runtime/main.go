@@ -5,9 +5,7 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"runtime/pprof"
 	"sync"
-	"time"
 
 	. "nyiyui.ca/hato/sakayukari"
 )
@@ -110,12 +108,12 @@ func (i *Instance) Diffuse() error {
 			var caseI int
 			caseI = caseIs[chosen]
 			d := recv.Interface().(Diffuse1)
-			//log.Printf("got: %s", d)
+			log.Printf("got: %s", d)
 			if d.Origin == (ActorRef{}) || d.Origin == Publish {
 				// self if blank
 				d.Origin = ActorRef{Index: caseI}
 				// only do dependencies if the actor itself publishes a new value; if the actor sends it to a different actor, that actor can decide to publichs a new value or not
-				// log.Printf("sending to deps of %s: %#v", d.Origin, dependsOn[d.Origin.Index])
+				log.Printf("sending to deps of %s: %#v", d.Origin, dependsOn[d.Origin.Index])
 				i.record(&d, dependsOn[d.Origin.Index])
 				for _, j := range dependsOn[d.Origin.Index] {
 					i.send(j, &d)
@@ -147,11 +145,13 @@ func (i *Instance) Diffuse() error {
 }
 
 func (i *Instance) send(actorI int, d *Diffuse1) {
-	//i.g.Actors[actorI].InputCh <- *d
-	select {
-	case i.g.Actors[actorI].InputCh <- *d:
-	case <-time.After(500 * time.Millisecond):
-		pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
-		panic(fmt.Sprintf("actor %s %s timed out: %#v", ActorRef{Index: actorI}, i.g.Actors[actorI].Comment, d))
-	}
+	i.g.Actors[actorI].InputCh <- *d
+	/*
+		select {
+		case i.g.Actors[actorI].InputCh <- *d:
+		case <-time.After(500 * time.Millisecond):
+			pprof.Lookup("goroutine").WriteTo(os.Stderr, 1)
+			panic(fmt.Sprintf("actor %s %s timed out: %#v", ActorRef{Index: actorI}, i.g.Actors[actorI].Comment, d))
+		}
+	*/
 }

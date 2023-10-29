@@ -18,6 +18,7 @@ type History struct {
 }
 
 func (h *History) AddSpan(s Span) {
+	s.MustCheckInvariants()
 	s.Time = time.Now()
 	h.Spans = append(h.Spans, s)
 }
@@ -49,6 +50,24 @@ type Span struct {
 	PositionKnown    bool
 	AbsPosition      layout.Position
 	AbsPositionKnown bool
+}
+
+func (s Span) MustCheckInvariants() {
+	if s.Position < 0 {
+		panic("s.Position < 0")
+	}
+	if !s.PositionKnown && s.Position != 0 {
+		panic("s.Position set but position unknown")
+	}
+	if s.Velocity < 0 {
+		panic("s.Velocity < 0")
+	}
+	if !s.VelocityKnown && s.Velocity != 0 {
+		panic("s.Velocity set but velocity unknown")
+	}
+	if s.Power < 0 {
+		panic("s.Power < 0")
+	}
 }
 
 type spanUsage struct {
@@ -262,45 +281,51 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 	if len(h.Spans) == 0 {
 		return 0, false
 	}
-	// evaluate the spans
+	spans := removeDuplicateIsh(h.Spans)
 	var pos int64
-	for i, span := range h.Spans {
-		if i == 0 {
-			continue
+	//for i, span := range spans {
+	//	zap.S().Infof("history index %d %#v", i, span)
+	//}
+	{ // make spans contain only spans before at
+		firstPastAt := slices.IndexFunc(spans, func(span Span) bool {
+			return !span.Time.Before(at)
+		})
+		if firstPastAt != -1 {
+			spans = spans[:firstPastAt]
 		}
-		if span.Time.After(at) {
-			break
+	}
+	for i, span := range spans {
+		if span.AbsPositionKnown && span.PositionKnown {
+			zap.S().Warnf("history index %d: AbsPositionKnown and PositionKnown", i)
 		}
-		prev := h.Spans[i-1]
-		delta := span.Time.Sub(prev.Time)
-		if prev.PositionKnown {
-			pos = prev.Position
-		}
-		if prev.AbsPositionKnown {
-			pos2, err := y.PositionToOffset2(path, prev.AbsPosition)
-			if err != nil {
-				pos = pos2
-			}
-		}
-		zap.S().Debugf("prev span = %#v", prev)
-		zap.S().Debugf("span span = %#v", span)
-		zap.S().Debugf("speed evaluated (power = %d) = %d", prev.Power, evaluate(relation.Coeffs, float64(prev.Power)))
-		pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(prev.Power)) / 1000)
-		if span.PositionKnown {
-			pos = span.Position
+		if span.VelocityKnown {
+			panic("Span.Velocity not implemented yet")
 		}
 		if span.AbsPositionKnown {
 			pos2, err := y.PositionToOffset2(path, span.AbsPosition)
 			if err != nil {
+				zap.S().Infof("index %d: AbsPosition: converting to offset failed: %s", i, err)
+			} else {
 				pos = pos2
 			}
+			zap.S().Infof("index %d: AbsPosition: %d %s (error: %s)", i, pos, span.AbsPosition, err)
 		}
+		if span.PositionKnown {
+			pos = span.Position
+			zap.S().Infof("index %d: PositionKnown %d", i, pos)
+		}
+
+		var delta time.Duration
+		if i == len(spans)-1 {
+			// evaluate until at
+			delta = at.Sub(span.Time)
+		} else {
+			next := spans[i+1]
+			delta = next.Time.Sub(span.Time)
+		}
+		//zap.S().Infof("speed evaluated (power = %d) = %d", span.Power, evaluate(relation.Coeffs, float64(span.Power)))
+		pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(span.Power)) / 1000)
+		//zap.S().Infof("index %d: pos = %d", i, pos)
 	}
-	// evaluate until at
-	last := h.Spans[len(h.Spans)-1]
-	delta := at.Sub(last.Time)
-	zap.S().Debugf("last span = %#v", last)
-	zap.S().Debugf("speed evaluated (power = %d) = %d", last.Power, evaluate(relation.Coeffs, float64(last.Power)))
-	pos += int64(float64(delta.Milliseconds()) * evaluate(relation.Coeffs, float64(last.Power)) / 1000)
 	return pos, true
 }

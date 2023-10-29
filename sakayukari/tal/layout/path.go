@@ -14,7 +14,7 @@ type Offset = int64
 func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
 	offset, err := y.PositionToOffset2(fp, pos)
 	if err != nil {
-		panic("offline")
+		panic(err)
 	}
 	return offset
 }

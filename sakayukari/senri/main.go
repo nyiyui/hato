@@ -41,25 +41,6 @@ func Main(g *tal.Guide) error {
 			con.Objects[i] = label
 		}
 	}
-	log.Printf("obj: %#v", con.Objects)
-
-	//list := widget.NewList(func() int { return len(images) }, func() fyne.CanvasObject {
-	//	_ = img
-	//	return container.New(
-	//		layout.NewHBoxLayout(),
-	//		widget.NewLabel("loading"),
-	//		//img,
-	//	)
-	//}, func(i int, obj fyne.CanvasObject) {
-	//	log.Printf("%d rect %#v", i, images[i].Bounds())
-	//	cont := obj.(*fyne.Container)
-	//	label := cont.Objects[0].(*widget.Label)
-	//	label.SetText(labels[i])
-	//	label.Refresh()
-	//	//img := cont.Objects[1].(*canvas.Image)
-	//	//img.Image = images[i]
-	//	//img.Refresh()
-	//})
 
 	c := make(chan tal.GuideSnapshot, 10)
 	g.SnapshotMux.Subscribe("senri", c)

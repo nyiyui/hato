@@ -18,11 +18,12 @@ import (
 )
 
 type Model2 struct {
-	g         *Guide
-	forms     map[uuid.UUID]FormData
-	formsLock sync.RWMutex
-	dbPath    string
-	syncReq   chan struct{}
+	g            *Guide
+	forms        map[uuid.UUID]FormData
+	formsLock    sync.RWMutex
+	dbPath       string
+	syncReq      chan struct{}
+	ignoreWrites bool
 }
 
 func NewModel2(g *Guide, dbPath string) (*Model2, error) {
@@ -30,7 +31,7 @@ func NewModel2(g *Guide, dbPath string) (*Model2, error) {
 		g:      g,
 		forms:  map[uuid.UUID]FormData{},
 		dbPath: dbPath,
-	} // 8 was randomly chosen
+	}
 	err := m.readDB()
 	if err != nil {
 		return nil, err
@@ -84,6 +85,10 @@ func (m *Model2) readDB() error {
 }
 
 func (m *Model2) writeDB() error {
+	if m.ignoreWrites {
+		zap.S().Debugf("model2: ignored write")
+		return nil
+	}
 	db, err := buntdb.Open(m.dbPath)
 	if err != nil {
 		return err
@@ -162,7 +167,7 @@ func (m *Model2) CurrentPosition2(t *Train) layout.Position {
 	return pos
 }
 
-func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
+func (m *Model2) CurrentPosition3(t *Train, fence bool) (pos layout.Position, overrun bool) {
 	offset := m.CurrentOffset(t)
 	pos, err := m.g.Layout.OffsetToPosition(*t.Path, offset)
 	if err != nil {
@@ -170,11 +175,17 @@ func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
 		pos = m.g.Layout.LinePortToPosition(t.Path.Follows[len(t.Path.Follows)-1])
 		overrun = true
 	}
-	c := GuideFence(m.g.Layout, t)
-	//zap.S().Debugf("pos nofit = %#v", pos)
-	pos = FitInConstraint(m.g.Layout, c, pos)
-	//zap.S().Debugf("pos fit = %#v", pos)
+	if fence {
+		c := GuideFence(m.g.Layout, t)
+		//zap.S().Debugf("pos nofit = %#v", pos)
+		pos = FitInConstraint(m.g.Layout, c, pos)
+		//zap.S().Debugf("pos fit = %#v", pos)
+	}
 	return
+}
+
+func (m *Model2) CurrentPosition(t *Train) (pos layout.Position, overrun bool) {
+	return m.CurrentPosition3(t, true)
 }
 
 // CurrentOffset returns the estimated offset. Note that it doesn't account for any constraints.
@@ -195,6 +206,10 @@ func (m *Model2) CurrentOffset(t *Train) int64 {
 		return -1
 	}
 	return offset
+}
+
+func (m *Model2) setIgnoreWrites() {
+	m.ignoreWrites = true
 }
 
 type FormData struct {
