@@ -216,7 +216,6 @@ type LineStates struct {
 
 func (g *Guide) RemakeActor(actors map[LineID]ActorRef) Actor {
 	g.conf.Actors = actors
-	conf := g.conf
 	a := Actor{
 		Comment:  "tal-guide",
 		InputCh:  make(chan Diffuse1),
@@ -228,16 +227,16 @@ func (g *Guide) RemakeActor(actors map[LineID]ActorRef) Actor {
 			Output:      true,
 		},
 	}
-	a.Inputs = append(a.Inputs, conf.Model)
-	for _, l := range conf.Layout.Lines {
-		a.Inputs = append(a.Inputs, conf.Actors[l.PowerConn])
+	a.Inputs = append(a.Inputs, g.conf.Model)
+	for _, l := range g.conf.Layout.Lines {
+		a.Inputs = append(a.Inputs, g.conf.Actors[l.PowerConn])
 		if l.IsSwitch() {
-			a.Inputs = append(a.Inputs, conf.Actors[l.SwitchConn])
+			a.Inputs = append(a.Inputs, g.conf.Actors[l.SwitchConn])
 		}
 	}
-	conf.actorsReverse = map[ActorRef]conn.Id{}
-	for li, ar := range conf.Actors {
-		conf.actorsReverse[ar] = li.Conn
+	g.conf.actorsReverse = map[ActorRef]conn.Id{}
+	for li, ar := range g.conf.Actors {
+		g.conf.actorsReverse[ar] = li.Conn
 	}
 	g.actor = a
 	return a
@@ -566,10 +565,13 @@ func (g *Guide) loop() {
 		case conn.ValCurrent:
 			g.handleValCurrent(diffuse, val)
 		case conn.ValShortNotify:
-			c := g.conf.actorsReverse[diffuse.Origin]
+			c, ok := g.conf.actorsReverse[diffuse.Origin]
+			if !ok {
+				zap.S().Errorf("no conn for actor %s", diffuse.Origin)
+			}
 			li := slices.IndexFunc(g.Layout.Lines, func(l layout.Line) bool { return l.SwitchConn == (LineID{Conn: c, Line: val.Line}) })
 			if li == -1 {
-				panic(fmt.Sprintf("no line found for ValShortNotify %#v", diffuse))
+				panic(fmt.Sprintf("no line found for ValShortNotify %#v (conn = %s, domain = %s)", diffuse, c, val.Line))
 			}
 			ls := g.lineStates[li]
 			log.Printf("lineState %#v", ls)
