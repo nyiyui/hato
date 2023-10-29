@@ -339,3 +339,47 @@ func InitTestbench6b() (*Layout, error) {
 	// TODO: when the goal is snb4, port B, then the direction for portA→portB (i.e. Line.PortB.Direction) is used, not Line.PortA, which should be used
 	return y, nil
 }
+
+func InitTestbench6c() (*Layout, error) {
+	kdss := func(line string) LineID {
+		return LineID{
+			Conn: conn.Id{"soyuu-kdss", "v4", "1"},
+			Line: line,
+		}
+	}
+	y := &Layout{Lines: make([]Line, 4)}
+	var nagase1 LineI = 0
+	var mitouc2 LineI = 1
+	var mitouc3 LineI = 2
+	var snb4 LineI = 3
+	y.Lines[nagase1] = Line{
+		Comment:    "nagase1",
+		PortA:      Port{Direction: true},
+		PortB:      Port{Length: kato.S248 + kato.S62F + kato.EP481_15S + kato.S60 + kato.S62, Direction: false, ConnI: mitouc2, ConnP: PortA, ConnFilled: true},
+		PortC:      Port{Length: kato.S248 + kato.S62F + kato.R481_15 + kato.R481_15, Direction: false, ConnI: mitouc3, ConnP: PortA, ConnFilled: true},
+		PowerConn:  kdss("A"),
+		SwitchConn: kdss("C"),
+	}
+	y.Lines[mitouc2] = Line{
+		Comment:   "mitouc2",
+		PortA:     Port{Direction: false, ConnI: nagase1, ConnP: PortB, ConnFilled: true},
+		PortB:     Port{Length: kato.S124 + kato.S62F, Direction: true, ConnI: snb4, ConnP: PortB, ConnFilled: true},
+		PowerConn: kdss("H"),
+	}
+	y.Lines[mitouc3] = Line{
+		Comment:   "mitouc3",
+		PortA:     Port{Direction: false, ConnI: nagase1, ConnP: PortC, ConnFilled: true},
+		PortB:     Port{Length: kato.S124 + kato.S62F, Direction: true, ConnI: snb4, ConnP: PortC, ConnFilled: true},
+		PowerConn: kdss("E"),
+	}
+	y.Lines[snb4] = Line{
+		Comment:    "snb4",
+		PortA:      Port{Direction: true},
+		PortB:      Port{Length: kato.S248 + kato.S62F + kato.EP481_15S + kato.S60 + kato.S62, Direction: false, ConnI: mitouc2, ConnP: PortB, ConnFilled: true},
+		PortC:      Port{Length: kato.S248 + kato.S62F + kato.R481_15 + kato.R481_15, Direction: false, ConnI: mitouc3, ConnP: PortB, ConnFilled: true},
+		PowerConn:  kdss("G"),
+		SwitchConn: kdss("F"),
+	}
+	// TODO: when the goal is snb4, port B, then the direction for portA→portB (i.e. Line.PortB.Direction) is used, not Line.PortA, which should be used
+	return y, nil
+}

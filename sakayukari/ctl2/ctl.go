@@ -219,10 +219,7 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 			timer.Reset(d)
 		}
 	}()
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
-		//pos.Precise = kato.S248 + kato.S124 + 62_000
-		pos.Precise = kato.S248
+	linearPlan := func(pos layout.Position) {
 		err := tp0.LinearPlan(plan.LinearPlan{
 			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
 			End:   plan.PointPlan{Position: pos, Velocity: 0},
@@ -230,6 +227,29 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 		if err != nil {
 			zap.S().Fatal(err)
 		}
+	}
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
+		pos.Precise = 130000
+		linearPlan(pos)
+	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortB})
+		pos.Precise = 0
+		linearPlan(pos)
+	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
+		pos.Precise = 130000
+		linearPlan(pos)
+	}
+	time.Sleep(3 * time.Second)
+	{
+		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
+		pos.Precise = 124000
+		linearPlan(pos)
 	}
 	//time.Sleep(3 * time.Second)
 	//{
@@ -253,17 +273,6 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 	//		zap.S().Fatal(err)
 	//	}
 	//}
-	time.Sleep(3 * time.Second)
-	{
-		pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortA})
-		err := tp0.LinearPlan(plan.LinearPlan{
-			Start: plan.PointPlan{Velocity: preset.ScaleKmH(30)},
-			End:   plan.PointPlan{Position: pos, Velocity: 0},
-		}, etaCh)
-		if err != nil {
-			zap.S().Fatal(err)
-		}
-	}
 	//time.Sleep(3 * time.Second)
 	//{
 	//	pos := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})

@@ -238,7 +238,7 @@ func (y *Layout) distanceBetween(a, b LinePort) int64 {
 		_, p := y.GetLinePort(a)
 		a = p.Conn()
 		if a.LineI != b.LineI {
-			panic("LinePort A not connected to same line as LinePort B")
+			panic(fmt.Sprintf("LinePort A not connected to same line as LinePort B (a = %s ; b = %s)", a, b))
 		}
 	}
 	if a == b {

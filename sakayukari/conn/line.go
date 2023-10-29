@@ -37,17 +37,20 @@ func (_ handlerLine) HandleConn(a Actor, c *Conn) {
 		for v := range a.InputCh {
 			switch req := v.Value.(type) {
 			case ReqLine:
-				{
-					latest, ok := state.latestLines[req.Line]
-					if ok && latest == req {
-						continue
-					}
+				latest, ok := state.latestLines[req.Line]
+				if ok && latest == req {
+					continue
 				}
 				log.Printf("ReqLine %s %s", c.Id, req)
 				var err error
 				func() {
 					state.fileLock.Lock()
 					defer state.fileLock.Unlock()
+					if latest.Direction != req.Direction {
+						req2 := req
+						req2.Power = 0
+						_, err = fmt.Fprintf(c.F, "%s\n", req2.String())
+					}
 					_, err = fmt.Fprintf(c.F, "%s\n", req.String())
 					b := make([]byte, 64000)
 					b[0] = '_'

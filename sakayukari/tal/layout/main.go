@@ -596,6 +596,14 @@ func (p PathToSelfError) Error() string {
 	return "path to self (from == goal)"
 }
 
+type SwitchbackError struct {
+	message string
+}
+
+func (s SwitchbackError) Error() string {
+	return fmt.Sprintf("switchback necessary (%s)", s.message)
+}
+
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	if from.PortI == PortDNC {
 		from.PortI = PortA // choose an arbitrary port (it's a bad idea to have PortDNC as the Start, as then offset calculations cannot be made)
@@ -612,13 +620,13 @@ func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	lps := y.PathTo(from.LineI, goal.LineI)
 	start := lps[0]
 	if from.PortI != start.PortI && from.PortI != PortA && from.PortI != PortDNC && start.PortI != PortA {
-		return FullPath{}, fmt.Errorf("switchback necessary (from → start is %s → %s)", from, start)
+		return FullPath{}, SwitchbackError{fmt.Sprintf("from → start is %s → %s", from, start)}
 	}
 	_, p := y.GetLinePort(lps[len(lps)-1])
 	end := p.Conn()
 	if goal.PortI != end.PortI && goal.PortI != PortA && end.PortI != PortA {
 		log.Printf("end %#v", end)
-		return FullPath{}, fmt.Errorf("switchback necessary (goal → end is %s → %s)", goal, end)
+		return FullPath{}, SwitchbackError{fmt.Sprintf("goal → end is %s → %s", goal, end)}
 	}
 	lps = append(lps, goal)
 	return FullPath{

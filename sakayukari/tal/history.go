@@ -312,7 +312,7 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 		}
 		if span.PositionKnown {
 			pos = span.Position
-			zap.S().Debugf("index %d: PositionKnown %d", i, pos)
+			zap.S().Debugf("index %d: PositionKnown %d (%#v)", i, pos, span)
 		}
 
 		var delta time.Duration

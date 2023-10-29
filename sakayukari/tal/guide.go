@@ -180,10 +180,7 @@ func (t *Train) String() string {
 	case TrainStateNextLocked:
 		fmt.Fprintf(b, "L")
 	}
-	fmt.Fprintf(b, " S%sF", t.Path.Start)
-	for _, lp := range t.Path.Follows {
-		fmt.Fprintf(b, " %s", lp)
-	}
+	fmt.Fprintf(b, " %s", t.Path)
 	//for i, s := range t.History.Spans {
 	//	fmt.Fprintf(b, "\n%d %#v", i, s)
 	//}
@@ -616,7 +613,7 @@ func (g *Guide) reify(ti int, t *Train) {
 		power = idlePower
 	}
 	log.Printf("REIFY: %d %s", power, t)
-	t.noPowerSupplied = power < 20
+	t.noPowerSupplied = power < 5
 	for i := t.TrailerBack; i <= t.TrailerFront; i++ {
 		g.applySwitch(ti, t, i)
 		g.apply(t, i, power)
@@ -995,7 +992,7 @@ func (g *Guide) publishChange(ti int, ct ChangeType) {
 	g.actor.OutputCh <- Diffuse1{Value: gc}
 }
 
-func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, path layout.FullPath, err error) {
+func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, err error) {
 	y := g.conf.Layout
 	frontLP := t.Path.Follows[t.TrailerFront]
 	frontLP.PortI = layout.PortDNC
@@ -1006,15 +1003,48 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, path layo
 		err = fmt.Errorf("FullPathTo lpsFront: %w", err)
 		return
 	}
+	zap.S().Infof("gtu: %s", gtu)
+	zap.S().Infof("gtu.Target: %s", gtu.Target)
+	zap.S().Infof("train: %s", t)
 	zap.S().Infof("lpsFront: %s", lpsFront)
 	zap.S().Infof("t.Path: %s", t.Path)
-	sameDir = (lpsFront.Follows[0].PortI == layout.PortA) == (t.Path.Follows[0].PortI == layout.PortA)
-	zap.S().Infof("sameDir: %s", sameDir)
+	// Example: same direction
+	// train: power43 1-1L S0A→0B→1B
+	//                            ^^
+	// lpsFront:              S1A→1B→3A
+	//                            ^^
+	sameDir = (lpsFront.Follows[0].PortI == layout.PortA) == (t.Path.Follows[t.TrailerFront].PortI == layout.PortA)
+	zap.S().Infof("sameDir: %t", sameDir)
 	current := t.CurrentAsPath(sameDir, y)
 	zap.S().Infof("current: %s", current)
 
-	extent, err := y.FullPathTo(current.Follows[len(current.Follows)-1], *gtu.Target)
-	if errors.Is(err, layout.PathToSelfError{}) {
+	var path layout.FullPath
+	from := current.Follows[len(current.Follows)-1]
+	extent, err := y.FullPathTo(from, *gtu.Target)
+	zap.S().Infof("condition 1 %t", from.PortI == PortB || from.PortI == PortC)
+	//zap.S().Infof("condition 2 %t", errors.As(err, layout.SwitchbackError{}))
+	zap.S().Infof("condition 2 %#v", err)
+	var switchbackErr layout.SwitchbackError
+	if (from.PortI == PortB || from.PortI == PortC) && errors.As(err, &switchbackErr) {
+		// Example:
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1007       gtu.Target: 2A
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1008       train: power43 1-1L S1A→1B→3A
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1009       lpsFront: S3A→3C→2A
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1010       t.Path: S1A→1B→3A
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1017       sameDir: %!s(bool=false)
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1070       current_raw: S3B→3A
+		// 2023-10-29T14:05:12.895-0400    INFO    tal/guide.go:1019       current: S3A→3B
+		if from.PortI == PortB {
+			from.PortI = PortC
+		} else if from.PortI == PortC {
+			from.PortI = PortB
+		}
+		current.Follows[len(current.Follows)-1] = from // modify current so later on, when adding current and extent, things work out
+		zap.S().Infof("Retry with %s", from)
+		extent, err = y.FullPathTo(from, *gtu.Target)
+	}
+	var pathToSelfErr layout.PathToSelfError
+	if errors.As(err, &pathToSelfErr) {
 		path = current.Clone()
 		err = nil
 	} else if err != nil {
@@ -1024,10 +1054,17 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, path layo
 	} else {
 		// path = current + extent
 		// e.g. {0A [0B]} + {0B [0B 1B]}
-		//                   ^~ don't include extent.Start in result
+		//                       ^~ don't include extent.Start in result
 		//    = {0A [0B 1B]}
 		if extent.Follows[0] == extent.Start {
 			extent.Follows = extent.Follows[1:]
+		}
+		// e.g. {0A [0B]} + {0A [0C 1B]}
+		//    = {0A [0C 1B]}
+		// e.g. S1A→1B + S1A→1B→3A
+		//    = S1A→1B→3A
+		if current.Follows[len(current.Follows)-1].LineI == extent.Follows[0].LineI {
+			current.Follows = current.Follows[:len(current.Follows)-1]
 		}
 		zap.S().Infof("extent: %s", extent)
 		if current.Follows[len(current.Follows)-1].LineI != extent.Start.LineI {
@@ -1036,6 +1073,11 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, path layo
 		path = current.Clone()
 		path.Follows = append(path.Follows, extent.Follows...)
 	}
+	t.Path = &path
+	t.TrailerBack = 0
+	t.TrailerFront = len(extent.Follows) - 1
+	t.CurrentBack = t.TrailerBack
+	t.CurrentFront = t.TrailerFront
 	zap.S().Infof("new path: %s", path)
 	// panic("TODO: cleanup path (remove duplicates: [0A 0A] → [0A])") // task should be done
 	return
@@ -1072,11 +1114,10 @@ func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) (newGeneration int, err error)
 		t.RunOnLock = gtu.RunOnLock
 	}
 	if gtu.Target != nil {
-		sameDir, path, err := g.newPath(gtu, t)
+		sameDir, err := g.newPath(gtu, t)
 		if err != nil {
 			return -1, fmt.Errorf("newPath: %w", err)
 		}
-		t.Path = &path
 		/*
 			      y := g.conf.Layout
 					  var sameDir bool
@@ -1196,6 +1237,7 @@ func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) (newGeneration int, err error)
 			)
 		}
 		newHistory := History{}
+		zap.S().Infof("t.Path %s", *t.Path)
 		pos, err := g.Layout.OffsetToPosition(*t.Path, g.Model2.CurrentOffset(t))
 		if err == nil {
 			newHistory.AddSpan(Span{
