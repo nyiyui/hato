@@ -44,7 +44,7 @@ func Main() error {
 		},
 	}
 	connState, connActors := conn.ConnActors([]conn.Id{
-		conn.Id{"soyuu-kdss", "v4", "1"},
+		conn.Id{"soyuu-kdss", "v4", "peach"},
 	})
 	log.Printf("finding devices…")
 	err = connState.Find()
@@ -77,14 +77,21 @@ func Main() error {
 			//Virtual: true,
 			Layout: y,
 			Actors: map[layout.LineID]ActorRef{
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "A"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "B"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "C"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "D"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "E"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "F"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "G"}: ActorRef{Index: 1},
-				layout.LineID{conn.Id{"soyuu-kdss", "v4", "1"}, "H"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "A"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "B"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "C"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "D"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "E"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "F"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "G"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "H"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "I"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "J"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "K"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "L"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "M"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "N"}: ActorRef{Index: 1},
+				layout.LineID{conn.Id{"soyuu-kdss", "v4", "peach"}, "O"}: ActorRef{Index: 1},
 			},
 			Cars: carsData,
 		})

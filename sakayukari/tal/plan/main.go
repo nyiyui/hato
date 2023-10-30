@@ -10,6 +10,8 @@ import (
 	"nyiyui.ca/hato/sakayukari/tal/layout"
 )
 
+const generalInterval = 100 * time.Millisecond
+
 type Planner struct {
 	g *tal.Guide
 }
@@ -127,7 +129,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 	{
 		var targetOffset int64
 		var targetOffsetSet bool
-		for range time.NewTicker(100 * time.Millisecond).C {
+		for range time.NewTicker(generalInterval).C {
 			gs := tp.p.g.SnapshotMux.Current()
 			t := gs.Trains[tp.trainI]
 			if t.Generation < newGeneration {

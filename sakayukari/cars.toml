@@ -1,5 +1,5 @@
 [sets.a7453d82-d52f-43ec-84d2-54dcea72f8c1]
-comment = "PICCOLO"
+comment = "広島電鉄 1001 PICCOLO"
 length = 123000
 [[sets.a7453d82-d52f-43ec-84d2-54dcea72f8c1.cars]]
 comment = "1002 (1)"
@@ -15,8 +15,23 @@ comment = "1002 (3)"
 large-current = true
 length = 38000
 
+[sets.73438c43-9669-4be5-9ea1-8630d32fb617]
+comment = "広島電鉄 1002 PICCOLA"
+length = 123000
+[[sets.73438c43-9669-4be5-9ea1-8630d32fb617.cars]]
+comment = "1002 (1)"
+large-current = true
+length = 38000
+[[sets.73438c43-9669-4be5-9ea1-8630d32fb617.cars]]
+comment = "1002 (2)"
+length = 47000
+[[sets.73438c43-9669-4be5-9ea1-8630d32fb617.cars]]
+comment = "1002 (3)"
+large-current = true
+length = 38000
+
 [sets.7b920d78-0c1b-49ef-ab2e-c1209f49bbc6]
-comment = "Greenmover LEX"
+comment = "広島電鉄 1007 GREENMOVER LEX"
 length = 123000
 [[sets.7b920d78-0c1b-49ef-ab2e-c1209f49bbc6.cars]]
 comment = "1007 (1)"

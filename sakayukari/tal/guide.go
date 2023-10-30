@@ -1021,9 +1021,6 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, err error
 	var path layout.FullPath
 	from := current.Follows[len(current.Follows)-1]
 	extent, err := y.FullPathTo(from, *gtu.Target)
-	zap.S().Infof("condition 1 %t", from.PortI == PortB || from.PortI == PortC)
-	//zap.S().Infof("condition 2 %t", errors.As(err, layout.SwitchbackError{}))
-	zap.S().Infof("condition 2 %#v", err)
 	var switchbackErr layout.SwitchbackError
 	if (from.PortI == PortB || from.PortI == PortC) && errors.As(err, &switchbackErr) {
 		// Example:

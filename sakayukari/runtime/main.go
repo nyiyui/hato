@@ -108,12 +108,12 @@ func (i *Instance) Diffuse() error {
 			var caseI int
 			caseI = caseIs[chosen]
 			d := recv.Interface().(Diffuse1)
-			log.Printf("got: %s", d)
+			//log.Printf("got: %s", d)
 			if d.Origin == (ActorRef{}) || d.Origin == Publish {
 				// self if blank
 				d.Origin = ActorRef{Index: caseI}
 				// only do dependencies if the actor itself publishes a new value; if the actor sends it to a different actor, that actor can decide to publichs a new value or not
-				log.Printf("sending to deps of %s: %#v", d.Origin, dependsOn[d.Origin.Index])
+				//log.Printf("sending to deps of %s: %#v", d.Origin, dependsOn[d.Origin.Index])
 				i.record(&d, dependsOn[d.Origin.Index])
 				for _, j := range dependsOn[d.Origin.Index] {
 					i.send(j, &d)

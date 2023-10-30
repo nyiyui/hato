@@ -9,6 +9,7 @@ struct channel {
   int pwm_pin;
   int dir_pin;
   int sensor_pin;
+  bool flip;
 
   unsigned long stop_ms;
 
@@ -50,7 +51,7 @@ void channel_write(struct channel *c, int power) {
   //Serial.println(abs(power));
   if (power != 0 && signum(power) != signum(c->_prev_power)) {
     digitalWrite(c->pwm_pin, 0); // prevent a possible moment of power in the wrong direction here
-    digitalWrite(c->dir_pin, power > 0 ? HIGH : LOW);
+    digitalWrite(c->dir_pin, power > 0 != c->flip ? HIGH : LOW);
   }
   if (abs(c->_prev_power) != abs(power))
     analogWrite(c->pwm_pin, abs(power));
@@ -70,22 +71,22 @@ void channel_write(struct channel *c, int power) {
 //};
 #define channels_len 16
 struct channel channels[channels_len] = {
-  { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8, },
-  { .name = 'B', .pwm_pin = 2,  .dir_pin = 23, .sensor_pin = A1, },
-  { .name = 'C', .pwm_pin = 7,  .dir_pin = 24, .sensor_pin = A2, },
-  { .name = 'D', .pwm_pin = 8,  .dir_pin = 25, .sensor_pin = A3, },
-  { .name = 'E', .pwm_pin = 9,  .dir_pin = 26, .sensor_pin = A4, },
-  { .name = 'F', .pwm_pin = 10, .dir_pin = 27, .sensor_pin = A5, },
-  { .name = 'G', .pwm_pin = 11, .dir_pin = 28, .sensor_pin = A6, },
-  { .name = 'H', .pwm_pin = 12, .dir_pin = 29, .sensor_pin = A7, },
-  { .name = 'I', .pwm_pin = 44, .dir_pin = 30, .sensor_pin = A9, },
-  { .name = 'J', .pwm_pin = 45, .dir_pin = 31, .sensor_pin = A10, },
-  { .name = 'K', .pwm_pin = 46, .dir_pin = 32, .sensor_pin = A11, },
-  { .name = 'L', .pwm_pin = 6,  .dir_pin = 33, .sensor_pin = A12, }, // higher-than-expected duty cycles
-  { .name = 'M', .pwm_pin = 5,  .dir_pin = 34, .sensor_pin = A13, }, // higher-than-expected duty cycles
-  { .name = 'N', .pwm_pin = 4,  .dir_pin = 35, .sensor_pin = A14, }, // 980 Hz
-  { .name = 'O', .pwm_pin = 13, .dir_pin = 36, .sensor_pin = A15, }, // 980 Hz
-  { .name = 'P', .pwm_pin = 40, .dir_pin = 37, .sensor_pin = -1,  }, // no PWM
+  { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8,  .flip = true,  },
+  { .name = 'B', .pwm_pin = 2,  .dir_pin = 23, .sensor_pin = A1,  .flip = true,  },
+  { .name = 'C', .pwm_pin = 7,  .dir_pin = 24, .sensor_pin = A2,  .flip = true,  },
+  { .name = 'D', .pwm_pin = 8,  .dir_pin = 25, .sensor_pin = A3,  .flip = false, },
+  { .name = 'E', .pwm_pin = 9,  .dir_pin = 26, .sensor_pin = A4,  .flip = true,  },
+  { .name = 'F', .pwm_pin = 10, .dir_pin = 27, .sensor_pin = A5,  .flip = true,  },
+  { .name = 'G', .pwm_pin = 11, .dir_pin = 28, .sensor_pin = A6,  .flip = true,  },
+  { .name = 'H', .pwm_pin = 12, .dir_pin = 29, .sensor_pin = A7,  .flip = true,  },
+  { .name = 'I', .pwm_pin = 44, .dir_pin = 30, .sensor_pin = A9,  .flip = true,  },
+  { .name = 'J', .pwm_pin = 45, .dir_pin = 31, .sensor_pin = A10, .flip = true,  },
+  { .name = 'K', .pwm_pin = 46, .dir_pin = 32, .sensor_pin = A11, .flip = true,  },
+  { .name = 'L', .pwm_pin = 6,  .dir_pin = 33, .sensor_pin = A12, .flip = true,  }, // higher-than-expected duty cycles
+  { .name = 'M', .pwm_pin = 5,  .dir_pin = 34, .sensor_pin = A13, .flip = false, }, // higher-than-expected duty cycles
+  { .name = 'N', .pwm_pin = 4,  .dir_pin = 35, .sensor_pin = A14, .flip = true,  }, // 980 Hz
+  { .name = 'O', .pwm_pin = 13, .dir_pin = 36, .sensor_pin = A15, .flip = true,  }, // 980 Hz
+  { .name = 'P', .pwm_pin = 40, .dir_pin = 37, .sensor_pin = -1,  .flip = true,  }, // no PWM
 };
 
 void channels_setup() {
