@@ -5,7 +5,7 @@ let src = null;
 srcUrlSubmit.addEventListener("click", updateSource);
 
 const initialReconnectTimeout = 500;
-const maxReconnectTimeout = 4000;
+const maxReconnectTimeout = 2000;
 let reconnectTimeout = initialReconnectTimeout;
 
 const statusElem = document.getElementById("status");
@@ -43,10 +43,10 @@ function updateAllocs() {
   const now = Date.now();
   platformDisplay.setAttribute('allocs', JSON.stringify(allocs.map((allocMutable) => {
     let alloc = structuredClone(allocMutable);
-    const seconds = Math.floor((allocMutable.time - now)/1000);
-    if (seconds < 3) alloc.near = "yes";
-    if (seconds < 0) seconds = 0;
+    let seconds = Math.floor((allocMutable.time - now)/1000);
+    //if (seconds < 3) alloc.near = "yes";
     alloc.time = `約${seconds}秒後`;
+    if (seconds < 0) alloc.time = '';
     return alloc;
   })));
 }

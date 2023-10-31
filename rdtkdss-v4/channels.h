@@ -74,7 +74,7 @@ struct channel channels[channels_len] = {
   { .name = 'A', .pwm_pin = 3,  .dir_pin = 22, .sensor_pin = A8,  .flip = true,  },
   { .name = 'B', .pwm_pin = 2,  .dir_pin = 23, .sensor_pin = A1,  .flip = true,  },
   { .name = 'C', .pwm_pin = 7,  .dir_pin = 24, .sensor_pin = A2,  .flip = true,  },
-  { .name = 'D', .pwm_pin = 8,  .dir_pin = 25, .sensor_pin = A3,  .flip = false, },
+  { .name = 'D', .pwm_pin = 8,  .dir_pin = 25, .sensor_pin = A3,  .flip = false, }, // seems like the phase is different
   { .name = 'E', .pwm_pin = 9,  .dir_pin = 26, .sensor_pin = A4,  .flip = true,  },
   { .name = 'F', .pwm_pin = 10, .dir_pin = 27, .sensor_pin = A5,  .flip = true,  },
   { .name = 'G', .pwm_pin = 11, .dir_pin = 28, .sensor_pin = A6,  .flip = true,  },

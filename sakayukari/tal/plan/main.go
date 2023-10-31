@@ -74,7 +74,12 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 				LineI: lp.End.Position.LineI,
 				PortI: port,
 			})
-			beforeLast := path.Follows[len(path.Follows)-2]
+			var beforeLast layout.LinePort
+			if len(path.Follows) >= 2 {
+				beforeLast = path.Follows[len(path.Follows)-2]
+			} else {
+				beforeLast = path.Start
+			}
 			switch tp.p.g.Layout.GetPort(beforeLast).Conn().PortI {
 			case layout.PortA:
 				// B or C

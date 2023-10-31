@@ -138,6 +138,8 @@ func (m *Model2) RecordTrainCharacter(t *Train) error {
 }
 
 func (m *Model2) GetFormData(formI uuid.UUID) (FormData, bool) {
+	m.formsLock.Lock()
+	defer m.formsLock.Unlock()
 	fd, ok := m.forms[formI]
 	if !ok {
 		return FormData{}, false
