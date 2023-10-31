@@ -102,7 +102,7 @@ func Main() error {
 		)
 		path2 := y.MustFullPathTo(
 			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},
-			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
+			layout.LinePort{y.MustLookupIndex("mitouc3"), layout.PortA},
 		)
 		path3 := y.MustFullPathTo(
 			layout.LinePort{y.MustLookupIndex("mitouc3"), layout.PortA},
@@ -119,15 +119,15 @@ func Main() error {
 				Orient:       tal.FormOrientA,
 				Path:         &path,
 			},
-			//tal.Train{
-			//	Power:        0,
-			//	CurrentBack:  0,
-			//	CurrentFront: 0,
-			//	State:        tal.TrainStateNextAvail,
-			//	FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
-			//	Orient:       tal.FormOrientA,
-			//	Path:         &path3,
-			//},
+			tal.Train{
+				Power:        0,
+				CurrentBack:  0,
+				CurrentFront: 0,
+				State:        tal.TrainStateNextAvail,
+				FormI:        uuid.MustParse("7b920d78-0c1b-49ef-ab2e-c1209f49bbc6"),
+				Orient:       tal.FormOrientA,
+				Path:         &path2,
+			},
 		})
 		g2.PublishSnapshot()
 	}
