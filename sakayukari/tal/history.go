@@ -302,7 +302,9 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 			panic("Span.Velocity not implemented yet")
 		}
 		if span.AbsPositionKnown {
-			pos2, err := y.PositionToOffset2(path, span.AbsPosition)
+			pos2, err := y.PositionToOffset2(path, span.AbsPosition, layout.PositionToOffsetOption{
+				DisallowPortMismatch: true,
+			})
 			if err != nil {
 				zap.S().Warnf("index %d: AbsPosition: converting to offset failed: %s", i, err)
 			} else {

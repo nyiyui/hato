@@ -555,6 +555,8 @@ func (f FullPath) String() string {
 	return b.String()
 }
 
+// AtIndex returns FullPath.Follows[i] for positive and zero indices, and FullPath.Start for -1.
+// It panics when the index is less than -1.
 func (f FullPath) AtIndex(i int) LinePort {
 	switch {
 	case i < -1:
@@ -566,6 +568,7 @@ func (f FullPath) AtIndex(i int) LinePort {
 	}
 }
 
+// Clone makes a deep copy.
 func (f FullPath) Clone() FullPath {
 	follows := make([]LinePort, len(f.Follows))
 	copy(follows, f.Follows)
@@ -575,6 +578,7 @@ func (f FullPath) Clone() FullPath {
 	}
 }
 
+// Equal implements a deep equal.
 func (a FullPath) Equal(b FullPath) bool {
 	if a.Start != b.Start {
 		return false
@@ -582,6 +586,7 @@ func (a FullPath) Equal(b FullPath) bool {
 	return slices.Equal(a.Follows, b.Follows)
 }
 
+// MustFullPathTo calls FullPathTo, but panics on error.
 func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {
 	fp, err := y.FullPathTo(from, goal)
 	if err != nil {
@@ -596,6 +601,7 @@ func (p PathToSelfError) Error() string {
 	return "path to self (from == goal)"
 }
 
+// SwitchbackError is returned by FullPathTo when there is no path to the goal without changing direction.
 type SwitchbackError struct {
 	message string
 }
@@ -604,6 +610,7 @@ func (s SwitchbackError) Error() string {
 	return fmt.Sprintf("switchback necessary (%s)", s.message)
 }
 
+// FullPathTo returns a path from from to goal using Dijkstra's algorithm.
 func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 	if from.PortI == PortDNC {
 		from.PortI = PortA // choose an arbitrary port (it's a bad idea to have PortDNC as the Start, as then offset calculations cannot be made)

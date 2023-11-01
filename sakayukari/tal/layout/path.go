@@ -10,16 +10,41 @@ import (
 
 type Offset = int64
 
-// PositionToOffset returns an Offset where the first LinePort of path is the starting point.
+// PositionToOffset2 returns the Offset of a Position on the same line as the given path.
 func (y *Layout) PositionToOffset(fp FullPath, pos Position) (offset Offset) {
-	offset, err := y.PositionToOffset2(fp, pos)
+	offset, err := y.PositionToOffset2(fp, pos, PositionToOffsetOption{})
 	if err != nil {
 		panic(err)
 	}
 	return offset
 }
 
-func (y *Layout) PositionToOffset2(fp FullPath, pos Position) (offset Offset, err error) {
+// PositionToOffsetOption has options for PositionToOffset. The default is the zero value.
+type PositionToOffsetOption struct {
+	// DisallowPortMismatch makes PositionToOffset return PortMismatchError when the Position.Port does not match that of the matching LinePort of the Path.
+	// Example:
+	//   A=========B
+	//        \
+	//         --P-C
+	//   path is taking the double-lined port/path
+	//   P = Position
+	// Here, DisallowPortMismatch would return an error as P is on a different port (same line) as the path.
+	DisallowPortMismatch bool
+}
+
+// PortMismatchError is returned when the Position.Port does not match that of the corresponding LinePort of the Path. See PositionToOffsetOption for more details.
+type PortMismatchError struct {
+	fp  FullPath
+	i   int
+	pos Position
+}
+
+func (pm PortMismatchError) Error() string {
+	return fmt.Sprintf("port mismatch: path has port %s, but position has port %s (path = %s ; current index = %d ; pos = %s)", pm.fp.Follows[pm.i].PortI, pm.pos.Port, pm.fp, pm.i, pm.pos)
+}
+
+// PositionToOffset2 returns the Offset of a Position on (optionally the same line as) the given path.
+func (y *Layout) PositionToOffset2(fp FullPath, pos Position, option PositionToOffsetOption) (offset Offset, err error) {
 	if pos.Precise != 0 && pos.Port == 0 {
 		panic("invalid pos")
 	}
@@ -58,6 +83,13 @@ func (y *Layout) PositionToOffset2(fp FullPath, pos Position) (offset Offset, er
 			panic(fmt.Sprintf("pos %#v strays from path %#v on index %d", pos, fp.Follows, i))
 		}
 		if lp.LineI == pos.LineI {
+			if lp.PortI != pos.Port && option.DisallowPortMismatch {
+				return 0, PortMismatchError{
+					fp:  fp,
+					i:   i,
+					pos: pos,
+				}
+			}
 			// last
 			return cum + y.positionToStep(prev, lp, pos, fp), nil
 		} else {
@@ -264,23 +296,4 @@ func (y *Layout) distanceBetween(a, b LinePort) int64 {
 	default:
 		panic("unreachable252")
 	}
-}
-
-func SameDirection2(prev, next []LinePort) (sameDir bool, err error) {
-	if prev[0] == next[0] {
-		return true, nil
-	}
-	if prev[len(prev)-1].LineI == next[0].LineI {
-		return false, nil
-	}
-	return false, errors.New("idk")
-}
-
-func SameDir1(a, b LinePort) bool {
-	if a.LineI != b.LineI {
-		panic("different Line")
-	}
-	aSame := a.PortI == PortA
-	bSame := b.PortI == PortA
-	return aSame == bSame
 }
