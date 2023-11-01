@@ -20,7 +20,49 @@
   </head>
   <body>
     <!-- GENDO START CommonHeader -->
-    <!-- GENDO END CommonHeader -->
+
+<div id="common-header">
+  <style>
+    #common-nav {
+      background: #222;
+    }
+    #common-nav-inner {
+      margin: auto;
+      max-width: 900px;
+      font-size: 1rem;
+      font-family: Optima, Candara, 'Noto Sans', source-sans-pro, sans-serif;
+      color: #d0d0d0;
+      padding: 4px;
+    }
+    #common-nav-inner a {
+      color: #d0d0d0;
+      text-decoration: none;
+      padding-right: 10px;
+    }
+    #common-nav-inner a:hover {
+      text-decoration: underline;
+    }
+    #common-nav-inner .this {
+      color: #adadad;
+    }
+  </style>
+  <nav id="common-nav">
+    <div id="common-nav-inner">
+      <a href="https://nyiyui.ca" style="color: #ff6bdf;">
+        <img src="https://cdn.nyiyui.ca/one.svg" style="height: 27px; display: inline; vertical-align: middle;" alt="logo" />
+        Nyiyui
+      </a>
+      
+        <a href="https://nyiyui.ca/qrystal">Qrystal</a>
+      
+      
+      <span class="this">
+        HATO
+      </span>
+    </div>
+  </nav>
+</div>
+<!-- GENDO END CommonHeader -->
     <p>
       Your car ID is:
       <code id="car-id">loading…</code>
