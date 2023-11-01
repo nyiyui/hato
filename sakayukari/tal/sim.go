@@ -99,7 +99,7 @@ func (s *Simulator) GenActorRefs(newActor func(a Actor) ActorRef) map[layout.Lin
 }
 
 func (s *Simulator) Run() {
-	s.g.Model2.setIgnoreWrites()
+	s.g.Model2.SetIgnoreWrites()
 	s.lineStates = make([]lineState, len(s.g.Layout.Lines))
 	s.trainStates = make([]trainState, len(s.g.trains))
 	go s.logEvents()

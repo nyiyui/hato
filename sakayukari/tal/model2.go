@@ -210,7 +210,7 @@ func (m *Model2) CurrentOffset(t *Train) int64 {
 	return offset
 }
 
-func (m *Model2) setIgnoreWrites() {
+func (m *Model2) SetIgnoreWrites() {
 	m.ignoreWrites = true
 }
 

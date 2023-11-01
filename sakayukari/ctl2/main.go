@@ -96,6 +96,7 @@ func Main() error {
 			Cars: carsData,
 		})
 		g.Actors = append(g.Actors, actor)
+		g2.Model2.SetIgnoreWrites()
 		path := y.MustFullPathTo(
 			layout.LinePort{y.MustLookupIndex("nagase1"), layout.PortA},
 			layout.LinePort{y.MustLookupIndex("snb4"), layout.PortA},

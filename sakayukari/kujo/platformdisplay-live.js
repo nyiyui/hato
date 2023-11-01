@@ -1,8 +1,7 @@
 const platformDisplay = document.getElementById("platform-display");
 const srcUrl = document.getElementById("src-url");
 const srcUrlSubmit = document.getElementById("src-url-submit");
-const params = new URLSearchParams(window.location.search);
-let src = params.get('src');
+let src = null;
 srcUrlSubmit.addEventListener("click", updateSource);
 
 const initialReconnectTimeout = 500;
@@ -10,6 +9,10 @@ const maxReconnectTimeout = 2000;
 let reconnectTimeout = initialReconnectTimeout;
 
 const statusElem = document.getElementById("status");
+
+const params = new URLSearchParams(window.location.search);
+srcUrl.value = params.get('src');
+updateSource();
 
 function updateSource() {
   if (src) src.close();

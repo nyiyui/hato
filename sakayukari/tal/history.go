@@ -1,6 +1,7 @@
 package tal
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -307,6 +308,8 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 			})
 			if err != nil {
 				zap.S().Warnf("index %d: AbsPosition: converting to offset failed: %s", i, err)
+			} else if errors.As(err, &layout.PortMismatchError{}) {
+				// ignore as this is useless
 			} else {
 				pos = pos2
 			}

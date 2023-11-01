@@ -190,27 +190,45 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 	tp1 := p.NewTrainPlanner(1)
 	_ = tp1
 	y := g.Layout
-	handleAudio := func(etaCh <-chan time.Time, station string, op kujo.Operation) {
+	handleAudio := func(etaCh <-chan time.Time, station string, kop kujo.Operation) {
 		timer := time.NewTimer(24 * time.Hour) // just some arbitraryily large #
+		timer.Stop()
 		// TODO: fix (wrong code actually, need to call timer.Stop etc)
-		go func() {
-			for range timer.C {
-				audio.Play()
+		var op *audio.OnePlay
+		defer op.Stop()
+		for {
+			select {
+			case <-timer.C:
+				if op != nil {
+					op.Stop()
+				}
+				zap.S().Infof("==================================================play")
+				op = audio.Play()
+			case eta, ok := <-etaCh:
+				if !ok {
+					op = nil
+					op.Stop()
+					break
+				}
+				kujoServer.ETAMuxS.Send(kujo.ETAReport{
+					Station: station,
+					ETA:     eta,
+					Op:      kop,
+				})
+				//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
+				d := eta.Sub(time.Now())
+				d -= 5 * time.Second
+				if d < 0 {
+					d = 0
+				} else {
+					op.Stop()
+					op = nil
+				}
+				if !timer.Stop() {
+					<-timer.C
+				}
+				timer.Reset(d)
 			}
-		}()
-		for eta := range etaCh {
-			kujoServer.ETAMuxS.Send(kujo.ETAReport{
-				Station: station,
-				ETA:     eta,
-				Op:      op,
-			})
-			//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
-			d := eta.Sub(time.Now())
-			d -= 3 * time.Second
-			if d < 0 {
-				d = 0
-			}
-			timer.Reset(d)
 		}
 	}
 	linearPlan := func(tp *plan.TrainPlanner, etaCh chan<- time.Time, pos layout.Position) {
@@ -225,96 +243,59 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 	nagase := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
 	nagase.Precise = 124000
 	mitoucA := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
-	mitoucA.Precise = 90000
+	mitoucA.Precise = 123000
 	mitoucB := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
-	mitoucB.Precise = 90000
+	mitoucB.Precise = 123000
 	snb := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortB})
-	snb.Precise = 0
+	snb.Precise = 124000
 	for {
 		waitBoth(func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "red", "1", "新日本橋"})
+			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "青", "1", "新日本橋"})
 			linearPlan(tp0, etaCh, mitoucA)
-			close(etaCh)
+			//close(etaCh)
 		}, func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "white", "2", "長瀬"})
+			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "マルーン", "2", "長瀬"})
 			linearPlan(tp1, etaCh, mitoucB)
-			close(etaCh)
+			//close(etaCh)
 		})
 		time.Sleep(3 * time.Second)
 		waitBoth(func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "snb", kujo.Operation{"普通", "red", "1", "長瀬"})
+			go handleAudio(etaCh, "snb", kujo.Operation{"普通", "青", "1", "長瀬"})
 			linearPlan(tp0, etaCh, snb)
-			close(etaCh)
+			//close(etaCh)
 		}, func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "nagase", kujo.Operation{"普通", "white", "1", "新日本橋"})
+			go handleAudio(etaCh, "nagase", kujo.Operation{"普通", "マルーン", "1", "新日本橋"})
 			linearPlan(tp1, etaCh, nagase)
-			close(etaCh)
+			//close(etaCh)
 		})
 		time.Sleep(3 * time.Second)
 		waitBoth(func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "red", "2", "長瀬"})
+			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "青", "2", "長瀬"})
 			linearPlan(tp0, etaCh, mitoucB)
-			close(etaCh)
+			//close(etaCh)
 		}, func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "white", "1", "新日本橋"})
+			go handleAudio(etaCh, "mitouc", kujo.Operation{"普通", "マルーン", "1", "新日本橋"})
 			linearPlan(tp1, etaCh, mitoucA)
-			close(etaCh)
+			//close(etaCh)
 		})
 		time.Sleep(3 * time.Second)
 		waitBoth(func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "nagase", kujo.Operation{"普通", "red", "1", "新日本橋"})
+			go handleAudio(etaCh, "nagase", kujo.Operation{"普通", "青", "1", "新日本橋"})
 			linearPlan(tp0, etaCh, nagase)
-			close(etaCh)
+			//close(etaCh)
 		}, func() {
 			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "snb", kujo.Operation{"普通", "white", "1", "長瀬"})
+			go handleAudio(etaCh, "snb", kujo.Operation{"普通", "マルーン", "1", "長瀬"})
 			linearPlan(tp1, etaCh, snb)
-			close(etaCh)
+			//close(etaCh)
 		})
-		time.Sleep(3 * time.Second)
-		continue
-		{
-			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "snb", kujo.Operation{
-				Type:  "普通",
-				Index: "0",
-				Track: "1",
-				Dir:   "長瀬",
-			})
-			linearPlan(tp0, etaCh, snb)
-			close(etaCh)
-		}
-		time.Sleep(3 * time.Second)
-		{
-			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "mitouc", kujo.Operation{
-				Type:  "普通",
-				Index: "0",
-				Track: "2",
-				Dir:   "長瀬",
-			})
-			linearPlan(tp0, etaCh, mitoucB)
-			close(etaCh)
-		}
-		time.Sleep(3 * time.Second)
-		{
-			etaCh := make(chan time.Time)
-			go handleAudio(etaCh, "nagase", kujo.Operation{
-				Type:  "普通",
-				Index: "0",
-				Track: "1",
-				Dir:   "新日本橋",
-			})
-			linearPlan(tp0, etaCh, nagase)
-			close(etaCh)
-		}
 		time.Sleep(3 * time.Second)
 	}
 }

@@ -831,6 +831,8 @@ type GuideTrainUpdate struct {
 	TrainI int
 	// Target, if not nil, is the goal to which a new path will be made for.
 	Target *layout.LinePort
+	// TargetFar, if true, selects the farthest port from the start.
+	TargetFar bool
 	// Power, if PowerFilled is not false, is the new power applied to the train.
 	Power int
 	// PowerFilled must be true for Power to have any meaning.
@@ -996,7 +998,7 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, err error
 	y := g.conf.Layout
 	frontLP := t.Path.Follows[t.TrailerFront]
 	frontLP.PortI = layout.PortDNC
-	lpsFront, err := y.FullPathTo(frontLP, *gtu.Target)
+	lpsFront, err := y.FullPathTo(frontLP, *gtu.Target, layout.FullPathToOption{Far: gtu.TargetFar})
 	if errors.Is(err, layout.PathToSelfError{}) {
 		return
 	} else if err != nil {
@@ -1020,7 +1022,7 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, err error
 
 	var path layout.FullPath
 	from := current.Follows[len(current.Follows)-1]
-	extent, err := y.FullPathTo(from, *gtu.Target)
+	extent, err := y.FullPathTo(from, *gtu.Target, layout.FullPathToOption{Far: gtu.TargetFar})
 	var switchbackErr layout.SwitchbackError
 	if (from.PortI == PortB || from.PortI == PortC) && errors.As(err, &switchbackErr) {
 		// Example:
@@ -1038,7 +1040,7 @@ func (g *Guide) newPath(gtu GuideTrainUpdate, t *Train) (sameDir bool, err error
 		}
 		current.Follows[len(current.Follows)-1] = from // modify current so later on, when adding current and extent, things work out
 		zap.S().Infof("Retry with %s", from)
-		extent, err = y.FullPathTo(from, *gtu.Target)
+		extent, err = y.FullPathTo(from, *gtu.Target, layout.FullPathToOption{Far: gtu.TargetFar})
 	}
 	var pathToSelfErr layout.PathToSelfError
 	if errors.As(err, &pathToSelfErr) {
@@ -1115,103 +1117,6 @@ func (g *Guide) TrainUpdate(gtu GuideTrainUpdate) (newGeneration int, err error)
 		if err != nil {
 			return -1, fmt.Errorf("newPath: %w", err)
 		}
-		/*
-			      y := g.conf.Layout
-					  var sameDir bool
-						func() {
-							//log.Printf("### t %#v", t)
-							// TODO: In the below scenario, where TrailerBack is A and TrailerFront is B,
-							//       lpsBack can be A-C, while lpsFront can be A-B. (This can cause problems with using len(lpsBack) and len(lpsFront) to determine which to use.)
-							//       Include all of t.Path in the new path
-							// A---B
-							//   \-C
-							backLP := t.Path.Follows[t.TrailerBack]
-							backLP.PortI = layout.PortDNC
-							lpsBack, err := y.FullPathTo(backLP, *gtu.Target)
-							if errors.Is(err, layout.PathToSelfError{}) {
-								return
-							} else if err != nil {
-								panic(fmt.Sprintf("FullPathTo lpsBack: %s", err))
-							}
-							frontLP := t.Path.Follows[t.TrailerFront]
-							frontLP.PortI = layout.PortDNC
-							lpsFront, err := y.FullPathTo(frontLP, *gtu.Target)
-							if errors.Is(err, layout.PathToSelfError{}) {
-								return
-							} else if err != nil {
-								panic(fmt.Sprintf("FullPathTo lpsFront: %s", err))
-							}
-							zap.S().Debugf("### lpsBack %d -> %#v", t.Path.Follows[t.TrailerBack].LineI, lpsBack)
-							zap.S().Debugf("### lpsFront %d -> %#v", t.Path.Follows[t.TrailerFront].LineI, lpsFront)
-
-							// We have to include all currents in the new path.
-							// The longer one will include both TrailerBack and TrailerFront regardless of direction.
-							if len(lpsBack.Follows) == 1 || len(lpsFront.Follows) == 1 {
-								//log.Printf("### ALREADY THERE")
-							} else {
-								if len(lpsBack.Follows) > len(lpsFront.Follows) {
-									t.Path = &lpsBack
-									t.TrailerBack = 0
-									t.TrailerFront = len(lpsBack.Follows) - len(lpsFront.Follows)
-								} else if len(lpsFront.Follows) > len(lpsBack.Follows) {
-									t.Path = &lpsFront
-									t.TrailerBack = 0
-									t.TrailerFront = len(lpsFront.Follows) - len(lpsBack.Follows)
-								} else {
-									t.Path = &lpsFront // shouldn't matter
-									t.TrailerBack = 0
-									t.TrailerFront = 0
-									if t.TrailerBack != t.TrailerFront {
-										panic(fmt.Sprintf("same-length path from two different LineIs: %d (back) and %d (front)", t.TrailerBack, t.TrailerFront))
-									}
-									if t.TrailerBack < 0 || t.TrailerFront < 0 || len(t.Path.Follows) == 0 {
-										panic("assert failed")
-									}
-								}
-
-								// Recalculate a path from the farthest line *and* port.
-								// lpsBack and lpsFront were calculated using back/front and a "do not care" port, so they may be using a part closer than the end:
-								//     back  front
-								//     ↓     ↓
-								// A---B A---B A---B
-								//     ^~~~~~~~~~~~~
-								//     lpsBack
-								// See here that lpsBack doesn't contain 0A.
-								// recalculate path using the proper port, not PortDNC
-								// → use the opposite port of the farthest one
-
-								// TODO: when train flips, CurrentBack and CurrentFront needs to be flipped too!
-								t.CurrentBack = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentBack].LineI })
-								t.CurrentFront = slices.IndexFunc(t.Path.Follows, func(lp LinePort) bool { return lp.LineI == oldT.Path.Follows[oldT.CurrentFront].LineI })
-								if t.CurrentBack == -1 || t.CurrentFront == -1 {
-									log.Printf("lpsBack %#v", lpsBack)
-									log.Printf("lpsFront %#v", lpsFront)
-									log.Printf("t %#v", t)
-									log.Printf("t.Path %#v", t.Path)
-									log.Printf("oldT %#v", oldT)
-									log.Printf("oldT.Path %#v", oldT.Path)
-									panic("new CurrentBack/CurrentFront is -1")
-								}
-								if t.CurrentBack > t.CurrentFront {
-									t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
-									sameDir = false
-								} else if t.CurrentBack == t.CurrentFront {
-									if oldT.CurrentBack != oldT.CurrentFront {
-										panic("new train CurrentBack/Front is same but old train CurrentBack/Front")
-									}
-									// check if flipped
-									if !layout.SameDir1(t.Path.Follows[t.CurrentBack], oldT.Path.Follows[oldT.CurrentBack]) {
-										t.CurrentBack, t.CurrentFront = t.CurrentFront, t.CurrentBack
-										sameDir = false
-									} else {
-										sameDir = true
-									}
-								} else {
-									sameDir = true
-								}
-							}
-						}()
-		*/
 		zap.S().Infow("updated train",
 			"oldT", oldT,
 			"new", t,

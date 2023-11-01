@@ -106,6 +106,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 			LineI: lp.End.Position.LineI,
 			PortI: port,
 		},
+		TargetFar:    true,
 		Power:        powerStart,
 		PowerFilled:  true,
 		RunOnLock:    true,
@@ -133,7 +134,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 				distance := targetOffset - currentOffset
 				duration := distance * 1000 / lp.Start.Velocity // use velocity from model
 				eta := time.Now().Add(time.Duration(duration) * time.Millisecond)
-				zap.S().Debugf("eta: %s", eta)
+				//zap.S().Debugf("eta: %s", eta)
 				etaCh <- eta
 			case <-stopCh:
 				return

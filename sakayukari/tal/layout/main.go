@@ -30,11 +30,13 @@ type PortI int
 
 func (p PortI) String() string {
 	switch p {
-	case 0:
+	case PortDNC:
+		return "dnc"
+	case PortA:
 		return "A"
-	case 1:
+	case PortB:
 		return "B"
-	case 2:
+	case PortC:
 		return "C"
 	default:
 		return strconv.FormatInt(int64(p), 10)
@@ -42,11 +44,11 @@ func (p PortI) String() string {
 }
 
 const (
+	// PortDNC means "any part".
 	PortDNC PortI = -1
-	// use non 0-3 numbers to error out on legacy code
-	PortA PortI = 0
-	PortB PortI = 1
-	PortC PortI = 2
+	PortA   PortI = 0
+	PortB   PortI = 1
+	PortC   PortI = 2
 )
 
 func reverse[S ~[]E, E any](s S) {
@@ -588,7 +590,7 @@ func (a FullPath) Equal(b FullPath) bool {
 
 // MustFullPathTo calls FullPathTo, but panics on error.
 func (y *Layout) MustFullPathTo(from, goal LinePort) FullPath {
-	fp, err := y.FullPathTo(from, goal)
+	fp, err := y.FullPathTo(from, goal, FullPathToOption{})
 	if err != nil {
 		panic(fmt.Sprintf("MustFullPathTo: %s", err))
 	}
@@ -610,8 +612,12 @@ func (s SwitchbackError) Error() string {
 	return fmt.Sprintf("switchback necessary (%s)", s.message)
 }
 
+type FullPathToOption struct {
+	Far bool
+}
+
 // FullPathTo returns a path from from to goal using Dijkstra's algorithm.
-func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
+func (y *Layout) FullPathTo(from, goal LinePort, option FullPathToOption) (FullPath, error) {
 	if from.PortI == PortDNC {
 		from.PortI = PortA // choose an arbitrary port (it's a bad idea to have PortDNC as the Start, as then offset calculations cannot be made)
 	}
@@ -635,7 +641,20 @@ func (y *Layout) FullPathTo(from, goal LinePort) (FullPath, error) {
 		log.Printf("end %#v", end)
 		return FullPath{}, SwitchbackError{fmt.Sprintf("goal → end is %s → %s", goal, end)}
 	}
-	lps = append(lps, goal)
+	if option.Far {
+		goal2 := goal
+		last := lps[len(lps)-1]
+		goalConn := y.GetPort(last).Conn()
+		switch goalConn.PortI {
+		case PortA:
+			// current port is farthest (if port == A, Precise is 0 so it is the only one available anyway)
+		case PortB, PortC:
+			goal2.PortI = PortA
+		}
+		lps = append(lps, goal2)
+	} else {
+		lps = append(lps, goal)
+	}
 	return FullPath{
 		Start:   from,
 		Follows: lps,
