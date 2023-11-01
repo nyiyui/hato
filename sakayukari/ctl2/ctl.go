@@ -194,41 +194,24 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 		timer := time.NewTimer(24 * time.Hour) // just some arbitraryily large #
 		timer.Stop()
 		// TODO: fix (wrong code actually, need to call timer.Stop etc)
-		var op *audio.OnePlay
-		defer op.Stop()
-		for {
-			select {
-			case <-timer.C:
-				if op != nil {
-					op.Stop()
-				}
-				zap.S().Infof("==================================================play")
-				op = audio.Play()
-			case eta, ok := <-etaCh:
-				if !ok {
-					op = nil
-					op.Stop()
-					break
-				}
-				kujoServer.ETAMuxS.Send(kujo.ETAReport{
-					Station: station,
-					ETA:     eta,
-					Op:      kop,
-				})
-				//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
-				d := eta.Sub(time.Now())
-				d -= 5 * time.Second
-				if d < 0 {
-					d = 0
-				} else {
-					op.Stop()
-					op = nil
-				}
-				if !timer.Stop() {
-					<-timer.C
-				}
-				timer.Reset(d)
+		go func() {
+			for range timer.C {
+				audio.Play()
 			}
+		}()
+		for eta := range etaCh {
+			kujoServer.ETAMuxS.Send(kujo.ETAReport{
+				Station: station,
+				ETA:     eta,
+				Op:      kop,
+			})
+			//zap.S().Infof("eta: %s %#v", eta.Sub(time.Now()), eta)
+			d := eta.Sub(time.Now())
+			d -= 3 * time.Second
+			if d < 0 {
+				d = 0
+			}
+			timer.Reset(d)
 		}
 	}
 	linearPlan := func(tp *plan.TrainPlanner, etaCh chan<- time.Time, pos layout.Position) {
@@ -241,7 +224,7 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 		}
 	}
 	nagase := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
-	nagase.Precise = 124000
+	nagase.Precise = 190000
 	mitoucA := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
 	mitoucA.Precise = 123000
 	mitoucB := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})

@@ -1,7 +1,6 @@
 package tal
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -302,19 +301,21 @@ func (h *History) Extrapolate(y *layout.Layout, path layout.FullPath, relation R
 		if span.VelocityKnown {
 			panic("Span.Velocity not implemented yet")
 		}
-		if span.AbsPositionKnown {
-			pos2, err := y.PositionToOffset2(path, span.AbsPosition, layout.PositionToOffsetOption{
-				DisallowPortMismatch: true,
-			})
-			if err != nil {
-				zap.S().Warnf("index %d: AbsPosition: converting to offset failed: %s", i, err)
-			} else if errors.As(err, &layout.PortMismatchError{}) {
-				// ignore as this is useless
-			} else {
-				pos = pos2
+		/*
+			if span.AbsPositionKnown {
+				pos2, err := y.PositionToOffset2(path, span.AbsPosition, layout.PositionToOffsetOption{
+					DisallowPortMismatch: true,
+				})
+				if err != nil {
+					zap.S().Warnf("index %d: AbsPosition: converting to offset failed: %s", i, err)
+				} else if errors.As(err, &layout.PortMismatchError{}) {
+					// ignore as this is useless
+				} else {
+					pos = pos2
+				}
+				zap.S().Debugf("index %d: AbsPosition: %d %s (error: %s)", i, pos, span.AbsPosition, err)
 			}
-			zap.S().Debugf("index %d: AbsPosition: %d %s (error: %s)", i, pos, span.AbsPosition, err)
-		}
+		*/
 		if span.PositionKnown {
 			pos = span.Position
 			zap.S().Debugf("index %d: PositionKnown %d (%#v)", i, pos, span)

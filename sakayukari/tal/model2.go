@@ -119,6 +119,8 @@ func (m *Model2) writeDB() error {
 }
 
 func (m *Model2) RecordTrainCharacter(t *Train) error {
+	zap.S().Warnf("RecordTrainCharacter disabled for now!")
+	return nil
 	m.formsLock.Lock()
 	defer m.formsLock.Unlock()
 	if len(t.History.Spans) == 0 {

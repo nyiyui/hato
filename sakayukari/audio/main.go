@@ -28,18 +28,7 @@ func init() {
 	}()
 }
 
-type OnePlay struct {
-	ctrl *beep.Ctrl
-}
-
-func Play() *OnePlay {
-	op := OnePlay{&beep.Ctrl{Streamer: buffer.Streamer(0, buffer.Len())}}
-	speaker.Play(op.ctrl)
-	return &op
-}
-
-func (op *OnePlay) Stop() {
-	speaker.Lock()
-	op.ctrl.Streamer = nil
-	speaker.Unlock()
+func Play() {
+	oneshot := buffer.Streamer(0, buffer.Len())
+	speaker.Play(oneshot)
 }
