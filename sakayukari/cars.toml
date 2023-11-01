@@ -1,3 +1,18 @@
+[sets.5a3df046-0de7-418a-a159-f7f24431ea75]
+comment = "MyTRAM BLUE"
+length = 123000
+[[sets.5a3df046-0de7-418a-a159-f7f24431ea75.cars]]
+comment = "BLUE (1)"
+large-current = true
+length = 38000
+[[sets.5a3df046-0de7-418a-a159-f7f24431ea75.cars]]
+comment = "BLUE (2)"
+length = 47000
+[[sets.5a3df046-0de7-418a-a159-f7f24431ea75.cars]]
+comment = "BLUE (3)"
+large-current = true
+length = 38000
+
 [sets.a7453d82-d52f-43ec-84d2-54dcea72f8c1]
 comment = "広島電鉄 1001 PICCOLO"
 length = 123000

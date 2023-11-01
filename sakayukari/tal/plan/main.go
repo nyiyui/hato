@@ -32,6 +32,8 @@ type TrainPlanner struct {
 type PointPlan struct {
 	Position layout.Position
 	Velocity int64
+	Power    int
+	UsePower bool
 }
 
 // LinearPlan plans a trip with a linear velocity to LinearPlan.End.
@@ -42,8 +44,7 @@ type LinearPlan struct {
 }
 
 func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error {
-	velocity := lp.Start.Velocity
-	var powerStart, powerEnd float64
+	var powerStart, powerEnd int
 	var port layout.PortI
 	{
 		gs := tp.p.g.SnapshotMux.Current()
@@ -56,13 +57,23 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 		if len(fd.Relation.Coeffs) == 0 {
 			panic("panik")
 		}
-		powerStart, ok = fd.Relation.SolveForX(float64(velocity))
-		if !ok {
-			return fmt.Errorf("no power can be given to attain start velocity of %d µm/s (start velocity)", velocity)
+		if lp.Start.UsePower {
+			powerStart = lp.Start.Power
+		} else {
+			powerStart2, ok := fd.Relation.SolveForX(float64(lp.Start.Velocity))
+			if !ok {
+				return fmt.Errorf("no power can be given to attain start velocity of %d µm/s (start velocity)", lp.Start.Velocity)
+			}
+			powerStart = int(powerStart2)
 		}
-		powerEnd, ok = fd.Relation.SolveForX(float64(lp.End.Velocity))
-		if !ok {
-			return fmt.Errorf("no power can be given to attain end velocity of %d µm/s (end velocity)", lp.End.Velocity)
+		if lp.End.UsePower {
+			powerEnd = lp.End.Power
+		} else {
+			powerEnd2, ok := fd.Relation.SolveForX(float64(lp.End.Velocity))
+			if !ok {
+				return fmt.Errorf("no power can be given to attain end velocity of %d µm/s (end velocity)", lp.End.Velocity)
+			}
+			powerEnd = int(powerEnd2)
 		}
 		switch lp.End.Position.Port {
 		case layout.PortA:
@@ -95,7 +106,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 			LineI: lp.End.Position.LineI,
 			PortI: port,
 		},
-		Power:        int(powerStart),
+		Power:        powerStart,
 		PowerFilled:  true,
 		RunOnLock:    true,
 		SetRunOnLock: true,
@@ -120,7 +131,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 				pos, _ := tp.p.g.Model2.CurrentPosition(&t)
 				currentOffset := tp.p.g.Layout.PositionToOffset(*t.Path, pos)
 				distance := targetOffset - currentOffset
-				duration := distance * 1000 / velocity // use velocity from model
+				duration := distance * 1000 / lp.Start.Velocity // use velocity from model
 				eta := time.Now().Add(time.Duration(duration) * time.Millisecond)
 				zap.S().Debugf("eta: %s", eta)
 				etaCh <- eta
@@ -155,7 +166,7 @@ func (tp *TrainPlanner) LinearPlan(lp LinearPlan, etaCh chan<- time.Time) error 
 	}
 	_, err = tp.p.g.TrainUpdate(tal.GuideTrainUpdate{
 		TrainI:       tp.trainI,
-		Power:        int(powerEnd),
+		Power:        powerEnd,
 		PowerFilled:  true,
 		RunOnLock:    false, // reset RunOnLock
 		SetRunOnLock: true,
