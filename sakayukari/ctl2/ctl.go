@@ -225,9 +225,9 @@ func WaypointControl2(g *tal.Guide, kujoServer *kujo.Server) {
 	nagase := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("nagase1"), PortI: layout.PortB})
 	nagase.Precise = 124000
 	mitoucA := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc2"), PortI: layout.PortB})
-	mitoucA.Precise = 130000
+	mitoucA.Precise = 90000
 	mitoucB := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("mitouc3"), PortI: layout.PortB})
-	mitoucB.Precise = 130000
+	mitoucB.Precise = 90000
 	snb := y.LinePortToPosition(layout.LinePort{LineI: y.MustLookupIndex("snb4"), PortI: layout.PortB})
 	snb.Precise = 0
 	for {
