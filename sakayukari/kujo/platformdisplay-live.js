@@ -1,7 +1,8 @@
 const platformDisplay = document.getElementById("platform-display");
 const srcUrl = document.getElementById("src-url");
 const srcUrlSubmit = document.getElementById("src-url-submit");
-let src = null;
+const params = new URLSearchParams(window.location.search);
+let src = params.get('src');
 srcUrlSubmit.addEventListener("click", updateSource);
 
 const initialReconnectTimeout = 500;
