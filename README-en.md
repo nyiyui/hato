@@ -27,3 +27,7 @@ HATO's main program detects the direction of the train based on the polarity of 
 ## Demo Video
 
 <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/feEj1TXzvtw?si=cXUUK7CVFKUmiYCf&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+## [Mitou Junior Mentorship Program](https://jr.mitou.org/english/) Final Presentation Slides
+
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vTna_kV5mdMgtzeJbguJie78pdeHvQdgSHAvareKW4sNdjQMN_z_cBeJy-oTP5OM6jKveWvjQBx_t1l/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
