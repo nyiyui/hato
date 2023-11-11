@@ -32,7 +32,7 @@ Nゲージのシステムは、レールに電流を流すことで車両を動�
 
 ## [未踏ジュニア 成果報告会スライド](https://jr.mitou.org/projects/2023/hato)
 
-<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vTg74KgWRsJZkHOSdoS3f1Vs6Y6JPuo3XhNAyqh0CFVfhQ8ePn3AFxCCRjI8Nd3yi_bosN9fE0dCZWN/embed?start=false&loop=false&delayms=3000" frameborder="0" width="1920" height="1109" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vTg74KgWRsJZkHOSdoS3f1Vs6Y6JPuo3XhNAyqh0CFVfhQ8ePn3AFxCCRjI8Nd3yi_bosN9fE0dCZWN/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
 
 <!--
 ## 今後の目標
